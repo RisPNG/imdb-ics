@@ -39,11 +39,13 @@ For local configuration, copy `.env.example` to `.env` and run `mise exec -- npm
 ## Deploy on Render
 
 1. Create your GitHub repository with the contents of this directory at the repository root, including `package-lock.json` and `render.yaml`.
-2. In Render, create a **Blueprint**, connect that repository, and apply `render.yaml`.
+2. In Render, create a **Blueprint**, connect that repository, and apply `render.yaml`. The Blueprint selects **Singapore**.
 3. The Blueprint requests a **paid 0.5 CPU / 512 MB web service (`0.5c-512mb`) and a 1 GB persistent disk**. At the displayed rates of $7/month for compute and $0.25/GB/month for the disk, the base cost is about **$7.25/month**, before taxes or any applicable usage charges. Review [Render's current pricing](https://render.com/pricing) before provisioning. The disk preserves event revisions and cancellation history across deploys. The continuously running service performs its own daily refreshes.
 4. Open the service's root URL, such as `https://release-calendar.onrender.com/`, and copy the subscription links from the dashboard. The homepage and all calendar feeds are public.
 
 Render sets `RENDER_EXTERNAL_URL`, which the service uses to produce absolute feed URLs. For a custom domain, set `PUBLIC_BASE_URL` to its HTTPS origin, such as `https://calendar.example.com`. Moving to a new hostname changes subscription URLs, so existing subscriptions need the new address or a maintained redirect from the old host.
+
+Render [does not support changing an existing service's region](https://render.com/docs/regions#changing-a-services-region). An existing Oregon service needs a new service in Singapore. Copy `DATA_DIR/snapshot.json` to the new service's disk to preserve event history, and verify the new deployment before removing the old service. Setting `region: singapore` in this Blueprint configures new deployments but does not move an existing service.
 
 The Blueprint pins Node 24, validates the HTML and asset budgets, runs the tests, and removes development dependencies before starting the service. No additional cron job is needed. Run one service instance against one disk; this project is intentionally a single-process service.
 
@@ -60,6 +62,7 @@ If you create a Web Service without the Blueprint, use these settings:
 | Setting | Value |
 | --- | --- |
 | Runtime | Node |
+| Region | Singapore |
 | Compute plan | `0.5c-512mb` (0.5 CPU, 512 MB RAM) |
 | Node version | `NODE_VERSION=24.21.0` |
 | Build command | `npm ci --include=dev && npm run check && npm test && npm prune --omit=dev` |

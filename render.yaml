@@ -2,6 +2,7 @@ services:
   - type: web
     name: release-calendar
     runtime: node
+    region: singapore
     plan: 0.5c-512mb
     buildCommand: npm ci --include=dev && npm run check && npm test && npm prune --omit=dev
     startCommand: npm start
