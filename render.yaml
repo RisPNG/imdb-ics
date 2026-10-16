@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: release-calendar
+    name: imdb-ics
     runtime: node
     region: singapore
     plan: 0.5c-512mb
@@ -8,7 +8,7 @@ services:
     startCommand: npm start
     healthCheckPath: /healthz
     disk:
-      name: release-calendar-data
+      name: imdb-ics-data
       mountPath: /var/data
       sizeGB: 1
     envVars:
