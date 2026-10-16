@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: release-calendar
+    runtime: node
+    plan: starter
+    buildCommand: npm ci --include=dev && npm run check && npm test && npm prune --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    disk:
+      name: release-calendar-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=192
+      - key: DATA_DIR
+        value: /var/data/release-calendar
+      - key: CALENDAR_TOKEN
+        generateValue: true
+      - key: EVENT_TIME_MODE
+        value: date
+      - key: REFRESH_INTERVAL_HOURS
+        value: "24"
+      - key: REFRESH_RETRY_MINUTES
+        value: "30"

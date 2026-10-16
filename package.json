@@ -1,0 +1,19 @@
+{
+  "name": "release-calendar",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Small, self-hosted calendar subscriptions for IMDb interests and filmographies.",
+  "engines": { "node": ">=24.8.0 <25" },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "node --env-file-if-exists=.env --watch src/server.mjs",
+    "refresh": "node --env-file-if-exists=.env scripts/refresh.mjs",
+    "url": "node --env-file-if-exists=.env scripts/url.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "html-validate": "11.16.2"
+  }
+}
