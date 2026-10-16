@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { renderCalendar } from './calendar.mjs';
 import { loadConfig } from './config.mjs';
@@ -12,12 +12,6 @@ const assetPaths = new Map([
   ['/enhance.js', ['../public/enhance.js', 'text/javascript; charset=utf-8']],
 ]);
 
-function equalPath(actual, expected) {
-  const left = Buffer.from(actual);
-  const right = Buffer.from(expected);
-  return left.length === right.length && timingSafeEqual(left, right);
-}
-
 export async function createApp(config, options = {}) {
   const store = options.store || new CalendarStore(config, options);
   await store.initialize();
@@ -28,7 +22,6 @@ export async function createApp(config, options = {}) {
     response.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'");
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'no-referrer');
-    response.setHeader('X-Robots-Tag', 'noindex, nofollow');
     response.setHeader('Cache-Control', 'no-store');
     if (config.origin.startsWith('https:')) response.setHeader('Strict-Transport-Security', 'max-age=31536000');
 
@@ -45,15 +38,12 @@ export async function createApp(config, options = {}) {
     if (path === '/healthz') return send(200, '{"status":"ok"}\n', 'application/json; charset=utf-8');
     if (path === '/readyz') return send(store.feed('all') ? 200 : 503,
       JSON.stringify({ status: store.feed('all') ? 'ready' : 'warming' }) + '\n', 'application/json; charset=utf-8');
-    if (path === '/robots.txt') return send(200, 'User-agent: *\nDisallow: /\n');
+    if (path === '/robots.txt') return send(200, 'User-agent: *\nAllow: /\n');
     const asset = assets.get(path);
     if (asset) return send(200, asset.body, asset.type, { 'Cache-Control': 'public, max-age=3600' });
 
-    const parts = path.split('/');
-    if (config.prefix && !equalPath(`/${parts[1]}`, config.prefix)) return send(404, 'Not found.\n');
-    const localPath = path.slice(config.prefix.length) || '/';
-    if (localPath === '/') return send(200, renderPage(store.pageData()), 'text/html; charset=utf-8');
-    const match = /^\/calendars\/([a-z-]+)\.ics$/.exec(localPath);
+    if (path === '/') return send(200, renderPage(store.pageData()), 'text/html; charset=utf-8');
+    const match = /^\/calendars\/([a-z-]+)\.ics$/.exec(path);
     if (!match) return send(404, 'Not found.\n');
     const feed = store.feed(match[1]);
     if (feed === undefined) return send(404, 'Unknown calendar.\n');
@@ -62,7 +52,7 @@ export async function createApp(config, options = {}) {
     const etag = `"${createHash('sha256').update(body).digest('hex')}"`;
     const timestamps = Object.values(feed.events).map((event) => event.modifiedAt).filter(Boolean).sort();
     const lastModified = new Date(timestamps.at(-1) || feed.updatedAt).toUTCString();
-    const headers = { ETag: etag, 'Last-Modified': lastModified, 'Cache-Control': 'private, max-age=300',
+    const headers = { ETag: etag, 'Last-Modified': lastModified, 'Cache-Control': 'public, max-age=300',
       'X-Calendar-Stale': String(feed.stale), 'Content-Disposition': `inline; filename="${match[1]}.ics"` };
     const condition = request.headers['if-none-match'];
     const matchesTag = condition?.split(',').some((value) => value.trim().replace(/^W\//, '') === etag || value.trim() === '*');
@@ -101,7 +91,7 @@ async function main() {
     app.server.listen(config.port, '0.0.0.0', resolve);
   });
   console.info(`Release Calendar listening on port ${config.port}.`);
-  console.info(`Dashboard path: ${config.prefix ? '/<CALENDAR_TOKEN>/' : '/'}`);
+  console.info(`Dashboard: ${config.baseUrl}/`);
   app.store.start();
   let closing = false;
   async function shutdown() {

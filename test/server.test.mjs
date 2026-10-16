@@ -20,6 +20,7 @@ async function runningApp(t, env = {}) {
 
 test('cold feeds return retryable 503, then cached all-day calendars support ETags and HEAD', async (t) => {
   const { store, origin } = await runningApp(t);
+  assert.equal((await fetch(`${origin}/`)).status, 200);
   const pending = await fetch(`${origin}/calendars/all.ics`);
   assert.equal(pending.status, 503);
   assert.equal(pending.headers.get('retry-after'), '60');
@@ -29,6 +30,7 @@ test('cold feeds return retryable 503, then cached all-day calendars support ETa
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type'), /^text\/calendar/);
   assert.equal(response.headers.get('x-calendar-stale'), 'false');
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=300');
   const body = await response.text();
   assert.equal(body.match(/BEGIN:VEVENT/g).length, 1);
   assert.match(body, /DTSTART;VALUE=DATE:20261119\r\n/);
@@ -47,38 +49,46 @@ test('cold feeds return retryable 503, then cached all-day calendars support ETa
   assert.equal((await fetch(`${origin}/readyz`)).status, 200);
 });
 
-test('private dashboard and feeds stay behind token paths; assets and health expose no token', async (t) => {
-  const token = 'private-test-key-that-stays-secret';
-  const { store, origin } = await runningApp(t, { CALENDAR_TOKEN: token, PUBLIC_BASE_URL: 'https://calendar.example' });
+test('public homepage exposes all six subscriptions at the configured origin', async (t) => {
+  const { store, origin } = await runningApp(t, { PUBLIC_BASE_URL: 'https://calendar.example' });
   await store.refresh();
-  for (const path of ['/', '/calendars/all.ics', '/wrong-key/', `/${token}-extra/`, `/${token}/calendars/unknown.ics`]) {
-    const response = await fetch(`${origin}${path}`);
-    assert.equal(response.status, 404, path);
-    assert(!(await response.text()).includes(token));
-  }
-  const page = await fetch(`${origin}/${token}/`, { headers: { Host: 'attacker.example' } });
+  const page = await fetch(`${origin}/`, { headers: { Host: 'attacker.example' } });
   assert.equal(page.status, 200);
   const html = await page.text();
-  assert(html.includes(`https://calendar.example/${token}/calendars/all.ics`));
+  for (const slug of ['all', 'marvel', 'star-wars', 'dc', 'vince-gilligan', 'justin-roiland']) {
+    assert(html.includes(`https://calendar.example/calendars/${slug}.ics`));
+    const response = await fetch(`${origin}/calendars/${slug}.ics`);
+    assert.equal(response.status, 200, slug);
+    assert.match(response.headers.get('content-type'), /^text\/calendar/);
+  }
   assert(!html.includes('attacker.example'));
+  assert.doesNotMatch(html, /noindex|nofollow/);
+  assert.equal(page.headers.get('x-robots-tag'), null);
   assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
   assert(page.headers.get('content-security-policy').includes("frame-ancestors 'none'"));
   assert.equal(page.headers.get('cache-control'), 'no-store');
-  assert.equal((await fetch(`${origin}/${token}/calendars/marvel.ics`)).status, 200);
-  for (const path of ['/healthz', '/robots.txt', '/style.css', '/enhance.js']) {
+  for (const path of ['/healthz', '/readyz', '/style.css', '/enhance.js']) {
     const response = await fetch(`${origin}${path}`);
     assert.equal(response.status, 200);
-    assert(!(await response.text()).includes(token));
   }
-  const denied = await fetch(`${origin}/${token}/`, { method: 'POST' });
+  assert.equal(await (await fetch(`${origin}/robots.txt`)).text(), 'User-agent: *\nAllow: /\n');
+  for (const path of ['/missing/', '/calendars/unknown.ics']) {
+    assert.equal((await fetch(`${origin}${path}`)).status, 404, path);
+  }
+  const denied = await fetch(`${origin}/`, { method: 'POST' });
   assert.equal(denied.status, 405);
   assert.equal(denied.headers.get('allow'), 'GET, HEAD');
 });
 
-test('Render base64 secrets work through encoded dashboard and feed URLs', async (t) => {
+test('public routes work even when an old Render token is still set', async (t) => {
   const token = 'abcdefghijklmnopqrstuvwx+/==';
-  const { store, origin, config } = await runningApp(t, { CALENDAR_TOKEN: token });
+  const { store, origin } = await runningApp(t, { CALENDAR_TOKEN: token, RENDER_EXTERNAL_URL: 'https://release-calendar.onrender.com' });
   await store.refresh();
-  assert.equal((await fetch(`${origin}${config.prefix}/`)).status, 200);
-  assert.equal((await fetch(`${origin}${config.prefix}/calendars/all.ics`)).status, 200);
+  const page = await fetch(`${origin}/`);
+  assert.equal(page.status, 200);
+  const html = await page.text();
+  assert(html.includes('https://release-calendar.onrender.com/calendars/all.ics'));
+  assert(!html.includes(encodeURIComponent(token)));
+  assert.equal((await fetch(`${origin}/calendars/all.ics`)).status, 200);
+  assert.equal((await fetch(`${origin}/${encodeURIComponent(token)}/`)).status, 404);
 });

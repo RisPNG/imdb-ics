@@ -19,8 +19,6 @@ services:
         value: --max-old-space-size=192
       - key: DATA_DIR
         value: /var/data/release-calendar
-      - key: CALENDAR_TOKEN
-        generateValue: true
       - key: EVENT_TIME_MODE
         value: date
       - key: REFRESH_INTERVAL_HOURS

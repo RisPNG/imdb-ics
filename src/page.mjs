@@ -89,7 +89,6 @@ export function renderPage({ baseUrl, feeds = [], upcoming = [], updatedAt = nul
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <meta name="description" content="Subscribe to release dates from your IMDb interests and filmmakers. One calendar, automatically updated.">
-  <meta name="robots" content="noindex, nofollow">
   <title>Release Calendar</title>
   ${canonical ? `<link rel="canonical" href="${escape(canonical)}">` : ''}
   <link rel="stylesheet" href="/style.css">

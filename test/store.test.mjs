@@ -111,7 +111,7 @@ test('null event records are rejected before rendering or time-mode migration ca
   assert.doesNotThrow(() => restored.pageData());
 });
 
-test('existing UTC snapshots migrate to default all-day events once while preserving UIDs and token privacy', async (t) => {
+test('existing UTC snapshots migrate to default all-day events once while preserving UIDs', async (t) => {
   const { store, config, dataDir } = await setup(t, async () => result([title]), {
     env: { EVENT_TIME_MODE: 'utc' }, clock: () => new Date('2026-10-16T00:00:00Z'),
   });
@@ -130,6 +130,4 @@ test('existing UTC snapshots migrate to default all-day events once while preser
   const secondRestart = new CalendarStore(allDayConfig, { logger: quiet });
   await secondRestart.initialize();
   assert.equal(secondRestart.feed('all').events[title.id].sequence, 1, 'restarting does not repeatedly revise an already migrated event');
-  const text = await readFile(join(dataDir, 'snapshot.json'), 'utf8');
-  assert(!text.includes('CALENDAR_TOKEN'));
 });

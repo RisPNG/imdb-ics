@@ -1,6 +1,6 @@
 # Release Calendar
 
-A small, self-hosted website that turns IMDb interests and filmographies into calendar subscriptions. There is one feed per source and one combined feed that removes duplicate IMDb title IDs.
+A small, self-hosted website that turns IMDb interests and filmographies into public calendar subscriptions. There is one feed per source and one combined feed that removes duplicate IMDb title IDs.
 
 The page uses semantic HTML, a stylesheet under 6 KiB, system fonts, and optional clipboard JavaScript under 2 KiB. The Node service has no runtime package dependencies. Development uses `html-validate` to check the generated HTML.
 
@@ -41,10 +41,9 @@ For local configuration, copy `.env.example` to `.env` and run `mise exec -- npm
 1. Create your GitHub repository with the contents of this directory at the repository root, including `package-lock.json` and `render.yaml`.
 2. In Render, create a **Blueprint**, connect that repository, and apply `render.yaml`.
 3. The Blueprint requests a **paid 0.5 CPU / 512 MB web service (`0.5c-512mb`) and a 1 GB persistent disk**. At the displayed rates of $7/month for compute and $0.25/GB/month for the disk, the base cost is about **$7.25/month**, before taxes or any applicable usage charges. Review [Render's current pricing](https://render.com/pricing) before provisioning. The disk preserves event revisions and cancellation history across deploys. The continuously running service performs its own daily refreshes.
-4. In Render's Shell for the service, run `npm run url`. It prints the private dashboard URL, including the generated token in its URL-encoded form. Keep that URL and the `CALENDAR_TOKEN` environment value private and stable.
-5. Open that URL and copy the subscription links from the dashboard. The root `/` deliberately returns 404 when private access is configured.
+4. Open the service's root URL, such as `https://release-calendar.onrender.com/`, and copy the subscription links from the dashboard. The homepage and all calendar feeds are public.
 
-Render sets `RENDER_EXTERNAL_URL`; the service uses that value to produce absolute feed URLs. For a custom domain, set `PUBLIC_BASE_URL` to its HTTPS origin, such as `https://calendar.example.com`. Keep the token unchanged. Moving to a new hostname changes subscription URLs; existing subscriptions need the new address or a maintained redirect from the old host.
+Render sets `RENDER_EXTERNAL_URL`, which the service uses to produce absolute feed URLs. For a custom domain, set `PUBLIC_BASE_URL` to its HTTPS origin, such as `https://calendar.example.com`. Moving to a new hostname changes subscription URLs, so existing subscriptions need the new address or a maintained redirect from the old host.
 
 The Blueprint pins Node 24, validates the HTML and asset budgets, runs the tests, and removes development dependencies before starting the service. No additional cron job is needed. Run one service instance against one disk; this project is intentionally a single-process service.
 
@@ -68,9 +67,6 @@ If you create a Web Service without the Blueprint, use these settings:
 | Health check | `/healthz` |
 | Disk mount | `/var/data` |
 | Data directory | `DATA_DIR=/var/data/release-calendar` |
-| Private token | `CALENDAR_TOKEN`, a permanent random URL-safe or base64 string of at least 24 characters |
-
-A nonlocal deployment refuses to start without a token. The dashboard and feeds use a secret path; possession of a full URL grants access. The service URL-encodes the token so Render-generated base64 values remain one path component. `npm run url` prints the correct private URL; do not add it to a startup script or publish its output. This is link-based privacy rather than individual user accounts. Avoid sharing screenshots containing your production URLs, and preserve the token in your deployment's environment. Rotating it invalidates existing subscriptions. Never put it in a commit.
 
 ## Add a subscription
 
@@ -82,10 +78,10 @@ Use a feed URL as a **subscription**, rather than downloading and importing a fi
 
 The service checks sources every 24 hours by default. Your calendar provider chooses its own polling interval; its displayed events can lag behind the service's updates. Refresh hints in the feed are advisory.
 
-Keep the hostname and token stable for a permanent address. For example, the combined feed is:
+Keep the hostname stable for a permanent address. For example, the combined feed is:
 
 ```text
-https://YOUR-SERVICE.onrender.com/URL_ENCODED_TOKEN/calendars/all.ics
+https://release-calendar.onrender.com/calendars/all.ics
 ```
 
 ## Dates and timezones
@@ -106,17 +102,17 @@ Only a successful, complete source refresh replaces that source's saved titles. 
 
 Events use stable IMDb-based UIDs, persistent creation/modification times and revision numbers. Date changes update the same event. Removed titles or dates withdrawn by the source produce cancellation records, which are retained so slow subscribers can remove old events. Unchanged refreshes produce the same feed bytes and ETag. JSON snapshots are written to a temporary file and renamed atomically.
 
-Back up `DATA_DIR/snapshot.json` along with the deployment environment. The snapshot contains source data and event history, never the calendar token. Avoid deleting it to force a refresh: doing so resets revision history.
+Back up `DATA_DIR/snapshot.json` along with the deployment environment. The snapshot contains source data and event history. Avoid deleting it to force a refresh: doing so resets revision history.
 
 `mise exec -- npm run refresh` performs one refresh and exits. Use this **with the web service stopped**, for an initial fetch or maintenance; running it alongside the server would create two competing writers. A nonzero exit means at least one source failed or the cache could not be saved. Normal operation uses the in-process scheduler.
 
-`GET /healthz` checks whether the HTTP process is alive. `GET /readyz` returns 503 until every source has a usable snapshot. Readiness does not assert that upstream data is fresh; the private dashboard shows update times and saved-data states. Both endpoints omit feed data and private URLs.
+`GET /healthz` checks whether the HTTP process is alive. `GET /readyz` returns 503 until every source has a usable snapshot. Readiness does not assert that upstream data is fresh. The public dashboard shows update times and saved-data states. Both endpoints omit feed data.
 
 ## IMDb access limitation
 
 This implementation uses **IMDb's website GraphQL endpoint**, not IMDb's licensed AWS Data Exchange API. Live tests retrieved the requested interests, credited titles, and release dates. However, the responses also included an entitlement value of `DENY` and a notice restricting public, commercial, or non-private use. The service records these notices in its refresh logs and saved source warnings. Returned data is not evidence of a licensed entitlement.
 
-There is no verified supported quota or availability guarantee for this endpoint. It can change or stop working. A private URL does not establish permission to use the upstream data. Review [IMDb's data-use guidance](https://help.imdb.com/article/imdb/general-information/can-i-use-imdb-data-in-my-software/G5JTRESSHJBBHTGX) before deployment; obtain appropriate supported access for any use that requires it. The licensed API's [schema is available to subscribers](https://data.imdb.com/documentation/api-documentation/key-concepts/); support for these exact filters in that separate product has not been verified.
+There is no verified supported quota or availability guarantee for this endpoint. It can change or stop working. Review [IMDb's data-use guidance](https://help.imdb.com/article/imdb/general-information/can-i-use-imdb-data-in-my-software/G5JTRESSHJBBHTGX) before deployment and obtain appropriate supported access for any use that requires it. The licensed API's [schema is available to subscribers](https://data.imdb.com/documentation/api-documentation/key-concepts/), but support for these exact filters in that separate product has not been verified.
 
 The upstream boundary is confined to `src/imdb.mjs`, so a supported provider can replace it without changing the calendar, cache, or UI modules.
 
@@ -129,10 +125,10 @@ The upstream boundary is confined to `src/imdb.mjs`, so a supported provider can
 | `src/calendar.mjs` | Stable event history and RFC 5545 serialization |
 | `src/store.mjs` | Daily scheduling, retries, deduplication, atomic persistence |
 | `src/page.mjs` | One small shared HTML layout with escaped source data |
-| `src/server.mjs` | Private HTTP routes, cached feeds, ETags, response headers |
+| `src/server.mjs` | Public HTTP routes, cached feeds, ETags, response headers |
 | `public/` | Compact CSS and optional clipboard enhancement |
 | `scripts/check.mjs` | HTML validation, JavaScript syntax, source uniqueness, byte budgets |
-| `test/` | Calendar, pagination, cache recovery, private routes and HTTP behavior |
+| `test/` | Calendar, pagination, cache recovery, public routes, and HTTP behaviour |
 
 The research informs the design rather than supplying copied code: [Susam's site](https://github.com/susam/susam.net) for separating source data, layout and validation; [Seirdy's site](https://github.com/Seirdy/seirdy.one) for explicit accessibility constraints; and [Kessler's portfolio](https://github.com/nickessler2004/Engineering-Portfolio-Website) for straightforward layout primitives. There is no generic theme, CSS framework, custom publishing language, or speculative layout containment. Asset budgets measure transfer size; they are not a claim of independently benchmarked browser performance.
 

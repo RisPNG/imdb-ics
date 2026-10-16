@@ -30,19 +30,12 @@ export function loadConfig(env = process.env) {
       origin.username || origin.password || origin.search || origin.hash || origin.pathname !== '/') {
     throw new Error('PUBLIC_BASE_URL must be an HTTPS origin (HTTP is allowed for localhost).');
   }
-  const token = env.CALENDAR_TOKEN || '';
-  if (!local && !token) throw new Error('CALENDAR_TOKEN is required for a nonlocal deployment.');
-  if (token && !/^[A-Za-z0-9_+\/=\-]{24,256}$/.test(token)) {
-    throw new Error('CALENDAR_TOKEN must contain 24–256 URL-safe or base64 characters.');
-  }
   const eventTimeMode = env.EVENT_TIME_MODE || 'date';
   if (!['date', 'utc'].includes(eventTimeMode)) throw new Error('EVENT_TIME_MODE must be date or utc.');
-  const prefix = token ? `/${encodeURIComponent(token)}` : '';
   return Object.freeze({
     port,
     origin: origin.origin,
-    prefix,
-    baseUrl: `${origin.origin}${prefix}`,
+    baseUrl: origin.origin,
     dataDir: resolve(env.DATA_DIR || fileURLToPath(new URL('../data', import.meta.url))),
     eventTimeMode,
     refreshIntervalMs: integer(env.REFRESH_INTERVAL_HOURS, 24, 'REFRESH_INTERVAL_HOURS', 1, 168) * 3_600_000,

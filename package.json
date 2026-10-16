@@ -9,7 +9,6 @@
     "start": "node src/server.mjs",
     "dev": "node --env-file-if-exists=.env --watch src/server.mjs",
     "refresh": "node --env-file-if-exists=.env scripts/refresh.mjs",
-    "url": "node --env-file-if-exists=.env scripts/url.mjs",
     "check": "node scripts/check.mjs",
     "test": "node --test"
   },

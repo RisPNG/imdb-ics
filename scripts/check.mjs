@@ -25,12 +25,12 @@ for (const directory of ['src', 'scripts', 'test']) {
 }
 for (const status of ['ready', 'pending', 'stale', 'error']) {
   for (const eventTimeMode of ['utc', 'date']) {
-    const baseUrl = 'https://calendar.example/private-build-check';
+    const baseUrl = 'https://calendar.example';
     const feeds = [{ slug: 'all', label: 'All releases', url: null }, ...SOURCES].map((source) => ({
       ...source, status, count: status === 'pending' ? null : 12, omitted: status === 'pending' ? 0 : 1,
       updatedAt: status === 'pending' ? null : '2026-10-16T08:00:00.000Z',
       subscriptionUrl: `${baseUrl}/calendars/${source.slug}.ics`,
-      webcalUrl: `webcal://calendar.example/private-build-check/calendars/${source.slug}.ics`,
+      webcalUrl: `webcal://calendar.example/calendars/${source.slug}.ics`,
     }));
     const html = renderPage({ baseUrl, feeds, upcoming: status === 'pending' ? [] : [{ title: 'A title & its release', date: '2026-11-19' }],
       updatedAt: status === 'pending' ? null : '2026-10-16T08:00:00.000Z', stale: status === 'stale', eventTimeMode });

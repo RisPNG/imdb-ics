@@ -51,10 +51,10 @@ test('omits incomplete and impossible release dates', () => {
   assert.doesNotMatch(html, /<th scope="row">/);
 });
 
-test('preserves a private dashboard base URL and describes the chosen event time', () => {
-  const html = renderPage({ baseUrl: `${baseUrl}/private-token/`, feeds: [feed] });
-  assert.match(html, /rel="canonical" href="https:\/\/calendar\.example\/private-token\/"/);
-  assert.doesNotMatch(html, /href="\/"/);
+test('uses the public dashboard URL and describes the chosen event time', () => {
+  const html = renderPage({ baseUrl, feeds: [feed] });
+  assert.match(html, /rel="canonical" href="https:\/\/calendar\.example\/"/);
+  assert.doesNotMatch(html, /noindex|nofollow/);
   assert.match(html, /all-day events/);
   assert.match(html, /same calendar date in every time zone/);
   assert.doesNotMatch(html, /midnight UTC/);
