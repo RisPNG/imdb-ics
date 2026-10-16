@@ -40,13 +40,17 @@ For local configuration, copy `.env.example` to `.env` and run `mise exec -- npm
 
 1. Create your GitHub repository with the contents of this directory at the repository root, including `package-lock.json` and `render.yaml`.
 2. In Render, create a **Blueprint**, connect that repository, and apply `render.yaml`.
-3. The Blueprint requests a **paid Starter web service and a 1 GB persistent disk**. Review Render's displayed price before provisioning. The disk preserves event revisions and cancellation history across deploys; the continuously running service performs its own daily refreshes.
+3. The Blueprint requests a **paid 0.5 CPU / 512 MB web service (`0.5c-512mb`) and a 1 GB persistent disk**. At the displayed rates of $7/month for compute and $0.25/GB/month for the disk, the base cost is about **$7.25/month**, before taxes or any applicable usage charges. Review [Render's current pricing](https://render.com/pricing) before provisioning. The disk preserves event revisions and cancellation history across deploys. The continuously running service performs its own daily refreshes.
 4. In Render's Shell for the service, run `npm run url`. It prints the private dashboard URL, including the generated token in its URL-encoded form. Keep that URL and the `CALENDAR_TOKEN` environment value private and stable.
 5. Open that URL and copy the subscription links from the dashboard. The root `/` deliberately returns 404 when private access is configured.
 
 Render sets `RENDER_EXTERNAL_URL`; the service uses that value to produce absolute feed URLs. For a custom domain, set `PUBLIC_BASE_URL` to its HTTPS origin, such as `https://calendar.example.com`. Keep the token unchanged. Moving to a new hostname changes subscription URLs; existing subscriptions need the new address or a maintained redirect from the old host.
 
 The Blueprint pins Node 24, validates the HTML and asset budgets, runs the tests, and removes development dependencies before starting the service. No additional cron job is needed. Run one service instance against one disk; this project is intentionally a single-process service.
+
+The selected compute and disk are sufficient for these five sources and a small subscription site. The saved calendar snapshot is currently about 1 MB, so the 1 GB disk has substantial room for event history. No database, GitHub Actions workflow, separate scheduler, or GitHub write credential is needed. If an IMDb refresh fails, subscribers continue receiving the last successfully saved dates while the service retries.
+
+Render's attached disks disable zero-downtime deploys, so a deployment can briefly interrupt requests. Calendar data survives the restart on the disk. See [Render's disk limitations](https://render.com/docs/disks#disk-limitations-and-considerations).
 
 Free or sleeping services do not guarantee a refresh every 24 hours, and ephemeral storage loses event history on redeploy. Removing the persistent disk is therefore a reliability trade-off, not an equivalent deployment.
 
@@ -57,6 +61,7 @@ If you create a Web Service without the Blueprint, use these settings:
 | Setting | Value |
 | --- | --- |
 | Runtime | Node |
+| Compute plan | `0.5c-512mb` (0.5 CPU, 512 MB RAM) |
 | Node version | `NODE_VERSION=24.21.0` |
 | Build command | `npm ci --include=dev && npm run check && npm test && npm prune --omit=dev` |
 | Start command | `npm start` |
