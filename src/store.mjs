@@ -107,7 +107,7 @@ export class CalendarStore {
       events: state.saved.events, updatedAt: state.saved.lastSuccessAt, stale: state.status === 'stale' };
   }
 
-  pageData() {
+  pageData(baseUrl = this.config.baseUrl) {
     const individual = this.config.sources.map((source) => {
       const { status, saved } = this.sourceState(source);
       return { ...source, status, count: saved?.lastSuccessAt ? Object.values(saved.events).filter((event) => event.status === 'CONFIRMED').length : null,
@@ -123,7 +123,7 @@ export class CalendarStore {
       count: combined ? Object.values(combined.events).filter((event) => event.status === 'CONFIRMED').length : null,
       updatedAt: combined?.updatedAt || null, omitted: undatedIds.size };
     const feeds = [all, ...individual].map((feed) => {
-      const subscriptionUrl = `${this.config.baseUrl}/calendars/${feed.slug}.ics`;
+      const subscriptionUrl = `${baseUrl}/calendars/${feed.slug}.ics`;
       return { ...feed, subscriptionUrl, webcalUrl: subscriptionUrl.replace(/^https?:/, 'webcal:') };
     });
     const today = this.clock().toISOString().slice(0, 10);
@@ -135,7 +135,7 @@ export class CalendarStore {
         .map((source) => source.label) })) : [];
     const updatedAt = individual.every((feed) => feed.updatedAt)
       ? individual.map((feed) => feed.updatedAt).sort()[0] : null;
-    return { baseUrl: this.config.baseUrl, feeds, upcoming, updatedAt, stale: !!combined?.stale,
+    return { baseUrl, feeds, upcoming, updatedAt, stale: !!combined?.stale,
       refreshing: !!this.refreshing, eventTimeMode: this.config.eventTimeMode };
   }
 

@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { get } from 'node:http';
+import { text } from 'node:stream/consumers';
 import { createApp } from '../src/server.mjs';
 import { loadConfig } from '../src/config.mjs';
 
@@ -49,19 +51,21 @@ test('cold feeds return retryable 503, then cached all-day calendars support ETa
   assert.equal((await fetch(`${origin}/readyz`)).status, 200);
 });
 
-test('public homepage exposes all six subscriptions at the configured origin', async (t) => {
+test('public homepage exposes all six subscriptions at the request origin', async (t) => {
   const { store, origin } = await runningApp(t, { PUBLIC_BASE_URL: 'https://calendar.example' });
   await store.refresh();
-  const page = await fetch(`${origin}/`, { headers: { Host: 'attacker.example' } });
+  const page = await fetch(`${origin}/`);
   assert.equal(page.status, 200);
   const html = await page.text();
+  const subscriptionUrl = origin.replace(/^http:/, 'https:');
   for (const slug of ['all', 'marvel', 'star-wars', 'dc', 'vince-gilligan', 'justin-roiland']) {
-    assert(html.includes(`https://calendar.example/calendars/${slug}.ics`));
+    assert(html.includes(`value="${subscriptionUrl}/calendars/${slug}.ics"`));
+    assert(html.includes(`href="${origin.replace(/^http:/, 'webcal:')}/calendars/${slug}.ics"`));
     const response = await fetch(`${origin}/calendars/${slug}.ics`);
     assert.equal(response.status, 200, slug);
     assert.match(response.headers.get('content-type'), /^text\/calendar/);
   }
-  assert(!html.includes('attacker.example'));
+  assert(!html.includes('calendar.example'));
   assert.doesNotMatch(html, /noindex|nofollow/);
   assert.equal(page.headers.get('x-robots-tag'), null);
   assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
@@ -80,6 +84,47 @@ test('public homepage exposes all six subscriptions at the configured origin', a
   assert.equal(denied.headers.get('allow'), 'GET, HEAD');
 });
 
+test('subscription links follow custom and Render hosts without changing the configured URL', async (t) => {
+  const { store, origin, config } = await runningApp(t, { RENDER_EXTERNAL_URL: 'https://imdb-ics.onrender.com' });
+  for (const ready of [false, true]) {
+    if (ready) await store.refresh();
+    for (const host of ['imdbics.rispeng.com', 'imdb-ics.onrender.com', 'imdbics.rispeng.com']) {
+      const page = await new Promise((resolve, reject) => get(`${origin}/`, {
+        headers: { Host: host, 'X-Forwarded-Proto': 'https', 'X-Forwarded-Host': 'unrelated.example' },
+      }, resolve).on('error', reject));
+      assert.equal(page.statusCode, 200);
+      const html = await text(page);
+      assert(html.includes(`rel="canonical" href="https://${host}/"`));
+      for (const slug of ['all', 'marvel', 'star-wars', 'dc', 'vince-gilligan', 'justin-roiland']) {
+        assert(html.includes(`value="https://${host}/calendars/${slug}.ics"`));
+        assert(html.includes(`href="webcal://${host}/calendars/${slug}.ics"`));
+      }
+      assert(!html.includes('unrelated.example'));
+      assert.equal(page.headers['cache-control'], 'no-store');
+    }
+  }
+  assert.equal(config.baseUrl, 'https://imdb-ics.onrender.com');
+  assert.equal(store.pageData().baseUrl, config.baseUrl);
+});
+
+test('subscription origins preserve request ports and the proxy protocol', async (t) => {
+  const { origin } = await runningApp(t);
+  for (const [headers, expected] of [
+    [{}, origin],
+    [{ Host: 'localhost:8080' }, 'http://localhost:8080'],
+    [{ Host: '[::1]:8080' }, 'http://[::1]:8080'],
+    [{ Host: 'imdbics.rispeng.com', 'X-Forwarded-Proto': 'https, http' }, 'https://imdbics.rispeng.com'],
+    [{ Host: 'imdbics.rispeng.com', 'X-Forwarded-Proto': 'javascript' }, 'http://imdbics.rispeng.com'],
+  ]) {
+    const page = await new Promise((resolve, reject) => get(`${origin}/`, { headers }, resolve).on('error', reject));
+    assert.equal(page.statusCode, 200);
+    const html = await text(page);
+    assert(html.includes(`rel="canonical" href="${expected}/"`));
+    assert(html.includes(`value="${expected}/calendars/all.ics"`));
+    assert(html.includes(`href="${expected.replace(/^https?:/, 'webcal:')}/calendars/all.ics"`));
+  }
+});
+
 test('public routes work even when an old Render token is still set', async (t) => {
   const token = 'abcdefghijklmnopqrstuvwx+/==';
   const { store, origin } = await runningApp(t, { CALENDAR_TOKEN: token, RENDER_EXTERNAL_URL: 'https://release-calendar.onrender.com' });
@@ -87,7 +132,7 @@ test('public routes work even when an old Render token is still set', async (t) 
   const page = await fetch(`${origin}/`);
   assert.equal(page.status, 200);
   const html = await page.text();
-  assert(html.includes('https://release-calendar.onrender.com/calendars/all.ics'));
+  assert(html.includes(`${origin.replace(/^http:/, 'https:')}/calendars/all.ics`));
   assert(!html.includes(encodeURIComponent(token)));
   assert.equal((await fetch(`${origin}/calendars/all.ics`)).status, 200);
   assert.equal((await fetch(`${origin}/${encodeURIComponent(token)}/`)).status, 404);

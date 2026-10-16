@@ -42,7 +42,16 @@ export async function createApp(config, options = {}) {
     const asset = assets.get(path);
     if (asset) return send(200, asset.body, asset.type, { 'Cache-Control': 'public, max-age=3600' });
 
-    if (path === '/') return send(200, renderPage(store.pageData()), 'text/html; charset=utf-8');
+    if (path === '/') {
+      const baseUrl = new URL(config.baseUrl);
+      const protocol = request.headers['x-forwarded-proto']?.split(',')[0].trim();
+      if (protocol === 'http' || protocol === 'https') baseUrl.protocol = `${protocol}:`;
+      if (request.headers.host) {
+        baseUrl.port = '';
+        baseUrl.host = request.headers.host;
+      }
+      return send(200, renderPage(store.pageData(baseUrl.origin)), 'text/html; charset=utf-8');
+    }
     const match = /^\/calendars\/([a-z-]+)\.ics$/.exec(path);
     if (!match) return send(404, 'Not found.\n');
     const feed = store.feed(match[1]);
