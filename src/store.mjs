@@ -1,11 +1,18 @@
 import { mkdir, readFile, writeFile, rename, unlink, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { isCompleteDate, reconcileEvents } from './calendar.mjs';
+import { gzip as gzipCallback, gunzip as gunzipCallback } from 'node:zlib';
+import { promisify } from 'node:util';
+import { isValidEvent, reconcileEvents } from './calendar.mjs';
 import { fetchSource } from './imdb.mjs';
 
+const gzip = promisify(gzipCallback);
+const gunzip = promisify(gunzipCallback);
+const MAX_SNAPSHOT_BYTES = 64 * 1024 * 1024;
+const MAX_COMPRESSED_BYTES = 16 * 1024 * 1024;
+
 function emptySnapshot() {
-  return { version: 1, eventTimeMode: null, sources: {}, combined: null };
+  return { version: 2, eventTimeMode: null, sources: {}, combined: null };
 }
 
 function validTime(value) {
@@ -14,26 +21,43 @@ function validTime(value) {
 
 function validEvents(events) {
   return events && typeof events === 'object' && !Array.isArray(events) &&
-    Object.entries(events).every(([id, event]) => event && /^tt\d+$/.test(id) && event.id === id &&
-      typeof event.title === 'string' && event.title.trim() && isCompleteDate(event.date) &&
-      ['CONFIRMED', 'CANCELLED'].includes(event.status) && Number.isSafeInteger(event.sequence) &&
-      event.sequence >= 0 && validTime(event.createdAt) && validTime(event.modifiedAt));
+    Object.entries(events).every(([id, event]) => isValidEvent(event) && event.id === id);
+}
+
+function validTitle(title) {
+  return title && /^tt\d+$/.test(title.id) && typeof title.title === 'string'
+    && (title.date === null || typeof title.date === 'string')
+    && (title.series === undefined || (title.series && /^tt\d+$/.test(title.series.id)
+      && typeof title.series.title === 'string'
+      && (title.series.date === undefined || title.series.date === null || typeof title.series.date === 'string')
+      && ['season', 'episode'].every((field) => title.series[field] === null || (Number.isInteger(title.series[field]) && title.series[field] >= 0))))
+    && (title.episodes === undefined || (Array.isArray(title.episodes) && title.episodes.every(validTitle)));
 }
 
 function validateSnapshot(value, sources) {
-  if (!value || value.version !== 1 || !value.sources || typeof value.sources !== 'object') return false;
+  if (!value || ![1, 2].includes(value.version) || !value.sources || typeof value.sources !== 'object') return false;
   for (const source of sources) {
     const saved = value.sources[source.slug];
     if (!saved) continue;
     if (!Array.isArray(saved.titles) || !validEvents(saved.events) ||
         (saved.lastSuccessAt !== null && !validTime(saved.lastSuccessAt)) ||
         (saved.lastAttemptAt !== null && !validTime(saved.lastAttemptAt)) ||
-        !saved.titles.every((title) => title && /^tt\d+$/.test(title.id) &&
-          typeof title.title === 'string' && (title.date === null || typeof title.date === 'string'))) return false;
+        !saved.titles.every(validTitle)) return false;
   }
   if (value.combined && (!validEvents(value.combined.events) ||
       !validTime(value.combined.updatedAt))) return false;
   return true;
+}
+
+function undatedTitleCount(titles, events) {
+  const ids = new Set(titles.flatMap((title) => [title, ...(title.episodes ?? [])])
+    .filter((title) => !title.date).map((title) => title.id));
+  for (const event of Object.values(events)) {
+    if (event.status !== 'CONFIRMED') continue;
+    ids.delete(event.titleId ?? event.id);
+    for (const id of event.episodeIds ?? []) ids.delete(id);
+  }
+  return ids.size;
 }
 
 function errorMessage(error) {
@@ -62,12 +86,25 @@ export class CalendarStore {
 
   async initialize() {
     try {
-      const path = join(this.config.dataDir, 'snapshot.json');
-      if ((await stat(path)).size > 16 * 1024 * 1024) throw new Error('Saved snapshot exceeds 16 MiB.');
-      const text = await readFile(path, 'utf8');
-      if (Buffer.byteLength(text) > 16 * 1024 * 1024) throw new Error('Saved snapshot exceeds 16 MiB.');
-      const saved = JSON.parse(text);
+      let path = join(this.config.dataDir, 'snapshot.json.gz');
+      let compressed = true;
+      let size;
+      try {
+        size = (await stat(path)).size;
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+        path = join(this.config.dataDir, 'snapshot.json');
+        compressed = false;
+        size = (await stat(path)).size;
+      }
+      const limit = compressed ? MAX_COMPRESSED_BYTES : MAX_SNAPSHOT_BYTES;
+      if (size > limit) throw new Error(`Saved snapshot exceeds the ${compressed ? '16 MiB compressed' : '64 MiB'} limit.`);
+      let bytes = await readFile(path);
+      if (bytes.length > limit) throw new Error(`Saved snapshot exceeds the ${compressed ? '16 MiB compressed' : '64 MiB'} limit.`);
+      if (compressed) bytes = await gunzip(bytes, { maxOutputLength: MAX_SNAPSHOT_BYTES });
+      const saved = JSON.parse(bytes.toString('utf8'));
       if (!validateSnapshot(saved, this.config.sources)) throw new Error('Saved snapshot has an invalid format.');
+      saved.version = 2;
       this.snapshot = saved;
     } catch (error) {
       if (error.code !== 'ENOENT') this.logger.warn(`Calendar cache could not be loaded: ${errorMessage(error)}`);
@@ -93,10 +130,9 @@ export class CalendarStore {
 
   feed(slug) {
     if (slug === 'all') {
-      const ready = this.config.sources.every((source) => this.sourceState(source).saved?.lastSuccessAt);
-      if (!ready || !this.snapshot.combined) return null;
+      if (!this.snapshot.combined) return null;
       const stale = this.config.sources.some((source) => this.sourceState(source).status !== 'ready');
-      return { label: 'All releases', description: 'Releases from all five IMDb sources, without duplicate titles.',
+      return { label: 'All releases', description: 'Releases from all configured IMDb sources, with series episodes grouped by release date.',
         events: this.snapshot.combined.events, updatedAt: this.snapshot.combined.updatedAt, stale };
     }
     const source = this.config.sources.find((candidate) => candidate.slug === slug);
@@ -114,14 +150,10 @@ export class CalendarStore {
         updatedAt: saved?.lastSuccessAt || null, omitted: saved?.omitted || 0 };
     });
     const combined = this.feed('all');
-    const undatedIds = new Set(this.config.sources.flatMap((source) =>
-      (this.snapshot.sources[source.slug]?.titles || []).filter((title) => !title.date).map((title) => title.id)));
-    if (combined) for (const event of Object.values(combined.events)) {
-      if (event.status === 'CONFIRMED') undatedIds.delete(event.id);
-    }
+    const titles = this.config.sources.flatMap((source) => this.snapshot.sources[source.slug]?.titles || []);
     const all = { slug: 'all', label: 'All releases', url: null, status: combined ? (combined.stale ? 'stale' : 'ready') : (individual.some((feed) => feed.status === 'error') ? 'error' : 'pending'),
       count: combined ? Object.values(combined.events).filter((event) => event.status === 'CONFIRMED').length : null,
-      updatedAt: combined?.updatedAt || null, omitted: undatedIds.size };
+      updatedAt: combined?.updatedAt || null, omitted: undatedTitleCount(titles, combined?.events || {}) };
     const feeds = [all, ...individual].map((feed) => {
       const subscriptionUrl = `${baseUrl}/calendars/${feed.slug}.ics`;
       return { ...feed, subscriptionUrl, webcalUrl: subscriptionUrl.replace(/^https?:/, 'webcal:') };
@@ -130,9 +162,14 @@ export class CalendarStore {
     const upcoming = combined ? Object.values(combined.events)
       .filter((event) => event.status === 'CONFIRMED' && event.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title) || a.id.localeCompare(b.id))
-      .slice(0, 12).map((event) => ({ ...event, sources: this.config.sources
-        .filter((source) => this.snapshot.sources[source.slug]?.events[event.id]?.status === 'CONFIRMED')
-        .map((source) => source.label) })) : [];
+      .slice(0, 12).map((event) => {
+        const ids = new Set([event.id, ...(event.episodeIds ?? [])]);
+        return { ...event, sources: this.config.sources
+          .filter((source) => Object.values(this.snapshot.sources[source.slug]?.events || {})
+            .some((candidate) => candidate.status === 'CONFIRMED'
+              && (ids.has(candidate.id) || candidate.episodeIds?.some((id) => ids.has(id)))))
+          .map((source) => source.label) };
+      }) : [];
     const updatedAt = individual.every((feed) => feed.updatedAt)
       ? individual.map((feed) => feed.updatedAt).sort()[0] : null;
     return { baseUrl, feeds, upcoming, updatedAt, stale: !!combined?.stale,
@@ -151,6 +188,7 @@ export class CalendarStore {
 
   async performRefresh(force, signal) {
     let refreshed = false;
+    const seriesCache = new Map();
     for (const source of this.config.sources) {
       if (signal.aborted) break;
       const previous = this.snapshot.sources[source.slug];
@@ -159,15 +197,16 @@ export class CalendarStore {
       const checkedAt = previous?.error ? previous.lastAttemptAt : previous?.lastSuccessAt;
       if (!force && checkedAt && this.clock().getTime() - Date.parse(checkedAt) < interval) continue;
       try {
-        const result = await this.loader(source, { signal });
+        const result = await this.loader(source, { signal, seriesCache });
         if (signal.aborted) break;
         if (!result || !Array.isArray(result.titles)) throw new Error('Source did not return a title snapshot.');
-        this.snapshot.sources[source.slug] = { titles: result.titles,
-          events: reconcileEvents(previous?.events || {}, result.titles, { now }),
-          total: result.total, omitted: result.omitted, warnings: result.warnings || [],
+        const events = reconcileEvents(previous?.events || {}, result.titles, { now });
+        const omitted = undatedTitleCount(result.titles, events);
+        this.snapshot.sources[source.slug] = { titles: result.titles, events,
+          total: result.total, omitted, warnings: result.warnings || [],
           lastSuccessAt: now, lastAttemptAt: now, error: null };
         refreshed = true;
-        this.logger.info(`Refreshed ${source.slug}: ${result.titles.length} titles, ${result.omitted} without a complete date.`);
+        this.logger.info(`Refreshed ${source.slug}: ${result.titles.length} titles, ${omitted} without a complete date.`);
         for (const warning of result.warnings || []) this.logger.warn(`${source.slug}: ${warning}`);
       } catch (error) {
         if (signal.aborted) break;
@@ -177,8 +216,9 @@ export class CalendarStore {
         this.logger.warn(`Refresh failed for ${source.slug}: ${errorMessage(error)}`);
       }
     }
-    if ((refreshed || !this.snapshot.combined) && this.config.sources.every((source) => this.snapshot.sources[source.slug]?.lastSuccessAt)) {
-      const titles = this.config.sources.flatMap((source) => this.snapshot.sources[source.slug].titles);
+    if ((refreshed || !this.snapshot.combined)
+        && (this.snapshot.combined || this.config.sources.every((source) => this.snapshot.sources[source.slug]?.lastSuccessAt))) {
+      const titles = this.config.sources.flatMap((source) => this.snapshot.sources[source.slug]?.titles || []);
       this.snapshot.combined = { events: reconcileEvents(this.snapshot.combined?.events || {}, titles, { now: this.clock().toISOString() }),
         updatedAt: this.clock().toISOString() };
     }
@@ -188,12 +228,18 @@ export class CalendarStore {
   async persist() {
     const temporary = join(this.config.dataDir, `.snapshot-${randomUUID()}.tmp`);
     try {
+      const text = JSON.stringify(this.snapshot);
+      if (Buffer.byteLength(text) > MAX_SNAPSHOT_BYTES) throw new Error('Calendar snapshot exceeds the 64 MiB limit.');
+      const bytes = await gzip(text, { maxOutputLength: MAX_COMPRESSED_BYTES });
       await mkdir(this.config.dataDir, { recursive: true, mode: 0o700 });
-      await writeFile(temporary, `${JSON.stringify(this.snapshot)}\n`, { mode: 0o600 });
-      await rename(temporary, join(this.config.dataDir, 'snapshot.json'));
+      await writeFile(temporary, bytes, { mode: 0o600 });
+      await rename(temporary, join(this.config.dataDir, 'snapshot.json.gz'));
       this.persistenceError = null;
+      await unlink(join(this.config.dataDir, 'snapshot.json')).catch((error) => {
+        if (error.code !== 'ENOENT') this.logger.warn(`Legacy calendar cache could not be removed: ${errorMessage(error)}`);
+      });
     } catch (error) {
-      this.persistenceError = errorMessage(error);
+      this.persistenceError = error.code === 'ERR_BUFFER_TOO_LARGE' ? 'Calendar snapshot exceeds the 16 MiB compressed limit.' : errorMessage(error);
       this.logger.warn(`Calendar cache could not be saved: ${this.persistenceError}`);
       await unlink(temporary).catch(() => {});
     }

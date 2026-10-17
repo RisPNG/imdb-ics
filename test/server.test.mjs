@@ -6,14 +6,17 @@ import { join } from 'node:path';
 import { get } from 'node:http';
 import { text } from 'node:stream/consumers';
 import { createApp } from '../src/server.mjs';
-import { loadConfig } from '../src/config.mjs';
+import { loadConfig, SOURCES } from '../src/config.mjs';
+import { CalendarStore } from '../src/store.mjs';
 
-async function runningApp(t, env = {}) {
+const feedSlugs = ['all', ...SOURCES.map((source) => source.slug)];
+
+async function runningApp(t, env = {}, options = {}) {
   const dataDir = await mkdtemp(join(tmpdir(), 'release-calendar-server-test-'));
   const config = loadConfig({ DATA_DIR: dataDir, ...env });
   const app = await createApp(config, { logger: { info() {}, warn() {} }, loader: async () => ({
     titles: [{ id: 'tt1234567', title: 'A title, with punctuation', date: '2026-11-19' }], total: 1, omitted: 0, warnings: [],
-  }) });
+  }), ...options });
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
   const origin = `http://127.0.0.1:${app.server.address().port}`;
   t.after(async () => { await app.close(); await rm(dataDir, { recursive: true, force: true }); });
@@ -51,14 +54,108 @@ test('cold feeds return retryable 503, then cached all-day calendars support ETa
   assert.equal((await fetch(`${origin}/readyz`)).status, 200);
 });
 
-test('public homepage exposes all six subscriptions at the request origin', async (t) => {
+test('saved combined feeds remain available while new sources warm up and readiness waits for them', async (t) => {
+  let failing = true;
+  const missing = SOURCES.at(-1);
+  const existingTitle = { id: 'tt1234567', title: 'An existing release', date: '2026-11-19' };
+  const addedTitle = { id: 'tt2345678', title: 'A newly followed release', date: '2026-11-20' };
+  const { store, origin, config } = await runningApp(t, {}, {
+    loader: async (source) => {
+      if (failing && source.slug === missing.slug) throw new Error('HTTP 503');
+      return { titles: [source.slug === SOURCES[1].slug ? addedTitle : existingTitle], total: 1, omitted: 0, warnings: [] };
+    },
+  });
+  const original = new CalendarStore({ ...config, sources: config.sources.slice(0, 1) }, {
+    loader: store.loader, logger: { info() {}, warn() {} },
+  });
+  await original.initialize();
+  await original.refresh();
+  await store.initialize();
+
+  const saved = await fetch(`${origin}/calendars/all.ics`);
+  assert.equal(saved.status, 200);
+  assert.equal(saved.headers.get('x-calendar-stale'), 'true');
+  assert.match(await saved.text(), /SUMMARY:An existing release\r\n/);
+  assert.equal((await fetch(`${origin}/readyz`)).status, 503);
+
+  await store.refresh();
+  const warming = await fetch(`${origin}/calendars/all.ics`);
+  assert.equal(warming.status, 200);
+  assert.equal(warming.headers.get('x-calendar-stale'), 'true');
+  const body = await warming.text();
+  assert.match(body, /SUMMARY:An existing release\r\n/);
+  assert.match(body, /SUMMARY:A newly followed release\r\n/);
+  assert.equal((await fetch(`${origin}/readyz`)).status, 503);
+  assert.equal((await fetch(`${origin}/calendars/${missing.slug}.ics`)).status, 503);
+
+  failing = false;
+  await store.refresh();
+  const ready = await fetch(`${origin}/calendars/all.ics`);
+  assert.equal(ready.status, 200);
+  assert.equal(ready.headers.get('x-calendar-stale'), 'false');
+  await ready.text();
+  assert.equal((await fetch(`${origin}/readyz`)).status, 200);
+  assert.equal((await fetch(`${origin}/calendars/${missing.slug}.ics`)).status, 200);
+});
+
+test('episode descriptions retain series titles and links and invalidate cached feeds when an episode title changes', async (t) => {
+  let clock = new Date('2026-10-17T00:00:00Z');
+  const series = {
+    id: 'tt3456789', title: 'A series', date: '2026-11-19', type: 'tvSeries',
+    episodes: [
+      { id: 'tt4567890', title: 'The beginning', date: '2026-11-19', type: 'tvEpisode',
+        series: { id: 'tt3456789', title: 'A series', season: 1, episode: 1 } },
+      { id: 'tt5678901', title: 'A second, unexpected; chapter', date: '2026-11-19', type: 'tvEpisode',
+        series: { id: 'tt3456789', title: 'A series', season: 1, episode: 2 } },
+      { id: 'tt6789012', title: 'Next week', date: '2026-11-26', type: 'tvEpisode',
+        series: { id: 'tt3456789', title: 'A series', season: 1, episode: 3 } },
+    ],
+  };
+  const { store, origin } = await runningApp(t, {}, {
+    clock: () => clock,
+    loader: async () => ({ titles: [series], total: 1, omitted: 0, warnings: [] }),
+  });
+  await store.refresh();
+  const first = await fetch(`${origin}/calendars/all.ics`);
+  const etag = first.headers.get('etag');
+  const body = (await first.text()).replace(/\r\n /g, '');
+  assert.equal(body.match(/BEGIN:VEVENT/g).length, 2);
+  assert.equal(body.match(/SUMMARY:A series\r\n/g).length, 2);
+  assert.match(body, /UID:tt3456789@release-calendar\r\n/);
+  assert.match(body, /UID:tt3456789-2026-11-26@release-calendar\r\n/);
+  assert.match(body, /DESCRIPTION:S01E01: The beginning\\nS01E02: A second\\, unexpected\\; chapter\r\n/);
+  assert.match(body, /DESCRIPTION:S01E03: Next week\r\n/);
+  assert.equal(body.match(/URL:https:\/\/www.imdb.com\/title\/tt3456789\/\r\n/g).length, 2);
+  const sourceFeed = await fetch(`${origin}/calendars/marvel.ics`);
+  assert.match((await sourceFeed.text()).replace(/\r\n /g, ''), /DESCRIPTION:S01E03: Next week\r\n/);
+
+  clock = new Date('2026-10-18T00:00:00Z');
+  await store.refresh();
+  const unchanged = await fetch(`${origin}/calendars/all.ics`, { headers: { 'If-None-Match': etag } });
+  assert.equal(unchanged.status, 304);
+  await unchanged.text();
+  series.episodes[1].title = 'A revised chapter';
+  clock = new Date('2026-10-19T00:00:00Z');
+  await store.refresh();
+  const changed = await fetch(`${origin}/calendars/all.ics`, { headers: { 'If-None-Match': etag } });
+  assert.equal(changed.status, 200);
+  assert.notEqual(changed.headers.get('etag'), etag);
+  assert.equal(changed.headers.get('last-modified'), clock.toUTCString());
+  const updated = (await changed.text()).replace(/\r\n /g, '');
+  assert.match(updated, /DESCRIPTION:S01E01: The beginning\\nS01E02: A revised chapter\r\n/);
+  assert.equal(store.feed('all').events[series.id].sequence, 1);
+  assert.equal(store.feed('all').events[`${series.id}-2026-11-26`].sequence, 0);
+});
+
+test('public homepage exposes every configured subscription at the request origin', async (t) => {
   const { store, origin } = await runningApp(t, { PUBLIC_BASE_URL: 'https://calendar.example' });
   await store.refresh();
   const page = await fetch(`${origin}/`);
   assert.equal(page.status, 200);
   const html = await page.text();
   const subscriptionUrl = origin.replace(/^http:/, 'https:');
-  for (const slug of ['all', 'marvel', 'star-wars', 'dc', 'vince-gilligan', 'justin-roiland']) {
+  assert.equal((html.match(/<input[^>]*type="url"/g) || []).length, feedSlugs.length);
+  for (const slug of feedSlugs) {
     assert(html.includes(`value="${subscriptionUrl}/calendars/${slug}.ics"`));
     assert(html.includes(`href="${origin.replace(/^http:/, 'webcal:')}/calendars/${slug}.ics"`));
     const response = await fetch(`${origin}/calendars/${slug}.ics`);
@@ -71,12 +168,12 @@ test('public homepage exposes all six subscriptions at the request origin', asyn
   assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
   assert(page.headers.get('content-security-policy').includes("frame-ancestors 'none'"));
   assert.equal(page.headers.get('cache-control'), 'no-store');
-  for (const path of ['/healthz', '/readyz', '/style.css', '/enhance.js']) {
+  for (const path of ['/healthz', '/readyz', '/style.css']) {
     const response = await fetch(`${origin}${path}`);
     assert.equal(response.status, 200);
   }
   assert.equal(await (await fetch(`${origin}/robots.txt`)).text(), 'User-agent: *\nAllow: /\n');
-  for (const path of ['/missing/', '/calendars/unknown.ics']) {
+  for (const path of ['/missing/', '/calendars/unknown.ics', '/enhance.js']) {
     assert.equal((await fetch(`${origin}${path}`)).status, 404, path);
   }
   const denied = await fetch(`${origin}/`, { method: 'POST' });
@@ -95,7 +192,7 @@ test('subscription links follow custom and Render hosts without changing the con
       assert.equal(page.statusCode, 200);
       const html = await text(page);
       assert(html.includes(`rel="canonical" href="https://${host}/"`));
-      for (const slug of ['all', 'marvel', 'star-wars', 'dc', 'vince-gilligan', 'justin-roiland']) {
+      for (const slug of feedSlugs) {
         assert(html.includes(`value="https://${host}/calendars/${slug}.ics"`));
         assert(html.includes(`href="webcal://${host}/calendars/${slug}.ics"`));
       }

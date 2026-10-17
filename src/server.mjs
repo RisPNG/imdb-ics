@@ -9,7 +9,6 @@ import { CalendarStore } from './store.mjs';
 
 const assetPaths = new Map([
   ['/style.css', ['../public/style.css', 'text/css; charset=utf-8']],
-  ['/enhance.js', ['../public/enhance.js', 'text/javascript; charset=utf-8']],
 ]);
 
 export async function createApp(config, options = {}) {
@@ -19,7 +18,7 @@ export async function createApp(config, options = {}) {
     [path, { body: await readFile(new URL(file, import.meta.url)), type }])));
 
   const handleRequest = (request, response) => {
-    response.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'");
+    response.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'");
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'no-referrer');
     response.setHeader('Cache-Control', 'no-store');
@@ -36,8 +35,10 @@ export async function createApp(config, options = {}) {
     try { path = new URL(request.url, 'http://localhost').pathname; }
     catch { return send(400, 'Invalid request URL.\n'); }
     if (path === '/healthz') return send(200, '{"status":"ok"}\n', 'application/json; charset=utf-8');
-    if (path === '/readyz') return send(store.feed('all') ? 200 : 503,
-      JSON.stringify({ status: store.feed('all') ? 'ready' : 'warming' }) + '\n', 'application/json; charset=utf-8');
+    if (path === '/readyz') {
+      const ready = config.sources.every((source) => store.sourceState(source).saved?.lastSuccessAt);
+      return send(ready ? 200 : 503, JSON.stringify({ status: ready ? 'ready' : 'warming' }) + '\n', 'application/json; charset=utf-8');
+    }
     if (path === '/robots.txt') return send(200, 'User-agent: *\nAllow: /\n');
     const asset = assets.get(path);
     if (asset) return send(200, asset.body, asset.type, { 'Cache-Control': 'public, max-age=3600' });

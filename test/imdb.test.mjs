@@ -4,14 +4,21 @@ import { fetchSource, ImdbError } from '../src/imdb.mjs';
 
 const marvel = { id: 'in0000248', kind: 'interest', label: 'Marvel' };
 const person = { id: 'nm0319213', kind: 'name', label: 'Vince Gilligan' };
-const title = (id, text, date = { year: 2026, month: 12, day: 18 }) => ({
-  node: { title: { id, titleText: { text }, releaseDate: date } },
+const title = (id, text, date = { year: 2026, month: 12, day: 18 }, type = 'movie', series) => ({
+  node: { title: { id, titleText: { text }, releaseDate: date, titleType: { id: type }, ...(series ? { series } : {}) } },
 });
 const page = (edges, total = edges.length, hasNextPage = false, endCursor = null, extensions) => ({
   data: { advancedTitleSearch: { total, edges, pageInfo: { hasNextPage, endCursor } } },
   ...(extensions ? { extensions } : {}),
 });
 const json = (payload) => new Response(JSON.stringify(payload), { headers: { 'content-type': 'application/json' } });
+const episode = (id, text, season, number, date = { year: 2025, month: 4, day: 22 }) => ({
+  node: { id, titleText: { text }, releaseDate: date, series: { episodeNumber: { seasonNumber: season, episodeNumber: number } } },
+});
+const episodesPage = (edges, total = edges.length, hasNextPage = false, endCursor = null, extensions) => ({
+  data: { title: { episodes: { episodes: { total, edges, pageInfo: { hasNextPage, endCursor } } } } },
+  ...(extensions ? { extensions } : {}),
+});
 
 test('collects every page, follows opaque cursors, and deduplicates overlapping titles', async () => {
   const requests = [];
@@ -34,13 +41,13 @@ test('collects every page, follows opaque cursors, and deduplicates overlapping 
   assert.equal(result.total, 3);
   assert.equal(result.omitted, 1);
   assert.deepEqual(result.titles, [
-    { id: 'tt21357150', title: 'Avengers: Doomsday', date: '2026-12-18' },
-    { id: 'tt4154796', title: 'Avengers: Endgame', date: '2019-04-26' },
-    { id: 'tt22084616', title: 'Spider-Man: Brand New Day', date: null },
+    { id: 'tt21357150', title: 'Avengers: Doomsday', date: '2026-12-18', type: 'movie' },
+    { id: 'tt4154796', title: 'Avengers: Endgame', date: '2019-04-26', type: 'movie' },
+    { id: 'tt22084616', title: 'Spider-Man: Brand New Day', date: null, type: 'movie' },
   ]);
 });
 
-test('uses directly credited titles for a person, without guessing an episode expansion', async () => {
+test('uses directly credited titles for a person', async () => {
   let query;
   const result = await fetchSource(person, {
     fetchImpl: async (_url, options) => {
@@ -51,6 +58,230 @@ test('uses directly credited titles for a person, without guessing an episode ex
   assert.match(query, /titleCreditsConstraint: \{anyCredits: \[\{nameId: "nm0319213"\}\]\}/);
   assert.equal(result.titles[0].date, '2008-01-20');
 });
+
+test('expands a series with single and batch episode release dates without changing its source counts', async () => {
+  const responses = [
+    page([title('tt9253284', 'Andor', { year: 2022, month: 9, day: 21 }, 'tvSeries')]),
+    episodesPage([
+      episode('tt20258964', 'One Year Later', 2, 1),
+      episode('tt20603288', 'Sagrona Teema', 2, 2),
+      episode('tt20603292', 'Harvest', 2, 3),
+      episode('tt15939206', 'Ever Been to Ghorman?', 2, 4, { year: 2025, month: 4, day: 29 }),
+      episode('tt15939208', 'Upcoming', 2, 5, { year: 2025, month: 5 }),
+    ]),
+  ];
+  const queries = [];
+  const result = await fetchSource(marvel, {
+    fetchImpl: async (_url, options) => {
+      queries.push(JSON.parse(options.body).query);
+      return json(responses.shift());
+    },
+  });
+  assert.match(queries[0], /titleType \{ id \}/);
+  assert.match(queries[1], /title\(id: "tt9253284"\)/);
+  assert.match(queries[1], /episodes\(first: 100\)/);
+  assert.equal(result.total, 1);
+  assert.equal(result.omitted, 0);
+  assert.deepEqual(result.titles[0], {
+    id: 'tt9253284', title: 'Andor', date: '2022-09-21', type: 'tvSeries',
+    episodes: [
+      { id: 'tt20258964', title: 'One Year Later', date: '2025-04-22', type: 'tvEpisode', series: { id: 'tt9253284', title: 'Andor', date: '2022-09-21', season: 2, episode: 1 } },
+      { id: 'tt20603288', title: 'Sagrona Teema', date: '2025-04-22', type: 'tvEpisode', series: { id: 'tt9253284', title: 'Andor', date: '2022-09-21', season: 2, episode: 2 } },
+      { id: 'tt20603292', title: 'Harvest', date: '2025-04-22', type: 'tvEpisode', series: { id: 'tt9253284', title: 'Andor', date: '2022-09-21', season: 2, episode: 3 } },
+      { id: 'tt15939206', title: 'Ever Been to Ghorman?', date: '2025-04-29', type: 'tvEpisode', series: { id: 'tt9253284', title: 'Andor', date: '2022-09-21', season: 2, episode: 4 } },
+      { id: 'tt15939208', title: 'Upcoming', date: null, type: 'tvEpisode', series: { id: 'tt9253284', title: 'Andor', date: '2022-09-21', season: 2, episode: 5 } },
+    ],
+  });
+});
+
+test('paginates miniseries episodes, deduplicates overlaps, and retains nullable numbering', async () => {
+  const first = episode('tt10161316', 'Filmed Before a Live Studio Audience', 1, 1, { year: 2021, month: 1, day: 15 });
+  const responses = [
+    page([title('tt9140560', 'WandaVision', null, 'tvMiniSeries')]),
+    episodesPage([first], 3, true, 'opaque episode "cursor"'),
+    episodesPage([first, episode('tt10161318', 'Do Not Touch That Dial', 1, 2, { year: 2021, month: 1, day: 15 }), episode('tt10161320', 'Upcoming', null, null, null)], 3),
+  ];
+  const queries = [];
+  const result = await fetchSource(marvel, {
+    fetchImpl: async (_url, options) => {
+      queries.push(JSON.parse(options.body).query);
+      return json(responses.shift());
+    },
+  });
+  assert.equal(queries.length, 3);
+  assert.ok(queries[2].includes(`after: ${JSON.stringify('opaque episode "cursor"')}`));
+  assert.equal(result.omitted, 1);
+  assert.equal(result.titles[0].episodes.length, 3);
+  assert.deepEqual(result.titles[0].episodes[2].series, { id: 'tt9140560', title: 'WandaVision', date: null, season: null, episode: null });
+  assert.equal(result.titles[0].episodes[2].date, null);
+});
+
+test('retains parent series metadata on directly matched episodes without expanding unrelated episodes', async () => {
+  let calls = 0;
+  const result = await fetchSource(person, {
+    fetchImpl: async (_url, options) => {
+      calls += 1;
+      assert.match(JSON.parse(options.body).query, /series \{ series \{ id titleText \{ text \} releaseDate \{ year month day \} \} episodeNumber/);
+      return json(page([
+        title('tt0959621', 'Pilot', { year: 2008, month: 1, day: 20 }, 'tvEpisode', { series: { id: 'tt0903747', titleText: { text: 'Breaking Bad' }, releaseDate: { year: 2008, month: 1, day: 20 } }, episodeNumber: { seasonNumber: 1, episodeNumber: 1 } }),
+        title('tt1054724', 'Unknown episode', null, 'tvEpisode', { series: { id: 'tt0903747', titleText: { text: 'Breaking Bad' }, releaseDate: { year: 2008, month: 1, day: 20 } }, episodeNumber: null }),
+      ]));
+    },
+  });
+  assert.equal(calls, 1);
+  assert.deepEqual(result.titles[0], { id: 'tt0959621', title: 'Pilot', date: '2008-01-20', type: 'tvEpisode', series: { id: 'tt0903747', title: 'Breaking Bad', date: '2008-01-20', season: 1, episode: 1 } });
+  assert.deepEqual(result.titles[1].series, { id: 'tt0903747', title: 'Breaking Bad', date: '2008-01-20', season: null, episode: null });
+});
+
+test('filmographies retain series premieres and only credited episodes even when the full series is cached', async () => {
+  const seriesCache = new Map([['tt0903747', { episodes: [
+    { id: 'tt1054724', title: "Cat's in the Bag...", date: '2008-01-27', type: 'tvEpisode',
+      series: { id: 'tt0903747', title: 'Breaking Bad', date: '2008-01-20', season: 1, episode: 2 } },
+  ], warnings: [] }]]);
+  let calls = 0;
+  const result = await fetchSource(person, {
+    seriesCache,
+    fetchImpl: async () => {
+      calls += 1;
+      return json(page([
+        title('tt0903747', 'Breaking Bad', { year: 2008, month: 1, day: 20 }, 'tvSeries'),
+        title('tt0959621', 'Pilot', { year: 2008, month: 1, day: 20 }, 'tvEpisode', {
+          series: { id: 'tt0903747', titleText: { text: 'Breaking Bad' }, releaseDate: { year: 2008, month: 1, day: 20 } },
+          episodeNumber: { seasonNumber: 1, episodeNumber: 1 },
+        }),
+      ]));
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(result.total, 2);
+  assert.equal(result.titles[0].date, '2008-01-20');
+  assert.equal(Object.hasOwn(result.titles[0], 'episodes'), false);
+  assert.deepEqual(result.titles.map((entry) => entry.id), ['tt0903747', 'tt0959621']);
+  assert.deepEqual(result.titles[1].series, { id: 'tt0903747', title: 'Breaking Bad', date: '2008-01-20', season: 1, episode: 1 });
+});
+
+test('keeps partial and absent parent series dates null without losing dated episodes', async () => {
+  for (const date of [null, { year: 2027 }, { year: 2027, month: 4 }]) {
+    const result = await fetchSource(person, {
+      fetchImpl: async () => json(page([title('tt0959621', 'Pilot', { year: 2027, month: 4, day: 12 }, 'tvEpisode', {
+        series: { id: 'tt0903747', titleText: { text: 'Upcoming series' }, releaseDate: date },
+        episodeNumber: { seasonNumber: 1, episodeNumber: 1 },
+      })])),
+    });
+    assert.equal(result.titles[0].date, '2027-04-12');
+    assert.equal(result.titles[0].series.date, null);
+  }
+});
+
+test('accepts a series with no known episodes without inventing a schedule', async () => {
+  const responses = [page([title('tt9253284', 'Upcoming', null, 'tvSeries')]), episodesPage([])];
+  const result = await fetchSource(marvel, { fetchImpl: async () => json(responses.shift()) });
+  assert.deepEqual(result.titles[0].episodes, []);
+});
+
+test('reuses complete series reads across sources and exposes cached IMDb notices', async () => {
+  const seriesCache = new Map();
+  const queries = [];
+  const fetchImpl = async (_url, options) => {
+    const query = JSON.parse(options.body).query;
+    queries.push(query);
+    return json(query.includes('CalendarEpisodes')
+      ? episodesPage([episode('tt20258964', 'One Year Later', 2, 1)], 1, false, null, { disclaimer: 'Episode usage notice' })
+      : page([title('tt9253284', 'Andor', null, 'tvSeries')]));
+  };
+  const first = await fetchSource(marvel, { fetchImpl, seriesCache });
+  const second = await fetchSource({ id: 'in0000243', kind: 'interest' }, { fetchImpl, seriesCache });
+  assert.equal(queries.length, 3);
+  assert.equal(queries.filter((query) => query.includes('CalendarEpisodes')).length, 1);
+  assert.deepEqual(first.titles, second.titles);
+  assert.deepEqual(second.warnings, ['IMDb usage notice: Episode usage notice']);
+});
+
+test('reads series sequentially with separate operation timeouts after the source search finishes', async (t) => {
+  const operations = [];
+  t.mock.method(AbortSignal, 'timeout', (duration) => {
+    const controller = new AbortController();
+    if (duration === 120_000) operations.push(controller);
+    return controller.signal;
+  });
+  const queries = [];
+  const result = await fetchSource(marvel, {
+    fetchImpl: async (_url, options) => {
+      const query = JSON.parse(options.body).query;
+      queries.push(query);
+      if (queries.length === 1) {
+        return json(page([title('tt9253284', 'Andor', null, 'tvSeries'), title('tt9140560', 'WandaVision', null, 'tvMiniSeries')]));
+      }
+      operations[queries.length - 2].abort(new Error('Previous operation timed out'));
+      assert.equal(options.signal.aborted, false);
+      return json(episodesPage([]));
+    },
+  });
+  assert.equal(operations.length, 3);
+  assert.match(queries[1], /title\(id: "tt9253284"\)/);
+  assert.match(queries[2], /title\(id: "tt9140560"\)/);
+  assert.equal(result.titles.length, 2);
+});
+
+test('rejects a source when an episode page fails and retries rather than caching its partial episodes', async () => {
+  const seriesCache = new Map();
+  const responses = [
+    page([title('tt9253284', 'Andor', null, 'tvSeries')]),
+    episodesPage([episode('tt20258964', 'One Year Later', 2, 1)], 2, true, 'next'),
+    new Response('Unavailable', { status: 503 }),
+    page([title('tt9253284', 'Andor', null, 'tvSeries')]),
+    episodesPage([episode('tt20258964', 'One Year Later', 2, 1)]),
+  ];
+  const fetchImpl = async () => {
+    const payload = responses.shift();
+    return payload instanceof Response ? payload : json(payload);
+  };
+  await assert.rejects(fetchSource(marvel, { fetchImpl, seriesCache }), (error) => error.code === 'HTTP_ERROR' && error.status === 503);
+  assert.equal(seriesCache.size, 0);
+  assert.equal((await fetchSource(marvel, { fetchImpl, seriesCache })).titles[0].episodes.length, 1);
+  assert.equal(seriesCache.size, 1);
+  assert.equal(responses.length, 0);
+});
+
+test('cancels episode expansion and leaves cancelled reads out of the shared cache', async () => {
+  const controller = new AbortController();
+  const seriesCache = new Map();
+  let upstreamSignal;
+  let cancelled = false;
+  let calls = 0;
+  const pending = fetchSource(marvel, {
+    signal: controller.signal,
+    seriesCache,
+    fetchImpl: async (_url, options) => {
+      calls += 1;
+      if (calls === 1) return json(page([title('tt9253284', 'Andor', null, 'tvSeries')]));
+      upstreamSignal = options.signal;
+      return new Response(new ReadableStream({
+        start(stream) { stream.enqueue(new TextEncoder().encode('{')); },
+        cancel() { cancelled = true; },
+      }));
+    },
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  controller.abort(new Error('Episode refresh cancelled'));
+  await assert.rejects(pending, /Episode refresh cancelled/);
+  assert.equal(upstreamSignal.aborted, true);
+  assert.equal(cancelled, true);
+  assert.equal(seriesCache.size, 0);
+});
+
+for (const [name, responses] of [
+  ['a repeated episode cursor', [episodesPage([episode('tt20258964', 'One Year Later', 2, 1)], 3, true, 'same'), episodesPage([episode('tt20603288', 'Sagrona Teema', 2, 2)], 3, true, 'same')]],
+  ['an incomplete episode list', [episodesPage([episode('tt20258964', 'One Year Later', 2, 1)], 2)]],
+  ['a changing episode number', [episodesPage([episode('tt20258964', 'One Year Later', 2, 1)], 2, true, 'next'), episodesPage([episode('tt20258964', 'One Year Later', 2, 2), episode('tt20603288', 'Sagrona Teema', 2, 2)], 2)]],
+]) {
+  test(`refuses to publish ${name}`, async () => {
+    const seriesCache = new Map();
+    const payloads = [page([title('tt9253284', 'Andor', null, 'tvSeries')]), ...responses];
+    await assert.rejects(fetchSource(marvel, { seriesCache, fetchImpl: async () => json(payloads.shift()) }), (error) => error.code === 'INCOMPLETE_RESULT');
+    assert.equal(seriesCache.size, 0);
+  });
+}
 
 test('keeps missing and impossible dates undated, preserving real Gregorian leap days', async () => {
   const inputs = [

@@ -1,23 +1,73 @@
 # Release Calendar
 
-A small, self-hosted website that turns IMDb interests and filmographies into public calendar subscriptions. There is one feed per source and one combined feed that removes duplicate IMDb title IDs.
+A small, self-hosted website that turns IMDb interests and filmographies into public calendar subscriptions. There is one feed per source and one combined feed that removes duplicate releases.
 
-The page uses semantic HTML, a stylesheet under 6 KiB, system fonts, and optional clipboard JavaScript under 2 KiB. The Node service has no runtime package dependencies. Development uses `html-validate` to check the generated HTML.
+The page uses semantic HTML, one small shared stylesheet, and system fonts, with no client-side JavaScript. The Node service has no runtime package dependencies. Development uses `html-validate` to check the generated HTML.
 
 ## Calendars
 
 | Calendar | IMDb source | Feed filename |
 | --- | --- | --- |
-| All releases | All five sources, deduplicated | `all.ics` |
+| All releases | All configured sources, deduplicated | `all.ics` |
 | Marvel | [in0000248](https://www.imdb.com/interest/in0000248/) | `marvel.ics` |
 | Star Wars | [in0000243](https://www.imdb.com/interest/in0000243/) | `star-wars.ics` |
 | DC | [in0000244](https://www.imdb.com/interest/in0000244/) | `dc.ics` |
 | Vince Gilligan | [nm0319213](https://www.imdb.com/name/nm0319213/) | `vince-gilligan.ics` |
 | Justin Roiland | [nm1551598](https://www.imdb.com/name/nm1551598/) | `justin-roiland.ics` |
+| Chiwetel Ejiofor | [nm0252230](https://www.imdb.com/name/nm0252230/) | `chiwetel-ejiofor.ics` |
+| Kane Parsons | [nm10735410](https://www.imdb.com/name/nm10735410/) | `kane-parsons.ics` |
+| Donald Glover | [nm2255973](https://www.imdb.com/name/nm2255973/) | `donald-glover.ics` |
+| Michael Peña | [nm0671567](https://www.imdb.com/name/nm0671567/) | `michael-pena.ics` |
+| Jake Gyllenhaal | [nm0350453](https://www.imdb.com/name/nm0350453/) | `jake-gyllenhaal.ics` |
+| Kyle Chandler | [nm0151419](https://www.imdb.com/name/nm0151419/) | `kyle-chandler.ics` |
+| Leonardo DiCaprio | [nm0000138](https://www.imdb.com/name/nm0000138/) | `leonardo-dicaprio.ics` |
+| Matt Damon | [nm0000354](https://www.imdb.com/name/nm0000354/) | `matt-damon.ics` |
+| Michael Mando | [nm3103126](https://www.imdb.com/name/nm3103126/) | `michael-mando.ics` |
+| Brad Pitt | [nm0000093](https://www.imdb.com/name/nm0000093/) | `brad-pitt.ics` |
+| George Lucas | [nm0000184](https://www.imdb.com/name/nm0000184/) | `george-lucas.ics` |
+| George Clooney | [nm0000123](https://www.imdb.com/name/nm0000123/) | `george-clooney.ics` |
+| Diego Luna | [nm0526019](https://www.imdb.com/name/nm0526019/) | `diego-luna.ics` |
+| Grant Gustin | [nm2652716](https://www.imdb.com/name/nm2652716/) | `grant-gustin.ics` |
+| Ryan Gosling | [nm0331516](https://www.imdb.com/name/nm0331516/) | `ryan-gosling.ics` |
+| Benedict Cumberbatch | [nm1212722](https://www.imdb.com/name/nm1212722/) | `benedict-cumberbatch.ics` |
+| Robert Pattinson | [nm1500155](https://www.imdb.com/name/nm1500155/) | `robert-pattinson.ics` |
+| Steven Ogg | [nm1476804](https://www.imdb.com/name/nm1476804/) | `steven-ogg.ics` |
+| Ned Luke | [nm0902623](https://www.imdb.com/name/nm0902623/) | `ned-luke.ics` |
+| Michael Cera | [nm0148418](https://www.imdb.com/name/nm0148418/) | `michael-cera.ics` |
+| Tom Hiddleston | [nm1089991](https://www.imdb.com/name/nm1089991/) | `tom-hiddleston.ics` |
+| Nicolas Cage | [nm0000115](https://www.imdb.com/name/nm0000115/) | `nicolas-cage.ics` |
+| Oscar Isaac | [nm1209966](https://www.imdb.com/name/nm1209966/) | `oscar-isaac.ics` |
+| Steven Yeun | [nm3081796](https://www.imdb.com/name/nm3081796/) | `steven-yeun.ics` |
+| Andrew Santino | [nm2747668](https://www.imdb.com/name/nm2747668/) | `andrew-santino.ics` |
+| Bobby Lee | [nm0496899](https://www.imdb.com/name/nm0496899/) | `bobby-lee.ics` |
+| John Cena | [nm1078479](https://www.imdb.com/name/nm1078479/) | `john-cena.ics` |
+| Christopher Nolan | [nm0634240](https://www.imdb.com/name/nm0634240/) | `christopher-nolan.ics` |
+| Joel McHale | [nm0570364](https://www.imdb.com/name/nm0570364/) | `joel-mchale.ics` |
+| Bob Odenkirk | [nm0644022](https://www.imdb.com/name/nm0644022/) | `bob-odenkirk.ics` |
+| Aaron Paul | [nm0666739](https://www.imdb.com/name/nm0666739/) | `aaron-paul.ics` |
+| Bryan Cranston | [nm0186505](https://www.imdb.com/name/nm0186505/) | `bryan-cranston.ics` |
+| Gabriel Macht | [nm0532683](https://www.imdb.com/name/nm0532683/) | `gabriel-macht.ics` |
+| Josh Hutcherson | [nm1242688](https://www.imdb.com/name/nm1242688/) | `josh-hutcherson.ics` |
+| Rick Hoffman | [nm0389069](https://www.imdb.com/name/nm0389069/) | `rick-hoffman.ics` |
+| Patrick J. Adams | [nm1140666](https://www.imdb.com/name/nm1140666/) | `patrick-j-adams.ics` |
+| Anya Taylor-Joy | [nm5896355](https://www.imdb.com/name/nm5896355/) | `anya-taylor-joy.ics` |
+| Sadie Sink | [nm5584750](https://www.imdb.com/name/nm5584750/) | `sadie-sink.ics` |
+| Giancarlo Esposito | [nm0002064](https://www.imdb.com/name/nm0002064/) | `giancarlo-esposito.ics` |
+| Jonathan Banks | [nm0052186](https://www.imdb.com/name/nm0052186/) | `jonathan-banks.ics` |
+| Jesse Plemons | [nm0687146](https://www.imdb.com/name/nm0687146/) | `jesse-plemons.ics` |
+| Ethan Hawke | [nm0000160](https://www.imdb.com/name/nm0000160/) | `ethan-hawke.ics` |
+| Mark Hamill | [nm0000434](https://www.imdb.com/name/nm0000434/) | `mark-hamill.ics` |
+| Samuel L. Jackson | [nm0000168](https://www.imdb.com/name/nm0000168/) | `samuel-l-jackson.ics` |
+| Taron Egerton | [nm5473782](https://www.imdb.com/name/nm5473782/) | `taron-egerton.ics` |
+| Matthew Judge | [nm15158872](https://www.imdb.com/name/nm15158872/) | `matthew-judge.ics` |
+| Kevan Brighting | [nm2623915](https://www.imdb.com/name/nm2623915/) | `kevan-brighting.ics` |
+| James McAvoy | [nm0564215](https://www.imdb.com/name/nm0564215/) | `james-mcavoy.ics` |
+| Dan Harmon | [nm1363595](https://www.imdb.com/name/nm1363595/) | `dan-harmon.ics` |
+| Keanu Reeves | [nm0000206](https://www.imdb.com/name/nm0000206/) | `keanu-reeves.ics` |
 
-The supplied Justin Roiland URL appeared twice; it is configured once. Edit `SOURCES` in `src/config.mjs` to add or change sources.
+The configured set contains three interests and 52 people, giving 55 source calendars and one combined calendar. Edit `SOURCES` in `src/config.mjs` to add or change sources. This is a fixed source list and does not automatically synchronise with an IMDb favourites page.
 
-Each source includes all titles directly returned by its IMDb interest or credit search. This can include movies, television series, individual credited episodes, shorts, and other title types. A series is **not** automatically expanded into every episode, and a person's credits can include more than writing or directing. This preserves the requested broad source selection rather than applying an unrequested role or title-type filter.
+Each source includes all titles directly returned by its IMDb interest or credit search. This can include movies, television series, individual credited episodes, shorts, and other title types. The Marvel, Star Wars, and DC interest calendars expand matched series into complete episode lists. People calendars keep their directly credited titles, including series premiere events, and include only episodes directly credited to that person. A series credit alone does not add its other episodes. A person's credits can include more than writing or directing, so source selection remains broad without a role or title-type filter.
 
 ## Run locally
 
@@ -32,7 +82,7 @@ mise exec -- npm test
 mise exec -- npm start
 ```
 
-Open [localhost:3000](http://localhost:3000/). The first refresh starts in the background. A feed returns a retryable HTTP 503 until its first complete source snapshot is available; it never substitutes a fake empty calendar. After that, cached calendars are available immediately on restart.
+Open [localhost:3000](http://localhost:3000/). The first refresh starts in the background. Each source feed returns a retryable HTTP 503 until its first complete snapshot is available. On a new installation, the combined feed waits until every configured source has a complete snapshot. Cached calendars are available immediately on restart, and an existing combined feed stays available while added sources receive their first snapshots.
 
 For local configuration, copy `.env.example` to `.env` and run `mise exec -- npm run dev`. This reads the file and restarts the service when source files change. `npm start` uses the process environment supplied by the host. Environment files and cached data are ignored by Git.
 
@@ -45,11 +95,11 @@ For local configuration, copy `.env.example` to `.env` and run `mise exec -- npm
 
 The dashboard uses the hostname the visitor accesses for its subscription URLs, Subscribe buttons, and canonical URL. Opening `https://imdbics.rispeng.com` therefore produces links such as `https://imdbics.rispeng.com/calendars/all.ics`, while the Render hostname produces links on that hostname. The server reads the request's `Host` and the proxy's `X-Forwarded-Proto` header, with the configured URL supplying the default protocol. `PUBLIC_BASE_URL`, Render's `RENDER_EXTERNAL_URL`, and the local URL supply that configured URL in order of precedence. Adding a custom domain in Render does not require setting `PUBLIC_BASE_URL`. Moving to a new hostname changes subscription URLs, so existing subscriptions need the new address or a maintained redirect from the old host.
 
-Render [does not support changing an existing service's region](https://render.com/docs/regions#changing-a-services-region). If `release-calendar` already exists in Oregon, the new `imdb-ics` service in Singapore needs its own disk. Copy `DATA_DIR/snapshot.json` to the new service's disk to preserve event history, and verify the new deployment before removing the old service. Updating this Blueprint does not move the existing service or its saved data.
+Render [does not support changing an existing service's region](https://render.com/docs/regions#changing-a-services-region). If `release-calendar` already exists in Oregon, the new `imdb-ics` service in Singapore needs its own disk. Copy `DATA_DIR/snapshot.json.gz` to the new service's disk to preserve event history, and verify the new deployment before removing the old service. A legacy `DATA_DIR/snapshot.json` can also be copied and is accepted when no gzip snapshot exists. Updating this Blueprint does not move the existing service or its saved data.
 
 The Blueprint pins Node 24, validates the HTML and asset budgets, runs the tests, and removes development dependencies before starting the service. No additional cron job is needed. Run one service instance against one disk; this project is intentionally a single-process service.
 
-The selected compute and disk are sufficient for these five sources and a small subscription site. The saved calendar snapshot is currently about 1 MB, so the 1 GB disk has substantial room for event history. No database, GitHub Actions workflow, separate scheduler, or GitHub write credential is needed. If an IMDb refresh fails, subscribers continue receiving the last successfully saved dates while the service retries.
+Resource use depends on the configured sources and their episode counts. Measure refresh memory use and the saved snapshot size with the full source set before choosing production capacity. No database, GitHub Actions workflow, separate scheduler, or GitHub write credential is needed. If an IMDb refresh fails, subscribers continue receiving the last successfully saved dates while the service retries.
 
 Render's attached disks disable zero-downtime deploys, so a deployment can briefly interrupt requests. Calendar data survives the restart on the disk. See [Render's disk limitations](https://render.com/docs/disks#disk-limitations-and-considerations).
 
@@ -94,23 +144,36 @@ By default, each release is an **all-day event** on IMDb's returned release date
 
 For example, a release dated 19 November appears as an all-day event on 19 November in Kuala Lumpur, Los Angeles, and elsewhere. The feed uses `DTSTART;VALUE=DATE:20261119` and an exclusive end of `DTEND;VALUE=DATE:20261120`. It does not invent a release time.
 
-Dates come from IMDb's default `releaseDate` field. This is not a request for Malaysian release dates, and an all-day event does not establish which country's release date the source represents. Titles with only a year or month stay out of the feed until a complete valid date exists. A TV series uses its series release date; a directly matched episode uses that episode's date.
+Dates come from IMDb's default `releaseDate` field. This is not a request for Malaysian release dates, and an all-day event does not establish which country's release date the source represents. Releases with only a year or month stay out of the feed until a complete valid date exists.
+
+A series keeps its original premiere event. Interest calendars add every confirmed episode release date, while people calendars include only their directly credited episodes. Each release date has one event under the series name, and its description lists the season and episode numbers with episode titles. Episodes released together share one event, whether that is a weekly pair or an entire season. Episodes on the premiere date appear in the original event's description. An episode appears only once when both it and its series match.
+
+For example, two episodes released on the same day appear under the series name with a description such as:
+
+```text
+S01E01: Pilot
+S01E02: Second Episode
+```
+
+The feed follows IMDb's confirmed dates rather than generating a recurring weekly schedule, so breaks and batch releases use the dates returned by the source. Episodes without a complete date are omitted until one becomes available.
 
 `EVENT_TIME_MODE=date` is the default in the service, local environment example, and Render Blueprint. The optional `EVENT_TIME_MODE=utc` setting creates midnight UTC markers that calendar apps convert to local time; those can appear on the previous date in western timezones. Switching modes preserves UIDs and advances event revision numbers, so existing events can update without changing subscription URLs. Update timestamps and HTTP headers continue to use UTC.
 
 ## Refresh and persistence
 
-The service fetches one source at a time and follows every pagination cursor. The number of HTTP calls depends on each source's size. Requests have response-size and time bounds; there is no attempt to bypass an access challenge or blocked response.
+The service fetches one source at a time and follows every pagination cursor. Interest sources also fetch each matched series' complete episode list, while people sources fetch only directly credited titles and episodes. The number of HTTP calls depends on each source's size and the episode counts of series expanded by the interests. Requests have response-size and time bounds; there is no attempt to bypass an access challenge or blocked response.
 
-Only a successful, complete source refresh replaces that source's saved titles. If a page fails, the last good snapshot remains available and the dashboard labels it as saved data. Failed sources retry after 30 minutes by default. The combined feed is available only after all five sources have at least one complete snapshot, and retains saved data from any temporarily unavailable source.
+Only a successful, complete source refresh replaces that source's saved titles. If a page fails, the last good snapshot remains available and the dashboard labels it as saved data. Failed sources retry after 30 minutes by default. A new installation creates its first combined snapshot only after every configured source has a complete snapshot. When sources are added to an existing installation, its saved combined feed remains available and is marked as stale while their first snapshots are pending or failing. Successful source updates can join that feed while the remaining sources warm up, and temporarily unavailable sources retain their last saved data.
 
-Events use stable IMDb-based UIDs, persistent creation/modification times and revision numbers. Date changes update the same event. Removed titles or dates withdrawn by the source produce cancellation records, which are retained so slow subscribers can remove old events. Unchanged refreshes produce the same feed bytes and ETag. JSON snapshots are written to a temporary file and renamed atomically.
+Events use stable IMDb-based UIDs, persistent creation/modification times, and revision numbers. Title-level date changes update the same event. A series' original premiere UID stays the same when episodes are added to its description. Additional episode groups use the series ID and release date as their identity. Episode title, numbering, or membership changes advance the affected event's revision. Moving an episode to another date updates the relevant groups and cancels any additional group left empty. Removed titles or dates withdrawn by the source produce cancellation records, which are retained so slow subscribers can remove old events. Unchanged refreshes produce the same feed bytes and ETag.
 
-Back up `DATA_DIR/snapshot.json` along with the deployment environment. The snapshot contains source data and event history. Avoid deleting it to force a refresh: doing so resets revision history.
+Snapshots are stored as gzip-compressed JSON in `DATA_DIR/snapshot.json.gz`, with limits of 64 MiB uncompressed and 16 MiB compressed. Each save writes a temporary file and renames it atomically. A legacy `DATA_DIR/snapshot.json` is loaded only when the gzip file is absent and is removed after a successful gzip save.
+
+Back up `DATA_DIR/snapshot.json.gz` along with the deployment environment. The snapshot contains source data and event history. Avoid deleting it to force a refresh: doing so resets revision history.
 
 `mise exec -- npm run refresh` performs one refresh and exits. Use this **with the web service stopped**, for an initial fetch or maintenance; running it alongside the server would create two competing writers. A nonzero exit means at least one source failed or the cache could not be saved. Normal operation uses the in-process scheduler.
 
-`GET /healthz` checks whether the HTTP process is alive. `GET /readyz` returns 503 until every source has a usable snapshot. Readiness does not assert that upstream data is fresh. The public dashboard shows update times and saved-data states. Both endpoints omit feed data.
+`GET /healthz` checks whether the HTTP process is alive. `GET /readyz` returns 503 until every configured source has a usable snapshot, including newly added sources even when a saved combined feed is available. Readiness does not assert that upstream data is fresh. The public dashboard shows update times and saved-data states. Both endpoints omit feed data.
 
 ## IMDb access limitation
 
@@ -130,13 +193,13 @@ The upstream boundary is confined to `src/imdb.mjs`, so a supported provider can
 | `src/store.mjs` | Daily scheduling, retries, deduplication, atomic persistence |
 | `src/page.mjs` | One small shared HTML layout with escaped source data |
 | `src/server.mjs` | Public HTTP routes, cached feeds, ETags, response headers |
-| `public/` | Compact CSS and optional clipboard enhancement |
+| `public/style.css` | Shared layout, central colour palette, responsive, dark, and print styles |
 | `scripts/check.mjs` | HTML validation, JavaScript syntax, source uniqueness, byte budgets |
 | `test/` | Calendar, pagination, cache recovery, public routes, and HTTP behaviour |
 
-The research informs the design rather than supplying copied code: [Susam's site](https://github.com/susam/susam.net) for separating source data, layout and validation; [Seirdy's site](https://github.com/Seirdy/seirdy.one) for explicit accessibility constraints; and [Kessler's portfolio](https://github.com/nickessler2004/Engineering-Portfolio-Website) for straightforward layout primitives. There is no generic theme, CSS framework, custom publishing language, or speculative layout containment. Asset budgets measure transfer size; they are not a claim of independently benchmarked browser performance.
+The research informs the design rather than supplying copied code: [Susam's site](https://github.com/susam/susam.net) for separating source data, layout, and validation; [Seirdy's site](https://github.com/Seirdy/seirdy.one) for explicit accessibility constraints; and [Kessler's portfolio](https://github.com/nickessler2004/Engineering-Portfolio-Website) for straightforward layout primitives. There is no CSS framework, custom publishing language, or speculative layout containment. Byte budgets constrain generated output and assets; they are not a claim of independently benchmarked browser performance.
 
-The UI remains usable without JavaScript, includes keyboard focus and skip navigation, follows light/dark system preferences, and has print and narrow-screen styles. Response headers use a scoped Content Security Policy without a blanket `sandbox` directive.
+The release list puts dates first and keeps grouped episode descriptions in native disclosures. A combined subscription and three interest calendars precede an alphabetical people directory. Each person has an expandable subscription panel, and every calendar has a labelled address field for manual copying. Navigation, disclosures, and subscription links work without JavaScript. The central palette follows light/dark system preferences, with visible keyboard focus, skip navigation, and print and narrow-screen styles. Response headers restrict scripts, framing, and other unneeded resources through Content Security Policy and include `X-Content-Type-Options: nosniff`.
 
 ### Reference documentation
 

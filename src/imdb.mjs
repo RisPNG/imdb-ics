@@ -4,7 +4,7 @@ const MAX_TITLES = 50_000;
 const MAX_PAGES = 1_000;
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 const PAGE_TIMEOUT_MS = 20_000;
-const SOURCE_TIMEOUT_MS = 120_000;
+const OPERATION_TIMEOUT_MS = 120_000;
 
 export class ImdbError extends Error {
   constructor(message, { code = 'UPSTREAM_ERROR', status, cause } = {}) {
@@ -16,15 +16,26 @@ export class ImdbError extends Error {
 }
 
 function queryFor(source, cursor) {
+  const after = cursor === null ? '' : `, after: ${JSON.stringify(cursor)}`;
+  if (source.kind === 'series') {
+    return `query CalendarEpisodes {
+      title(id: "${source.id}") {
+        episodes { episodes(first: ${PAGE_SIZE}${after}) {
+          total
+          pageInfo { hasNextPage endCursor }
+          edges { node { id titleText { text } releaseDate { year month day } series { episodeNumber { seasonNumber episodeNumber } } } }
+        } }
+      }
+    }`;
+  }
   const filter = source.kind === 'interest'
     ? `interestConstraint: {allInterestIds: ["${source.id}"]}`
     : `titleCreditsConstraint: {anyCredits: [{nameId: "${source.id}"}]}`;
-  const after = cursor === null ? '' : `, after: ${JSON.stringify(cursor)}`;
   return `query CalendarSource {
     advancedTitleSearch(first: ${PAGE_SIZE}${after}, constraints: {${filter}}) {
       total
       pageInfo { hasNextPage endCursor }
-      edges { node { title { id titleText { text } releaseDate { year month day } } } }
+      edges { node { title { id titleText { text } releaseDate { year month day } titleType { id } series { series { id titleText { text } releaseDate { year month day } } episodeNumber { seasonNumber episodeNumber } } } } }
     }
   }`;
 }
@@ -98,22 +109,9 @@ function invalid(message) {
   throw new ImdbError(`IMDb returned an incomplete or inconsistent result: ${message}`, { code: 'INCOMPLETE_RESULT' });
 }
 
-/**
- * Read all directly matching titles, including titles without a complete date.
- * The website GraphQL endpoint is not the licensed AWS IMDb API. Entitlement
- * metadata and usage notices are returned as warnings for the caller to expose.
- * Any failed or inconsistent page rejects the entire source; callers should keep
- * their previous complete snapshot. Series are not expanded into their episodes.
- */
-export async function fetchSource(source, { fetchImpl = globalThis.fetch, signal, region } = {}) {
-  if (!source || !['interest', 'name'].includes(source.kind)
-      || !(source.kind === 'interest' ? /^in\d{7}$/ : /^nm\d{7,10}$/).test(source.id)) {
-    throw new TypeError('A source must contain a valid IMDb interest or name ID and matching kind.');
-  }
-  if (region !== undefined) throw new TypeError('Region-specific IMDb release dates are not supported; omit region to use the returned default date.');
-  if (typeof fetchImpl !== 'function') throw new TypeError('fetchImpl must be a function.');
+async function readTitles(source, { fetchImpl, signal }) {
   const operationSignal = AbortSignal.any([
-    AbortSignal.timeout(SOURCE_TIMEOUT_MS),
+    AbortSignal.timeout(OPERATION_TIMEOUT_MS),
     ...(signal ? [signal] : []),
   ]);
   operationSignal.throwIfAborted();
@@ -150,24 +148,38 @@ export async function fetchSource(source, { fetchImpl = globalThis.fetch, signal
       throw new ImdbError(`IMDb GraphQL error: ${message}`, { code: 'GRAPHQL_ERROR' });
     }
     recordWarnings(payload.extensions, warnings);
-    const page = payload.data?.advancedTitleSearch;
+    const page = source.kind === 'series' ? payload.data?.title?.episodes?.episodes : payload.data?.advancedTitleSearch;
     if (!page || !Number.isSafeInteger(page.total) || page.total < 0
         || !Array.isArray(page.edges) || typeof page.pageInfo?.hasNextPage !== 'boolean') {
-      invalid('missing title-search fields.');
+      invalid(source.kind === 'series' ? 'missing episode-list fields.' : 'missing title-search fields.');
     }
     if (page.total > MAX_TITLES) invalid(`more than the ${MAX_TITLES} title safety limit.`);
     if (total === undefined) total = page.total;
     if (total !== page.total) invalid('the total changed during pagination; retry the refresh.');
 
     for (const edge of page.edges) {
-      const title = edge?.node?.title;
+      const title = source.kind === 'series' ? edge?.node : edge?.node?.title;
       if (!title || !/^tt\d{7,10}$/.test(title.id)
           || typeof title.titleText?.text !== 'string' || !title.titleText.text.trim()) {
         invalid('a title is missing its ID or text.');
       }
-      const item = { id: title.id, title: title.titleText.text.trim(), date: completeDate(title.releaseDate) };
+      const type = source.kind === 'series' ? 'tvEpisode' : title.titleType?.id;
+      if (typeof type !== 'string' || !type) invalid(`title ${title.id} is missing its type.`);
+      const item = { id: title.id, title: title.titleText.text.trim(), date: completeDate(title.releaseDate), type };
+      if (type === 'tvEpisode') {
+        const parent = source.kind === 'series' ? { id: source.id, titleText: { text: source.title } } : title.series?.series;
+        const numbering = title.series?.episodeNumber;
+        if (!parent || !/^tt\d{7,10}$/.test(parent.id)
+            || typeof parent.titleText?.text !== 'string' || !parent.titleText.text.trim()) {
+          invalid(`episode ${title.id} is missing its series.`);
+        }
+        if ([numbering?.seasonNumber, numbering?.episodeNumber].some((value) => value != null && (!Number.isSafeInteger(value) || value < 0))) {
+          invalid(`episode ${title.id} has invalid numbering.`);
+        }
+        item.series = { id: parent.id, title: parent.titleText.text.trim(), date: source.kind === 'series' ? source.date : completeDate(parent.releaseDate), season: numbering?.seasonNumber ?? null, episode: numbering?.episodeNumber ?? null };
+      }
       const previous = titles.get(item.id);
-      if (previous && (previous.title !== item.title || previous.date !== item.date)) {
+      if (previous && JSON.stringify(previous) !== JSON.stringify(item)) {
         invalid(`title ${item.id} changed during pagination; retry the refresh.`);
       }
       titles.set(item.id, item);
@@ -186,4 +198,35 @@ export async function fetchSource(source, { fetchImpl = globalThis.fetch, signal
     cursor = next;
   }
   invalid(`more than the ${MAX_PAGES} page safety limit.`);
+}
+
+/**
+ * Read all directly matching titles, including undated titles, and expand interest series into their complete episode lists. Filmographies retain only directly credited episodes.
+ * The website GraphQL endpoint is not the licensed AWS IMDb API. Entitlement metadata and usage notices are returned as warnings for the caller to expose.
+ * Any failed or inconsistent page rejects the entire source; callers should keep their previous complete snapshot.
+ */
+export async function fetchSource(source, { fetchImpl = globalThis.fetch, signal, region, seriesCache = new Map() } = {}) {
+  if (!source || !['interest', 'name'].includes(source.kind)
+      || !(source.kind === 'interest' ? /^in\d{7}$/ : /^nm\d{7,10}$/).test(source.id)) {
+    throw new TypeError('A source must contain a valid IMDb interest or name ID and matching kind.');
+  }
+  if (region !== undefined) throw new TypeError('Region-specific IMDb release dates are not supported; omit region to use the returned default date.');
+  if (typeof fetchImpl !== 'function') throw new TypeError('fetchImpl must be a function.');
+  const result = await readTitles(source, { fetchImpl, signal });
+  const warnings = new Set(result.warnings);
+  for (const title of result.titles) {
+    signal?.throwIfAborted();
+    if (source.kind !== 'interest' || !['tvSeries', 'tvMiniSeries'].includes(title.type)) continue;
+    let cached = seriesCache.get(title.id);
+    if (!cached) {
+      const episodes = await readTitles({ kind: 'series', id: title.id, title: title.title, date: title.date }, { fetchImpl, signal });
+      signal?.throwIfAborted();
+      cached = { episodes: episodes.titles, warnings: episodes.warnings };
+      seriesCache.set(title.id, cached);
+    }
+    title.episodes = cached.episodes;
+    for (const warning of cached.warnings) warnings.add(warning);
+  }
+  result.warnings = [...warnings];
+  return result;
 }

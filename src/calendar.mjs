@@ -20,8 +20,12 @@ function compareText(left, right) {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 
-function validEvent(event) {
-  return event && TITLE_ID.test(event.id) && typeof event.title === 'string'
+export function isValidEvent(event) {
+  const titleId = event?.titleId ?? event?.id;
+  return event && TITLE_ID.test(titleId) && (event.id === titleId || event.id === `${titleId}-${event.date}`)
+    && (event.description === undefined || typeof event.description === 'string')
+    && (event.episodeIds === undefined || (Array.isArray(event.episodeIds) && event.episodeIds.every((id) => TITLE_ID.test(id))))
+    && typeof event.title === 'string'
     && event.title.trim() && isCompleteDate(event.date) && STATUSES.has(event.status)
     && Number.isSafeInteger(event.sequence) && event.sequence >= 0
     && timestamp(event.createdAt) && timestamp(event.modifiedAt);
@@ -29,9 +33,9 @@ function validEvent(event) {
 
 function savedEvents(previousEvents) {
   return Object.fromEntries(Object.values(previousEvents ?? {})
-    .filter(validEvent)
-    .map(({ id, title, date, createdAt, modifiedAt, sequence, status }) => [id, {
-      id, title, date, createdAt, modifiedAt, sequence, status,
+    .filter(isValidEvent)
+    .map(({ id, titleId = id, title, date, description = '', episodeIds = [], createdAt, modifiedAt, sequence, status }) => [id, {
+      id, titleId, title, date, description, episodeIds, createdAt, modifiedAt, sequence, status,
     }]));
 }
 
@@ -44,17 +48,65 @@ export function reconcileEvents(previousEvents, titles, { now = new Date() } = {
   const changedAt = timestamp(now);
   if (!changedAt) throw new TypeError('now must be a valid date');
   const previous = savedEvents(previousEvents);
-  const current = new Map();
+  const records = new Map();
 
-  // Prefer a complete date if repeated sources disagree. Then choose the earliest
-  // date and lexical title; neither API pagination nor source order changes state.
+  // Prefer complete dates, then the earliest date and lexical title. Preserve known episode relationships even when another source still has legacy title data, independently of pagination and source order.
   for (const title of titles ?? []) {
-    if (!title || !TITLE_ID.test(title.id) || typeof title.title !== 'string' || !title.title.trim()) continue;
-    const candidate = { id: title.id, title: title.title.trim(), date: isCompleteDate(title.date) ? title.date : null };
-    const existing = current.get(candidate.id);
-    const candidateKey = `${candidate.date ?? '~~~~'}\0${candidate.title}`;
-    const existingKey = existing && `${existing.date ?? '~~~~'}\0${existing.title}`;
-    if (!existing || compareText(candidateKey, existingKey) < 0) current.set(candidate.id, candidate);
+    for (const entry of [title, ...(title?.episodes ?? [])]) {
+      if (!entry || !TITLE_ID.test(entry.id) || typeof entry.title !== 'string' || !entry.title.trim()) continue;
+      const candidate = { id: entry.id, title: entry.title.trim(), date: isCompleteDate(entry.date) ? entry.date : null };
+      if (entry.series) candidate.series = entry.series;
+      const existing = records.get(candidate.id);
+      const candidateKey = `${candidate.date ?? '~~~~'}\0${candidate.title}`;
+      const existingKey = existing && `${existing.date ?? '~~~~'}\0${existing.title}`;
+      const preferred = !existing || compareText(candidateKey, existingKey) < 0 ? candidate : existing;
+      const relationships = [candidate.series, existing?.series].filter(Boolean)
+        .sort((left, right) => compareText(JSON.stringify(left), JSON.stringify(right)));
+      if (relationships.length) preferred.series = relationships[0];
+      records.set(candidate.id, preferred);
+    }
+  }
+
+  const current = new Map();
+  const parents = new Map();
+  for (const record of records.values()) {
+    if (record.series) {
+      const candidate = record.series;
+      const existing = parents.get(candidate.id);
+      const candidateKey = `${candidate.date ?? '~~~~'}\0${candidate.title}`;
+      const existingKey = existing && `${existing.date ?? '~~~~'}\0${existing.title}`;
+      if (!existing || compareText(candidateKey, existingKey) < 0) parents.set(candidate.id, candidate);
+    } else {
+      current.set(record.id, {
+        id: record.id, titleId: record.id, title: record.title, date: record.date, description: '', episodeIds: [],
+      });
+    }
+  }
+  const groups = new Map();
+  for (const record of records.values()) {
+    if (!record.series || !record.date) continue;
+    const selected = records.get(record.series.id);
+    const parent = parents.get(record.series.id);
+    const premiere = selected?.date ?? parent.date;
+    const id = premiere === record.date ? record.series.id : `${record.series.id}-${record.date}`;
+    let group = groups.get(id);
+    if (!group) {
+      group = { id, titleId: record.series.id, title: selected?.title ?? parent.title, date: record.date, episodes: [] };
+      groups.set(id, group);
+    }
+    group.episodes.push(record);
+  }
+  for (const { episodes, ...group } of groups.values()) {
+    episodes.sort((left, right) => (left.series.season ?? Infinity) - (right.series.season ?? Infinity)
+      || (left.series.episode ?? Infinity) - (right.series.episode ?? Infinity) || compareText(left.id, right.id));
+    const description = episodes.map((episode) => {
+      const { season, episode: number } = episode.series;
+      const label = season != null && number != null
+        ? `S${String(season).padStart(2, '0')}E${String(number).padStart(2, '0')}`
+        : number != null ? `Episode ${number}` : season != null ? `Season ${season}` : '';
+      return `${label ? `${label}: ` : ''}${episode.title}`;
+    }).join('\n');
+    current.set(group.id, { ...group, description, episodeIds: episodes.map((episode) => episode.id) });
   }
 
   const events = {};
@@ -72,7 +124,9 @@ export function reconcileEvents(previousEvents, titles, { now = new Date() } = {
 
     if (!before) {
       events[id] = { ...title, createdAt: changedAt, modifiedAt: changedAt, sequence: 0, status: 'CONFIRMED' };
-    } else if (before.title !== title.title || before.date !== title.date || before.status !== 'CONFIRMED') {
+    } else if (before.title !== title.title || before.date !== title.date || before.titleId !== title.titleId
+        || before.description !== title.description || JSON.stringify(before.episodeIds) !== JSON.stringify(title.episodeIds)
+        || before.status !== 'CONFIRMED') {
       events[id] = { ...before, ...title, modifiedAt: changedAt, sequence: before.sequence + 1, status: 'CONFIRMED' };
     } else {
       events[id] = before;
@@ -133,7 +187,7 @@ export function renderCalendar({ name = 'Release Calendar', description, events 
   ];
   if (description) lines.push(`X-WR-CALDESC:${escapeText(description)}`);
 
-  const ordered = Object.values(events ?? {}).filter(validEvent).sort((left, right) =>
+  const ordered = Object.values(events ?? {}).filter(isValidEvent).sort((left, right) =>
     compareText(left.date, right.date) || compareText(left.id, right.id));
   for (const event of ordered) {
     // A UTC-midnight marker is a display preference, not an asserted release time.
@@ -152,7 +206,8 @@ export function renderCalendar({ name = 'Release Calendar', description, events 
       `STATUS:${event.status}`,
       ...dates,
       `SUMMARY:${escapeText(event.title)}`,
-      `URL:https://www.imdb.com/title/${event.id}/`,
+      ...(event.description ? [`DESCRIPTION:${escapeText(event.description)}`] : []),
+      `URL:https://www.imdb.com/title/${event.titleId ?? event.id}/`,
       'TRANSP:TRANSPARENT',
       'END:VEVENT',
     );

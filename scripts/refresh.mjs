@@ -10,5 +10,5 @@ if (failed.length || store.persistenceError) {
   console.error(`Refresh incomplete${failed.length ? `: ${failed.map((source) => source.slug).join(', ')}` : ''}. Saved calendars were preserved.`);
   process.exitCode = 1;
 } else {
-  console.info('All five sources refreshed and the snapshot was saved.');
+  console.info(`All ${config.sources.length} sources refreshed and the snapshot was saved.`);
 }
