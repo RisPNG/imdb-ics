@@ -1,0 +1,374 @@
+{
+  "marvel": {
+    "summary": "Marvel's stories began in comics and extend into film, television, animation, and games. Characters including Spider-Man, the Avengers, and the X-Men share a fictional universe, with different adaptations offering their own versions of its heroes and their adventures.",
+    "roles": ["Comics", "Film and television"],
+    "knownFor": ["Spider-Man", "The Avengers", "X-Men"],
+    "references": [
+      { "label": "Marvel character guide", "url": "https://www.marvel.com/teams-and-groups/avengers/in-comics" },
+      { "label": "IMDb interest", "url": "https://www.imdb.com/interest/in0000248/" }
+    ]
+  },
+  "star-wars": {
+    "summary": "Created by George Lucas, Star Wars began with the 1977 film later titled A New Hope. Its space-fantasy stories follow the Jedi, the Sith, and conflicts across a distant galaxy, told through films, television, animation, books, comics, and games.",
+    "roles": ["Space fantasy", "Film and television"],
+    "knownFor": ["A New Hope", "The Empire Strikes Back", "The Clone Wars", "The Mandalorian"],
+    "references": [
+      { "label": "Star Wars film guide", "url": "https://www.starwars.com/films/star-wars-episode-iv-a-new-hope" },
+      { "label": "Star Wars history", "url": "https://www.starwars.com/news/5-ways-star-wars-a-new-hope-changed-everything" },
+      { "label": "IMDb interest", "url": "https://www.imdb.com/interest/in0000243/" }
+    ]
+  },
+  "dc": {
+    "summary": "DC publishes the comic-book stories of Superman, Batman, Wonder Woman, and the Justice League. Its characters also appear in films, television series, animation, and games, with stories ranging from individual heroes' lives to adventures that bring them together.",
+    "roles": ["Comics", "Film and television"],
+    "knownFor": ["Superman", "Batman", "Wonder Woman", "Justice League"],
+    "references": [
+      { "label": "DC character guide", "url": "https://www.dc.com/characters/justice-league" },
+      { "label": "DC films", "url": "https://www.dc.com/movies" },
+      { "label": "IMDb interest", "url": "https://www.imdb.com/interest/in0000244/" }
+    ]
+  },
+  "vince-gilligan": {
+    "summary": "Vince Gilligan is a writer, producer, and director who created Breaking Bad and co-created Better Call Saul. His television work also includes writing and producing The X-Files, while El Camino continues Jesse Pinkman's story from Breaking Bad in a feature film.",
+    "roles": ["Writer", "Producer", "Director"],
+    "knownFor": ["Breaking Bad", "Better Call Saul", "The X-Files", "El Camino"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0319213/bio/" }]
+  },
+  "justin-roiland": {
+    "summary": "Justin Roiland is a voice actor, writer, and producer who co-created Rick and Morty and Solar Opposites. He provided voices for both series during their early seasons, and his other animation work includes characters in Adventure Time and Gravity Falls.",
+    "roles": ["Voice actor", "Writer", "Producer"],
+    "knownFor": ["Rick and Morty", "Solar Opposites", "Adventure Time", "Gravity Falls"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm1551598/bio/" }]
+  },
+  "chiwetel-ejiofor": {
+    "summary": "Chiwetel Ejiofor works as an actor, writer, and director across film, television, and theatre. His performances include Solomon Northup in 12 Years a Slave and the Operative in Serenity. He also wrote and directed The Boy Who Harnessed the Wind.",
+    "roles": ["Actor", "Writer", "Director"],
+    "knownFor": ["12 Years a Slave", "Dirty Pretty Things", "Serenity", "The Boy Who Harnessed the Wind"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0252230/bio/" }]
+  },
+  "kane-parsons": {
+    "summary": "Kane Parsons makes films under the name Kane Pixels, combining writing, directing, and visual effects. He created the online horror series The Backrooms and The Oldest View, using computer-generated environments and found-footage storytelling to build their fictional worlds.",
+    "roles": ["Director", "Writer", "Visual effects artist"],
+    "knownFor": ["The Backrooms", "The Oldest View", "Backrooms"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm10735410/" }]
+  },
+  "donald-glover": {
+    "summary": "Donald Glover is an actor, writer, and musician who performs music as Childish Gambino. His television work includes Community, and he created and starred in Atlanta. His films include playing Lando Calrissian in Solo: A Star Wars Story.",
+    "roles": ["Actor", "Writer", "Musician"],
+    "knownFor": ["Community", "Atlanta", "Solo: A Star Wars Story", "Guava Island"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm2255973/bio/" }]
+  },
+  "michael-pena": {
+    "summary": "Michael Peña is an actor and producer whose film work includes Crash, End of Watch, American Hustle, and Ant-Man. Raised in Chicago, he began working in film and television after winning a role through an open casting call for To Sir, with Love II.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Crash", "End of Watch", "American Hustle", "Ant-Man"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0671567/" }]
+  },
+  "jake-gyllenhaal": {
+    "summary": "Jake Gyllenhaal is an actor and producer with roles in Donnie Darko, Brokeback Mountain, Nightcrawler, and Prisoners. He made his film debut in City Slickers as a child and has also performed on stage, including in London's West End.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Donnie Darko", "Brokeback Mountain", "Nightcrawler", "Prisoners"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0350453/bio/" }]
+  },
+  "kyle-chandler": {
+    "summary": "Kyle Chandler is an actor whose television work includes Friday Night Lights and Bloodline. His film credits include Argo, Super 8, Manchester by the Sea, and The Wolf of Wall Street, alongside work as a producer and director.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Friday Night Lights", "Bloodline", "Argo", "Manchester by the Sea"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0151419/" }]
+  },
+  "leonardo-dicaprio": {
+    "summary": "Leonardo DiCaprio is an actor and producer whose films include Titanic, The Aviator, The Departed, and The Wolf of Wall Street. He began working in television and films as a child before taking leading roles in collaborations with directors including Martin Scorsese and Christopher Nolan.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Titanic", "The Aviator", "The Departed", "The Wolf of Wall Street"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000138/bio/" }]
+  },
+  "matt-damon": {
+    "summary": "Matt Damon is an actor, writer, and producer who co-wrote and starred in Good Will Hunting. His screen work also includes The Martian, The Talented Mr. Ripley, and The Departed, with roles across drama, science fiction, and crime films.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["Good Will Hunting", "The Martian", "The Talented Mr. Ripley", "The Departed"],
+    "references": [
+      { "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000354/bio/" },
+      { "label": "Miramax: Good Will Hunting", "url": "https://www.miramax.com/movie/good-will-hunting/" }
+    ]
+  },
+  "michael-mando": {
+    "summary": "Michael Mando is an actor whose performances include Nacho Varga in Better Call Saul and Vaas Montenegro in the video game Far Cry 3. His work spans television, film, and performance capture, with further television appearances in Orphan Black.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Better Call Saul", "Far Cry 3", "Orphan Black"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm3103126/bio/" }]
+  },
+  "brad-pitt": {
+    "summary": "Brad Pitt is an actor and producer whose film credits include Fight Club, 12 Monkeys, Moneyball, and Mr. & Mrs. Smith. He began with television roles before his appearance in Thelma & Louise brought wider attention to his work on screen.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Fight Club", "12 Monkeys", "Moneyball", "Mr. & Mrs. Smith"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000093/bio/" }]
+  },
+  "george-lucas": {
+    "summary": "George Lucas is a writer, director, and producer who created Star Wars and founded Lucasfilm. He wrote and directed THX 1138 and American Graffiti before Star Wars, and his producing and story work also helped establish the Indiana Jones films.",
+    "roles": ["Writer", "Director", "Producer"],
+    "knownFor": ["Star Wars", "American Graffiti", "THX 1138", "Raiders of the Lost Ark"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000184/bio/" }]
+  },
+  "george-clooney": {
+    "summary": "George Clooney is an actor, director, and producer who played Dr. Doug Ross in ER. His film performances include Michael Clayton and Up in the Air, while his work behind the camera includes directing Good Night, and Good Luck.",
+    "roles": ["Actor", "Director", "Producer"],
+    "knownFor": ["ER", "Michael Clayton", "Up in the Air", "Good Night, and Good Luck."],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000123/bio/" }]
+  },
+  "diego-luna": {
+    "summary": "Diego Luna works as an actor, director, and producer, with film credits including Y tu mamá también and The Book of Life. He portrayed rebel operative Cassian Andor in Rogue One: A Star Wars Story and the television series Andor.",
+    "roles": ["Actor", "Director", "Producer"],
+    "knownFor": ["Y tu mamá también", "Rogue One: A Star Wars Story", "Andor", "The Book of Life"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0526019/" },
+      { "label": "Lucasfilm: Andor", "url": "https://www.lucasfilm.com/productions/andor/" }
+    ]
+  },
+  "grant-gustin": {
+    "summary": "Grant Gustin is an actor and singer who played Barry Allen in The Flash and Sebastian Smythe in Glee. His background includes musical-theatre training and performing in a touring production of West Side Story before his work on television.",
+    "roles": ["Actor", "Singer"],
+    "knownFor": ["The Flash", "Glee", "Rescued by Ruby"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm2652716/bio/" }]
+  },
+  "ryan-gosling": {
+    "summary": "Ryan Gosling is an actor, producer, and director whose film performances include The Notebook, Drive, Blue Valentine, and La La Land. He began performing as a child on The Mickey Mouse Club before moving into television series and feature films.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["The Notebook", "Drive", "Blue Valentine", "La La Land"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0331516/bio/" }]
+  },
+  "benedict-cumberbatch": {
+    "summary": "Benedict Cumberbatch is an actor and producer whose work spans theatre, television, film, and radio. His screen roles include Sherlock Holmes in Sherlock and Stephen Strange in Doctor Strange, alongside performances in The Imitation Game and Star Trek Into Darkness.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Sherlock", "Doctor Strange", "The Imitation Game", "Star Trek Into Darkness"],
+    "references": [
+      { "label": "IMDb biography", "url": "https://www.imdb.com/name/nm1212722/bio/" },
+      { "label": "D23: Doctor Strange", "url": "https://d23.com/a-to-z/doctor-strange-film/" }
+    ]
+  },
+  "robert-pattinson": {
+    "summary": "Robert Pattinson is an actor and producer whose films include Twilight and The Batman. He began performing with an amateur theatre group in London before moving into screen roles, with work in both large studio productions and independent films.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Twilight", "The Batman", "The Lighthouse", "Good Time"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm1500155/bio/" }]
+  },
+  "steven-ogg": {
+    "summary": "Steven Ogg is an actor whose work includes voice and performance capture for Trevor Philips in Grand Theft Auto V. His screen credits include The Walking Dead and He Never Died, alongside appearances in television series such as Law & Order.",
+    "roles": ["Actor", "Voice actor"],
+    "knownFor": ["Grand Theft Auto V", "The Walking Dead", "He Never Died"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm1476804/bio/" }]
+  },
+  "ned-luke": {
+    "summary": "Ned Luke is an actor and director with credits in Grand Theft Auto V, Boardwalk Empire, and Law & Order: Special Victims Unit. His work combines video-game performance with television appearances, including roles in the original Law & Order series.",
+    "roles": ["Actor", "Director"],
+    "knownFor": ["Grand Theft Auto V", "Boardwalk Empire", "Law & Order: Special Victims Unit"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0902623/" }]
+  },
+  "michael-cera": {
+    "summary": "Michael Cera is an actor and musician who played George Michael Bluth in Arrested Development. His film roles include Superbad, Juno, and Scott Pilgrim vs. the World. Alongside acting, he sings and plays guitar and bass.",
+    "roles": ["Actor", "Musician"],
+    "knownFor": ["Arrested Development", "Superbad", "Juno", "Scott Pilgrim vs. the World"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0148418/bio/" }]
+  },
+  "tom-hiddleston": {
+    "summary": "Tom Hiddleston is an actor and producer who first portrayed Loki in Thor and returned to the role in The Avengers. Trained at the Royal Academy of Dramatic Art, he has also worked in theatre and films including High-Rise.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Thor", "The Avengers", "High-Rise", "The Night Manager"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm1089991/bio/" }]
+  },
+  "nicolas-cage": {
+    "summary": "Nicolas Cage is an actor, producer, and director with film roles in Leaving Las Vegas, The Rock, and Face/Off. Born Nicolas Coppola, he adopted his professional surname early in his career and began taking leading roles with Valley Girl.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Leaving Las Vegas", "The Rock", "Face/Off", "Valley Girl"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000115/bio/" }]
+  },
+  "oscar-isaac": {
+    "summary": "Oscar Isaac is an actor and producer who trained at the Juilliard School after growing up in Miami. His film performances include Inside Llewyn Davis, A Most Violent Year, and Ex Machina, alongside work in the Star Wars films.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Inside Llewyn Davis", "A Most Violent Year", "Ex Machina", "Star Wars: The Force Awakens"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm1209966/bio/" }]
+  },
+  "steven-yeun": {
+    "summary": "Steven Yeun is an actor and producer whose films include Minari, Okja, and Nope. He studied at Kalamazoo College before pursuing acting and worked with comedy groups in Chicago, including Stir Friday Night and the Second City.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Minari", "Okja", "Nope", "Mayhem"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm3081796/" }]
+  },
+  "andrew-santino": {
+    "summary": "Andrew Santino is a comedian, actor, and podcast host whose film work includes Ricky Stanicky and The Disaster Artist. He hosts the interview podcast Whiskey Ginger and co-hosts Bad Friends with Bobby Lee, alongside his stand-up comedy work.",
+    "roles": ["Comedian", "Actor", "Podcast host"],
+    "knownFor": ["Whiskey Ginger", "Bad Friends", "Ricky Stanicky", "The Disaster Artist"],
+    "references": [
+      { "label": "IMDb credits", "url": "https://www.imdb.com/name/nm2747668/" },
+      { "label": "Andrew Santino: podcasts", "url": "https://www.andrewsantino.com/video" }
+    ]
+  },
+  "bobby-lee": {
+    "summary": "Bobby Lee is an actor, writer, and comedian whose television work includes Mad TV. His film credits include Paul and A Very Harold & Kumar Christmas. He also co-hosts the comedy podcast Bad Friends with Andrew Santino.",
+    "roles": ["Actor", "Writer", "Comedian"],
+    "knownFor": ["Mad TV", "Bad Friends", "Paul", "A Very Harold & Kumar Christmas"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0496899/" },
+      { "label": "Bad Friends: first episode", "url": "https://www.youtube.com/watch?v=-Ftwd9Fa8aQ" }
+    ]
+  },
+  "john-cena": {
+    "summary": "John Cena is an actor and professional wrestler whose wrestling career began before his work in feature films. His screen credits include The Suicide Squad, F9: The Fast Saga, and Ricky Stanicky, alongside work as a producer and writer.",
+    "roles": ["Actor", "Professional wrestler", "Producer"],
+    "knownFor": ["The Suicide Squad", "F9: The Fast Saga", "Ricky Stanicky", "Peacemaker"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1078479/" }]
+  },
+  "christopher-nolan": {
+    "summary": "Christopher Nolan is a writer, director, and producer whose films include Memento, The Prestige, Interstellar, and Dunkirk. He began making short films as a child and made his first feature, Following, before moving into larger independent and studio productions.",
+    "roles": ["Writer", "Director", "Producer"],
+    "knownFor": ["Memento", "The Prestige", "Interstellar", "Dunkirk"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0634240/bio/" }]
+  },
+  "joel-mchale": {
+    "summary": "Joel McHale is an actor, writer, and producer whose television work includes Community and The Soup. He trained in acting at the University of Washington and appeared in Seattle's Almost Live! before moving into film and national television work.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["Community", "The Soup", "The Informant!", "Deliver Us from Evil"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0570364/bio/" }]
+  },
+  "bob-odenkirk": {
+    "summary": "Bob Odenkirk is an actor, writer, and producer whose work includes Better Call Saul and Mr. Show with Bob and David. His background includes comedy writing for Saturday Night Live and The Ben Stiller Show, alongside film performances such as Nobody.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["Better Call Saul", "Mr. Show with Bob and David", "Nobody", "Saturday Night Live"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0644022/" }]
+  },
+  "aaron-paul": {
+    "summary": "Aaron Paul is an actor and producer who portrayed Jesse Pinkman in Breaking Bad and El Camino. His other film work includes Need for Speed and The Last House on the Left, following early appearances in television series and films.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Breaking Bad", "El Camino", "Need for Speed", "The Last House on the Left"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0666739/" },
+      { "label": "AMC: El Camino", "url": "https://www.amc.com/blogs/breaking-bad-movie-release-date-el-camino-netflix--1004389" }
+    ]
+  },
+  "bryan-cranston": {
+    "summary": "Bryan Cranston is an actor, producer, and writer whose television roles include Walter White in Breaking Bad and Hal in Malcolm in the Middle. His film work includes Argo and Trumbo, and he portrayed Lyndon B. Johnson on stage in All the Way.",
+    "roles": ["Actor", "Producer", "Writer"],
+    "knownFor": ["Breaking Bad", "Malcolm in the Middle", "Trumbo", "All the Way"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0186505/bio/" }]
+  },
+  "gabriel-macht": {
+    "summary": "Gabriel Macht is an actor, producer, and director whose screen work includes Suits, The Good Shepherd, and The Spirit. He began acting as a child, studied at Carnegie Mellon's School of Drama, and has performed in theatre as well as on screen.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Suits", "The Good Shepherd", "The Spirit", "A Love Song for Bobby Long"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0532683/" }]
+  },
+  "josh-hutcherson": {
+    "summary": "Josh Hutcherson is an actor, producer, and director whose films include The Hunger Games and Zathura: A Space Adventure. He began working in television as a child before appearing in feature films, including American Splendor and Little Manhattan.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["The Hunger Games", "Zathura: A Space Adventure", "Little Manhattan"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm1242688/bio/" }]
+  },
+  "rick-hoffman": {
+    "summary": "Rick Hoffman is an actor who portrayed Louis Litt in the legal drama Suits. His television credits also include Billions, while his film work includes Hostel and Thanksgiving, spanning legal drama and horror across his screen career.",
+    "roles": ["Television actor", "Film actor"],
+    "knownFor": ["Suits", "Billions", "Hostel", "Thanksgiving"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0389069/" },
+      { "label": "USA Network: Suits cast", "url": "https://pro-serv-tp.s3.amazonaws.com/Suits/www.usanetwork.com/suits/cast.html" }
+    ]
+  },
+  "patrick-j-adams": {
+    "summary": "Patrick J. Adams is an actor, producer, and director who portrayed Mike Ross in Suits and astronaut John Glenn in The Right Stuff. His work also includes the film Clara and theatre productions such as The Last Match.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Suits", "The Right Stuff", "Clara"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1140666/" }]
+  },
+  "anya-taylor-joy": {
+    "summary": "Anya Taylor-Joy is an actress and producer whose roles include Beth Harmon in The Queen's Gambit and Thomasin in The Witch. Her film work also includes Split and Thoroughbreds, following a childhood spent in Argentina and England.",
+    "roles": ["Actress", "Producer"],
+    "knownFor": ["The Queen's Gambit", "The Witch", "Split", "Thoroughbreds"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm5896355/bio/" }]
+  },
+  "sadie-sink": {
+    "summary": "Sadie Sink is an actress whose screen roles include Max in Stranger Things and Ziggy Berman in the Fear Street films. She began in theatre, performing in Annie and The Audience on Broadway, before further work in film and television.",
+    "roles": ["Actress", "Producer"],
+    "knownFor": ["Stranger Things", "Fear Street: Part Two - 1978", "The Whale", "All Too Well: The Short Film"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm5584750/" }]
+  },
+  "giancarlo-esposito": {
+    "summary": "Giancarlo Esposito is an actor whose screen work includes Breaking Bad, Do the Right Thing, and The Usual Suspects. He began performing on Broadway as a child before moving into film and television, including Homicide: Life on the Street.",
+    "roles": ["Screen actor", "Stage actor"],
+    "knownFor": ["Breaking Bad", "Do the Right Thing", "The Usual Suspects", "The Jungle Book"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0002064/" }]
+  },
+  "jonathan-banks": {
+    "summary": "Jonathan Banks is an actor who portrayed Mike Ehrmantraut in Breaking Bad and Better Call Saul. His film credits include Gremlins, Mudbound, and The Adventures of Buckaroo Banzai Across the 8th Dimension, alongside work on stage and television.",
+    "roles": ["Screen actor", "Stage actor"],
+    "knownFor": ["Breaking Bad", "Better Call Saul", "Gremlins", "Mudbound"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0052186/" },
+      { "label": "AMC: Better Call Saul", "url": "https://ce.amc.com/series/better-call-saul" }
+    ]
+  },
+  "jesse-plemons": {
+    "summary": "Jesse Plemons is an actor whose television roles include Landry Clarke in Friday Night Lights and Todd Alquist in Breaking Bad. His film performances include Game Night, The Irishman, I'm Thinking of Ending Things, and The Power of the Dog.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Friday Night Lights", "Breaking Bad", "I'm Thinking of Ending Things", "The Power of the Dog"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0687146/bio/" }]
+  },
+  "ethan-hawke": {
+    "summary": "Ethan Hawke is an actor, writer, and producer whose films include Training Day and Richard Linklater's Before trilogy. He began acting in Explorers and Dead Poets Society, and has also worked in theatre and written novels, including The Hottest State.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["Training Day", "Before Sunrise", "Before Sunset", "Before Midnight"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000160/bio/" }]
+  },
+  "mark-hamill": {
+    "summary": "Mark Hamill is an actor and voice actor who portrayed Luke Skywalker in the original Star Wars trilogy and its sequels. His voice work includes the Joker in Batman: The Animated Series, alongside film appearances in The Big Red One and Corvette Summer.",
+    "roles": ["Actor", "Voice actor"],
+    "knownFor": ["Star Wars", "Batman: The Animated Series", "The Big Red One", "Corvette Summer"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000434/bio/" }]
+  },
+  "samuel-l-jackson": {
+    "summary": "Samuel L. Jackson is an actor and producer whose roles include Jules Winnfield in Pulp Fiction and Nick Fury in Marvel films. His work also includes the Star Wars prequels and voicing Frozone in The Incredibles.",
+    "roles": ["Actor", "Producer", "Voice actor"],
+    "knownFor": ["Pulp Fiction", "The Avengers", "The Incredibles", "Jackie Brown"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000168/bio/" }]
+  },
+  "taron-egerton": {
+    "summary": "Taron Egerton is an actor and singer who portrayed Eggsy in the Kingsman films and Elton John in Rocketman. His other performances include Eddie the Eagle and voicing Johnny in Sing, following training at the Royal Academy of Dramatic Art.",
+    "roles": ["Actor", "Singer"],
+    "knownFor": ["Kingsman: The Secret Service", "Rocketman", "Eddie the Eagle", "Sing"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm5473782/bio/" }]
+  },
+  "matthew-judge": {
+    "summary": "Matthew Judge creates online videos under the name DarkViperAU, with work centred on Grand Theft Auto V. His credited projects include DarkViperAU, the challenge series Pacifist %, and The Viper Rambles Podcast, combining gaming videos with spoken commentary.",
+    "roles": ["Video creator", "Director"],
+    "knownFor": ["DarkViperAU", "Pacifist %", "The Viper Rambles Podcast"],
+    "references": [
+      { "label": "IMDb credits", "url": "https://www.imdb.com/name/nm15158872/" },
+      { "label": "IMDb: DarkViperAU", "url": "https://www.imdb.com/title/tt30627597/" },
+      { "label": "DarkViperAU channel", "url": "https://www.youtube.com/@DarkViperAU/about" }
+    ]
+  },
+  "kevan-brighting": {
+    "summary": "Kevan Brighting is a voice actor and narrator whose game work includes The Stanley Parable and its expanded edition, Ultra Deluxe. He provides the narration that accompanies the player's choices, and his other game credits include Void Bastards.",
+    "roles": ["Voice actor", "Narrator"],
+    "knownFor": ["The Stanley Parable", "The Stanley Parable: Ultra Deluxe", "Void Bastards"],
+    "references": [
+      { "label": "The Stanley Parable: official credits", "url": "https://www.stanleyparable.com/" },
+      { "label": "IMDb credits", "url": "https://www.imdb.com/name/nm2623915/" }
+    ]
+  },
+  "james-mcavoy": {
+    "summary": "James McAvoy is an actor whose films include Atonement, The Last King of Scotland, Filth, and Split. His screen roles also include Professor Charles Xavier in the X-Men films, alongside theatre performances in Macbeth and The Ruling Class.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Atonement", "The Last King of Scotland", "Filth", "Split"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0564215/bio/" }]
+  },
+  "dan-harmon": {
+    "summary": "Dan Harmon is a writer, producer, and director who created Community and co-created Rick and Morty. His comedy work also includes writing and producing the earlier series Computerman and Laser Fart, across live-action and animated television.",
+    "roles": ["Writer", "Producer", "Director"],
+    "knownFor": ["Community", "Rick and Morty", "Computerman", "Laser Fart"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm1363595/bio/" }]
+  },
+  "keanu-reeves": {
+    "summary": "Keanu Reeves is an actor and producer whose films include The Matrix, Speed, Point Break, and the John Wick series. His earlier work includes River's Edge and Bill & Ted's Excellent Adventure, with roles spanning drama, comedy, science fiction, and action.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["The Matrix", "Speed", "Point Break", "John Wick"],
+    "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000206/bio/" }]
+  }
+}

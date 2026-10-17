@@ -175,11 +175,11 @@ function nextDay(date) {
 }
 
 /** Render deterministic UTF-8 iCalendar; refresh time does not alter event state. */
-export function renderCalendar({ name = 'Release Calendar', description, events = {}, eventTimeMode = 'date' } = {}) {
+export function renderCalendar({ name = "Ris' IMDb ICalendar", description, events = {}, eventTimeMode = 'date' } = {}) {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Release Calendar//EN',
+    "PRODID:-//Ris' IMDb ICalendar//EN",
     'CALSCALE:GREGORIAN',
     `X-WR-CALNAME:${escapeText(name)}`,
     'REFRESH-INTERVAL;VALUE=DURATION:P1D',

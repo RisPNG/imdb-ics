@@ -143,7 +143,7 @@ export class CalendarStore {
       events: state.saved.events, updatedAt: state.saved.lastSuccessAt, stale: state.status === 'stale' };
   }
 
-  pageData(baseUrl = this.config.baseUrl) {
+  pageData(baseUrl = this.config.baseUrl, sourceSlug = 'all') {
     const individual = this.config.sources.map((source) => {
       const { status, saved } = this.sourceState(source);
       return { ...source, status, count: saved?.lastSuccessAt ? Object.values(saved.events).filter((event) => event.status === 'CONFIRMED').length : null,
@@ -159,7 +159,8 @@ export class CalendarStore {
       return { ...feed, subscriptionUrl, webcalUrl: subscriptionUrl.replace(/^https?:/, 'webcal:') };
     });
     const today = this.clock().toISOString().slice(0, 10);
-    const upcoming = combined ? Object.values(combined.events)
+    const selected = sourceSlug === 'all' ? combined : this.feed(sourceSlug);
+    const upcoming = selected ? Object.values(selected.events)
       .filter((event) => event.status === 'CONFIRMED' && event.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title) || a.id.localeCompare(b.id))
       .slice(0, 12).map((event) => {
@@ -170,9 +171,9 @@ export class CalendarStore {
               && (ids.has(candidate.id) || candidate.episodeIds?.some((id) => ids.has(id)))))
           .map((source) => source.label) };
       }) : [];
-    const updatedAt = individual.every((feed) => feed.updatedAt)
-      ? individual.map((feed) => feed.updatedAt).sort()[0] : null;
-    return { baseUrl, feeds, upcoming, updatedAt, stale: !!combined?.stale,
+    const updatedAt = sourceSlug === 'all' ? (individual.every((feed) => feed.updatedAt)
+      ? individual.map((feed) => feed.updatedAt).sort()[0] : null) : selected?.updatedAt || null;
+    return { baseUrl, feeds, upcoming, updatedAt, stale: !!selected?.stale, sourceSlug,
       refreshing: !!this.refreshing, eventTimeMode: this.config.eventTimeMode };
   }
 

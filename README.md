@@ -1,8 +1,8 @@
-# Release Calendar
+# Ris' IMDb ICalendar
 
 A small, self-hosted website that turns IMDb interests and filmographies into public calendar subscriptions. There is one feed per source and one combined feed that removes duplicate releases.
 
-The page uses semantic HTML, one small shared stylesheet, and system fonts, with no client-side JavaScript. The Node service has no runtime package dependencies. Development uses `html-validate` to check the generated HTML.
+The website uses semantic HTML, a shared stylesheet, system fonts, and a small optional script for copying calendar links. Addresses remain visible and subscriptions work without JavaScript. The Node service has no runtime package dependencies. Development uses `html-validate` to check the generated HTML.
 
 ## Calendars
 
@@ -192,14 +192,24 @@ The upstream boundary is confined to `src/imdb.mjs`, so a supported provider can
 | `src/calendar.mjs` | Stable event history and RFC 5545 serialization |
 | `src/store.mjs` | Daily scheduling, retries, deduplication, atomic persistence |
 | `src/page.mjs` | One small shared HTML layout with escaped source data |
+| `src/profiles.json` | Authored biographies, background information, known works, and reference links |
+| `src/profile-images.json` | Local image paths, dimensions, and IMDb provenance |
 | `src/server.mjs` | Public HTTP routes, cached feeds, ETags, response headers |
 | `public/style.css` | Shared layout, central colour palette, responsive, dark, and print styles |
+| `public/enhance.js` | Optional one-click address copying with accessible feedback |
+| `public/images/` | Saved IMDb portraits and interest images |
 | `scripts/check.mjs` | HTML validation, JavaScript syntax, source uniqueness, byte budgets |
 | `test/` | Calendar, pagination, cache recovery, public routes, and HTTP behaviour |
 
 The research informs the design rather than supplying copied code: [Susam's site](https://github.com/susam/susam.net) for separating source data, layout, and validation; [Seirdy's site](https://github.com/Seirdy/seirdy.one) for explicit accessibility constraints; and [Kessler's portfolio](https://github.com/nickessler2004/Engineering-Portfolio-Website) for straightforward layout primitives. There is no CSS framework, custom publishing language, or speculative layout containment. Byte budgets constrain generated output and assets; they are not a claim of independently benchmarked browser performance.
 
-The release list puts dates first and keeps grouped episode descriptions in native disclosures. A combined subscription and three interest calendars precede an alphabetical people directory. Each person has an expandable subscription panel, and every calendar has a labelled address field for manual copying. Navigation, disclosures, and subscription links work without JavaScript. The central palette follows light/dark system preferences, with visible keyboard focus, skip navigation, and print and narrow-screen styles. Response headers restrict scripts, framing, and other unneeded resources through Content Security Policy and include `X-Content-Type-Options: nosniff`.
+The homepage has the combined subscription, three interest calendars, and an alphabetical people directory. Every calendar address is visible beside its copy button. The native Browse calendars menu links to separate `/people/<slug>/` and `/interests/<slug>/` pages. These share the homepage layout and show their own upcoming releases, subscription, biography or background, and known works. A source's releases are selected before the 12-item display limit, so a busy combined feed cannot hide that source's later dates. Existing `.ics` addresses and event UIDs remain unchanged.
+
+The central palette uses IMDb-inspired yellow accents, a dark header, and system light/dark preferences. Keyboard focus, skip navigation, and print and narrow-screen styles remain available. The copy script uses the browser Clipboard API. If it is unavailable, the visible address can be copied manually. A refused clipboard write selects the address and announces the fallback. CSP permits only the required same-origin stylesheet, script, and images, restricts framing and other unneeded resources, and responses include `X-Content-Type-Options: nosniff`.
+
+The 53 IMDb images were saved once into `public/images/`, with their original source URLs and dimensions recorded in `src/profile-images.json`. Pages never request image metadata or remote images at runtime. Matthew Judge and Kevan Brighting had no IMDb portrait or gallery image when checked and use a labelled neutral placeholder. To replace an image, save the new local asset and update its manifest entry. Keep the provenance URL and accurate dimensions. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
+
+The project check validates all 55 source pages as well as homepage loading, ready, saved-data, and error states in both time modes. It checks local navigation and assets, source coverage, image dimensions, accessible address labels, copy targets, and byte budgets. Tests also cover copying success and failure, source-specific release lists, canonical page redirects, and existing feed behaviour.
 
 ### Reference documentation
 

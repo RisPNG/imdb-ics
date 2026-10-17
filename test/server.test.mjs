@@ -166,19 +166,84 @@ test('public homepage exposes every configured subscription at the request origi
   assert.doesNotMatch(html, /noindex|nofollow/);
   assert.equal(page.headers.get('x-robots-tag'), null);
   assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
-  assert(page.headers.get('content-security-policy').includes("frame-ancestors 'none'"));
+  const policy = page.headers.get('content-security-policy');
+  for (const directive of ["default-src 'none'", "frame-ancestors 'none'", "script-src 'self'", "img-src 'self'"]) {
+    assert(policy.includes(directive), directive);
+  }
+  assert.equal(page.headers.get('x-content-type-options'), 'nosniff');
+  assert(!policy.includes('unsafe-inline'));
   assert.equal(page.headers.get('cache-control'), 'no-store');
-  for (const path of ['/healthz', '/readyz', '/style.css']) {
+  for (const path of ['/healthz', '/readyz', '/style.css', '/enhance.js']) {
     const response = await fetch(`${origin}${path}`);
     assert.equal(response.status, 200);
   }
   assert.equal(await (await fetch(`${origin}/robots.txt`)).text(), 'User-agent: *\nAllow: /\n');
-  for (const path of ['/missing/', '/calendars/unknown.ics', '/enhance.js']) {
+  for (const path of ['/missing/', '/calendars/unknown.ics', '/profiles.json', '/profile-images.json', '/images/missing.jpg']) {
     assert.equal((await fetch(`${origin}${path}`)).status, 404, path);
   }
   const denied = await fetch(`${origin}/`, { method: 'POST' });
   assert.equal(denied.status, 405);
   assert.equal(denied.headers.get('allow'), 'GET, HEAD');
+});
+
+test('all source pages have canonical routes, local images, and one source subscription', async (t) => {
+  const { origin } = await runningApp(t);
+  for (const source of SOURCES) {
+    const group = source.kind === 'name' ? 'people' : 'interests';
+    const path = `/${group}/${source.slug}/`;
+    const response = await fetch(`${origin}${path}`);
+    assert.equal(response.status, 200, path);
+    assert.match(response.headers.get('content-type'), /^text\/html/);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    const html = await response.text();
+    assert(html.includes(`rel="canonical" href="${origin}${path}"`), path);
+    assert.equal((html.match(/<input\b[^>]*type="url"/g) || []).length, 1, path);
+    assert(html.includes(`value="${origin}/calendars/${source.slug}.ics"`), path);
+    const imagePath = html.match(/<img\b[^>]*\bsrc="(\/images\/[^"]+)"/)?.[1];
+    assert(imagePath, `Missing local image on ${path}.`);
+    const image = await fetch(`${origin}${imagePath}`);
+    assert.equal(image.status, 200, imagePath);
+    assert.match(image.headers.get('content-type'), /^image\/(?:jpeg|svg\+xml)(?:;|$)/);
+    assert.equal(image.headers.get('x-content-type-options'), 'nosniff');
+    assert(Number(image.headers.get('content-length')) > 0);
+    const redirect = await fetch(`${origin}${path.slice(0, -1)}`, { redirect: 'manual' });
+    assert.equal(redirect.status, 308, path);
+    assert.equal(redirect.headers.get('location'), path);
+  }
+  for (const path of ['/people/marvel/', '/interests/keanu-reeves/', '/people/unknown/', '/interests/unknown/', '/people/', '/interests/', '/images/../src/config.mjs']) {
+    assert.equal((await fetch(`${origin}${path}`)).status, 404, path);
+  }
+  const head = await fetch(`${origin}/people/keanu-reeves/`, { method: 'HEAD' });
+  assert.equal(head.status, 200);
+  assert(Number(head.headers.get('content-length')) > 0);
+  assert.equal(await head.text(), '');
+});
+
+test('source pages select their releases before limiting the combined upcoming list', async (t) => {
+  const person = SOURCES.at(-1);
+  const interest = SOURCES[0];
+  const personTitle = 'A directly credited person release';
+  const interestTitle = 'A separate interest release';
+  const { store, origin } = await runningApp(t, {}, {
+    clock: () => new Date('2026-10-17T00:00:00Z'),
+    loader: async (source) => ({
+      titles: source.slug === person.slug ? [{ id: 'tt1234567', title: personTitle, date: '2026-12-31' }]
+        : source.slug === interest.slug ? Array.from({ length: 13 }, (_, index) => ({
+          id: `tt${2345678 + index}`, title: `${interestTitle} ${index + 1}`, date: `2026-11-${String(index + 1).padStart(2, '0')}`,
+        })) : [],
+      total: 1, omitted: 0, warnings: [],
+    }),
+  });
+  await store.refresh();
+  const homepage = await (await fetch(origin)).text();
+  assert(!homepage.includes(personTitle), 'The combined list is already filled by earlier interest releases.');
+  assert(homepage.includes(interestTitle));
+  const personPage = await (await fetch(`${origin}/people/${person.slug}/`)).text();
+  assert(personPage.includes(personTitle));
+  assert(!personPage.includes(interestTitle));
+  const interestPage = await (await fetch(`${origin}/interests/${interest.slug}/`)).text();
+  assert(interestPage.includes(interestTitle));
+  assert(!interestPage.includes(personTitle));
 });
 
 test('subscription links follow custom and Render hosts without changing the configured URL', async (t) => {
@@ -213,12 +278,14 @@ test('subscription origins preserve request ports and the proxy protocol', async
     [{ Host: 'imdbics.rispeng.com', 'X-Forwarded-Proto': 'https, http' }, 'https://imdbics.rispeng.com'],
     [{ Host: 'imdbics.rispeng.com', 'X-Forwarded-Proto': 'javascript' }, 'http://imdbics.rispeng.com'],
   ]) {
-    const page = await new Promise((resolve, reject) => get(`${origin}/`, { headers }, resolve).on('error', reject));
-    assert.equal(page.statusCode, 200);
-    const html = await text(page);
-    assert(html.includes(`rel="canonical" href="${expected}/"`));
-    assert(html.includes(`value="${expected}/calendars/all.ics"`));
-    assert(html.includes(`href="${expected.replace(/^https?:/, 'webcal:')}/calendars/all.ics"`));
+    for (const [path, slug] of [['/', 'all'], ['/people/keanu-reeves/', 'keanu-reeves'], ['/interests/marvel/', 'marvel']]) {
+      const page = await new Promise((resolve, reject) => get(`${origin}${path}`, { headers }, resolve).on('error', reject));
+      assert.equal(page.statusCode, 200);
+      const html = await text(page);
+      assert(html.includes(`rel="canonical" href="${expected}${path}"`));
+      assert(html.includes(`value="${expected}/calendars/${slug}.ics"`));
+      assert(html.includes(`href="${expected.replace(/^https?:/, 'webcal:')}/calendars/${slug}.ics"`));
+    }
   }
 });
 

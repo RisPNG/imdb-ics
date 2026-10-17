@@ -6,9 +6,12 @@ import { renderCalendar } from './calendar.mjs';
 import { loadConfig } from './config.mjs';
 import { renderPage } from './page.mjs';
 import { CalendarStore } from './store.mjs';
+import images from './profile-images.json' with { type: 'json' };
 
 const assetPaths = new Map([
   ['/style.css', ['../public/style.css', 'text/css; charset=utf-8']],
+  ['/enhance.js', ['../public/enhance.js', 'text/javascript; charset=utf-8']],
+  ...Object.values(images).map((image) => [image.path, [`../public${image.path}`, image.path.endsWith('.svg') ? 'image/svg+xml' : 'image/jpeg']]),
 ]);
 
 export async function createApp(config, options = {}) {
@@ -18,7 +21,7 @@ export async function createApp(config, options = {}) {
     [path, { body: await readFile(new URL(file, import.meta.url)), type }])));
 
   const handleRequest = (request, response) => {
-    response.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'");
+    response.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'");
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'no-referrer');
     response.setHeader('Cache-Control', 'no-store');
@@ -43,7 +46,12 @@ export async function createApp(config, options = {}) {
     const asset = assets.get(path);
     if (asset) return send(200, asset.body, asset.type, { 'Cache-Control': 'public, max-age=3600' });
 
-    if (path === '/') {
+    const profileRoute = /^\/(people|interests)\/([a-z-]+)(\/)?$/.exec(path);
+    const source = profileRoute && config.sources.find((candidate) => candidate.slug === profileRoute[2]
+      && candidate.kind === (profileRoute[1] === 'people' ? 'name' : 'interest'));
+    if (profileRoute && !source) return send(404, 'Unknown calendar.\n');
+    if (source && !profileRoute[3]) return send(308, '', undefined, { Location: `/${profileRoute[1]}/${source.slug}/` });
+    if (path === '/' || source) {
       const baseUrl = new URL(config.baseUrl);
       const protocol = request.headers['x-forwarded-proto']?.split(',')[0].trim();
       if (protocol === 'http' || protocol === 'https') baseUrl.protocol = `${protocol}:`;
@@ -51,7 +59,7 @@ export async function createApp(config, options = {}) {
         baseUrl.port = '';
         baseUrl.host = request.headers.host;
       }
-      return send(200, renderPage(store.pageData(baseUrl.origin)), 'text/html; charset=utf-8');
+      return send(200, renderPage(store.pageData(baseUrl.origin, source?.slug || 'all')), 'text/html; charset=utf-8');
     }
     const match = /^\/calendars\/([a-z-]+)\.ics$/.exec(path);
     if (!match) return send(404, 'Not found.\n');
@@ -100,7 +108,7 @@ async function main() {
     app.server.once('error', reject);
     app.server.listen(config.port, '0.0.0.0', resolve);
   });
-  console.info(`Release Calendar listening on port ${config.port}.`);
+  console.info(`Ris' IMDb ICalendar listening on port ${config.port}.`);
   console.info(`Dashboard: ${config.baseUrl}/`);
   app.store.start();
   let closing = false;
@@ -118,7 +126,7 @@ async function main() {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
-    console.error(`Release Calendar could not start: ${error.message}`);
+    console.error(`Ris' IMDb ICalendar could not start: ${error.message}`);
     process.exitCode = 1;
   });
 }
