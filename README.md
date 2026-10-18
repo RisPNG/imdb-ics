@@ -64,8 +64,25 @@ The website uses semantic HTML, a shared stylesheet, system fonts, and a small o
 | James McAvoy | [nm0564215](https://www.imdb.com/name/nm0564215/) | `james-mcavoy.ics` |
 | Dan Harmon | [nm1363595](https://www.imdb.com/name/nm1363595/) | `dan-harmon.ics` |
 | Keanu Reeves | [nm0000206](https://www.imdb.com/name/nm0000206/) | `keanu-reeves.ics` |
+| Alan Morrison | [nm3290082](https://www.imdb.com/name/nm3290082/) | `alan-morrison.ics` |
+| Adam King | [nm5842157](https://www.imdb.com/name/nm5842157/) | `adam-king.ics` |
+| Ben Van Lier | [nm2866114](https://www.imdb.com/name/nm2866114/) | `ben-van-lier.ics` |
+| Britt Scott Clark | [nm7794173](https://www.imdb.com/name/nm7794173/) | `britt-scott-clark.ics` |
+| Byron Coll | [nm3750475](https://www.imdb.com/name/nm3750475/) | `byron-coll.ics` |
+| Hamish Parkinson | [nm3312641](https://www.imdb.com/name/nm3312641/) | `hamish-parkinson.ics` |
+| Rowan Bettjeman | [nm3394670](https://www.imdb.com/name/nm3394670/) | `rowan-bettjeman.ics` |
+| Rowan Atkinson | [nm0000100](https://www.imdb.com/name/nm0000100/) | `rowan-atkinson.ics` |
+| Cooper Tomlinson | [nm7831367](https://www.imdb.com/name/nm7831367/) | `cooper-tomlinson.ics` |
+| Curry Barker | [nm10533874](https://www.imdb.com/name/nm10533874/) | `curry-barker.ics` |
+| Jeremy Allen White | [nm2087739](https://www.imdb.com/name/nm2087739/) | `jeremy-allen-white.ics` |
+| Sam Houser | [nm0396759](https://www.imdb.com/name/nm0396759/) | `sam-houser.ics` |
+| Mark Fischbach | [nm6179964](https://www.imdb.com/name/nm6179964/) | `mark-fischbach.ics` |
+| Seán McLoughlin | [nm7681921](https://www.imdb.com/name/nm7681921/) | `sean-mcloughlin.ics` |
+| Isack Hadjar | [nm15884712](https://www.imdb.com/name/nm15884712/) | `isack-hadjar.ics` |
+| Felix Kjellberg | [nm5579304](https://www.imdb.com/name/nm5579304/) | `felix-kjellberg.ics` |
+| Max Verstappen | [nm6722413](https://www.imdb.com/name/nm6722413/) | `max-verstappen.ics` |
 
-The configured set contains three interests and 52 people, giving 55 source calendars and one combined calendar. Edit `SOURCES` in `src/config.mjs` to add or change sources. This is a fixed source list and does not automatically synchronise with an IMDb favourites page.
+The configured set contains three interests and 69 people, giving 72 source calendars and one combined calendar, or 73 feeds in total. Edit `SOURCES` in `src/config.mjs` to add or change sources. This is a fixed source list and does not automatically synchronise with an IMDb favourites page.
 
 Each source includes all titles directly returned by its IMDb interest or credit search. This can include movies, television series, individual credited episodes, shorts, and other title types. The Marvel, Star Wars, and DC interest calendars expand matched series into complete episode lists. People calendars keep their directly credited titles, including series premiere events, and include only episodes directly credited to that person. A series credit alone does not add its other episodes. A person's credits can include more than writing or directing, so source selection remains broad without a role or title-type filter.
 
@@ -207,9 +224,9 @@ The homepage has the combined subscription, three interest calendars, and an alp
 
 The central palette uses IMDb-inspired yellow accents, a dark header, and system light/dark preferences. Keyboard focus, skip navigation, and print and narrow-screen styles remain available. The copy script uses the browser Clipboard API. If it is unavailable, the visible address can be copied manually. A refused clipboard write selects the address and announces the fallback. CSP permits only the required same-origin stylesheet, script, and images, restricts framing and other unneeded resources, and responses include `X-Content-Type-Options: nosniff`.
 
-The 53 IMDb images were saved once into `public/images/`, with their original source URLs and dimensions recorded in `src/profile-images.json`. Pages never request image metadata or remote images at runtime. Matthew Judge and Kevan Brighting had no IMDb portrait or gallery image when checked and use a labelled neutral placeholder. To replace an image, save the new local asset and update its manifest entry. Keep the provenance URL and accurate dimensions. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
+The 66 IMDb images were saved once into `public/images/`, with their original source URLs and dimensions recorded in `src/profile-images.json`. Pages never request image metadata or remote images at runtime. Matthew Judge, Kevan Brighting, Hamish Parkinson, Sam Houser, Seán McLoughlin, and Isack Hadjar had no suitable individual portrait when checked and use a labelled neutral placeholder. To replace an image, save the new local asset and update its manifest entry. Keep the provenance URL and accurate dimensions. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
 
-The project check validates all 55 source pages as well as homepage loading, ready, saved-data, and error states in both time modes. It checks local navigation and assets, source coverage, image dimensions, accessible address labels, copy targets, and byte budgets. Tests also cover copying success and failure, source-specific release lists, canonical page redirects, and existing feed behaviour.
+The project check validates all 72 source pages as well as homepage loading, ready, saved-data, and error states in both time modes. It checks local navigation and assets, source coverage, image dimensions, accessible address labels, copy targets, and byte budgets. Tests also cover copying success and failure, source-specific release lists, canonical page redirects, and existing feed behaviour.
 
 ### Reference documentation
 

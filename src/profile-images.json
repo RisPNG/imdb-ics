@@ -493,5 +493,158 @@
     "imageUrl": null,
     "alt": "No IMDb portrait available for Kevan Brighting",
     "imageUnavailable": true
+  },
+  "alan-morrison": {
+    "path": "/images/alan-morrison.jpg",
+    "width": 480,
+    "height": 720,
+    "sourceUrl": "https://www.imdb.com/name/nm3290082/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMjg1NDkyMzktNTA1My00ZjAzLWI1MzktZGRmYjM0NmYwOTRhXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Alan Morrison",
+    "caption": "Alan Morrison"
+  },
+  "adam-king": {
+    "path": "/images/adam-king.jpg",
+    "width": 480,
+    "height": 670,
+    "sourceUrl": "https://www.imdb.com/name/nm5842157/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BZjY1ZjRkOGUtNmUyOS00MmMzLWI4MjMtNTIyMDAzOGEyNjU4XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Adam King",
+    "caption": "Adam King"
+  },
+  "ben-van-lier": {
+    "path": "/images/ben-van-lier.jpg",
+    "width": 480,
+    "height": 720,
+    "sourceUrl": "https://www.imdb.com/name/nm2866114/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMTY0MGU1NjItNjM2OS00ZmI2LTliZDYtYmFiZTFhMTgzNWVkXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Ben Van Lier",
+    "caption": "Ben Van Lier in American Playboy: The Hugh Hefner Story (2017)"
+  },
+  "britt-scott-clark": {
+    "path": "/images/britt-scott-clark.jpg",
+    "width": 480,
+    "height": 320,
+    "sourceUrl": "https://www.imdb.com/name/nm7794173/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BZGMyZjFjYTMtMzE2Ni00NGZmLWFmMjYtYmM5MTJhODhhNzY3XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Britt Scott Clark",
+    "caption": "Britt Scott Clark"
+  },
+  "byron-coll": {
+    "path": "/images/byron-coll.jpg",
+    "width": 480,
+    "height": 368,
+    "sourceUrl": "https://www.imdb.com/name/nm3750475/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMzRjMDE2Y2UtYmIyNi00NmFjLTgzZDgtNWY5M2E4NjA5ODE4XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Byron Coll",
+    "caption": "Byron Coll"
+  },
+  "hamish-parkinson": {
+    "path": "/images/portrait-unavailable.svg",
+    "width": 480,
+    "height": 640,
+    "sourceUrl": "https://www.imdb.com/name/nm3312641/",
+    "imageUrl": null,
+    "alt": "No IMDb portrait available for Hamish Parkinson",
+    "imageUnavailable": true
+  },
+  "rowan-bettjeman": {
+    "path": "/images/rowan-bettjeman.jpg",
+    "width": 480,
+    "height": 670,
+    "sourceUrl": "https://www.imdb.com/name/nm3394670/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BODhlMmQ0ODYtZWY5My00MjRhLTg3YzAtODM1OTM5MjIxM2I4XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Rowan Bettjeman",
+    "caption": "Rowan Bettjeman"
+  },
+  "rowan-atkinson": {
+    "path": "/images/rowan-atkinson.jpg",
+    "width": 480,
+    "height": 710,
+    "sourceUrl": "https://www.imdb.com/name/nm0000100/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMTg3NDUzOTc3MV5BMl5BanBnXkFtZTcwNjcxMDkxNw@@._V1_QL85_UX480_.jpg",
+    "alt": "Rowan Atkinson",
+    "caption": "Rowan Atkinson at an event for Johnny English Reborn (2011)"
+  },
+  "cooper-tomlinson": {
+    "path": "/images/cooper-tomlinson.jpg",
+    "width": 480,
+    "height": 720,
+    "sourceUrl": "https://www.imdb.com/name/nm7831367/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BYTY5ZDkwNTktNDgxOS00NmNiLTkzZGUtZjc2MDRkMDI2NGY4XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Cooper Tomlinson",
+    "caption": "Cooper Tomlinson in Obsession (2025)"
+  },
+  "curry-barker": {
+    "path": "/images/curry-barker.jpg",
+    "width": 480,
+    "height": 615,
+    "sourceUrl": "https://www.imdb.com/name/nm10533874/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BNGJlYzhkZDYtMmY2MS00YzlkLTgyNTYtYTI1ODU0NDQ2ZmYxXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Curry Barker",
+    "caption": "Curry Barker"
+  },
+  "jeremy-allen-white": {
+    "path": "/images/jeremy-allen-white.jpg",
+    "width": 480,
+    "height": 376,
+    "sourceUrl": "https://www.imdb.com/name/nm2087739/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BZDU3OTU5MTQtNTY1My00OWViLTg2OTktNjM3NjhjZjgzNWE0XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Jeremy Allen White",
+    "caption": "Jeremy Allen White at an event for The Bear (2022)"
+  },
+  "sam-houser": {
+    "path": "/images/portrait-unavailable.svg",
+    "width": 480,
+    "height": 640,
+    "sourceUrl": "https://www.imdb.com/name/nm0396759/",
+    "imageUrl": null,
+    "alt": "No IMDb portrait available for Sam Houser",
+    "imageUnavailable": true
+  },
+  "mark-fischbach": {
+    "path": "/images/mark-fischbach.jpg",
+    "width": 480,
+    "height": 596,
+    "sourceUrl": "https://www.imdb.com/name/nm6179964/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMzhlZjZmOTctMDUxMy00OTFhLWJhMjAtNDM0N2I4YTQ1MjVhXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Mark Fischbach",
+    "caption": "Mark Fischbach in In Space with Markiplier: Part 1 (2022)"
+  },
+  "sean-mcloughlin": {
+    "path": "/images/portrait-unavailable.svg",
+    "width": 480,
+    "height": 640,
+    "sourceUrl": "https://www.imdb.com/name/nm7681921/",
+    "imageUrl": null,
+    "alt": "No IMDb portrait available for Seán McLoughlin",
+    "imageUnavailable": true
+  },
+  "isack-hadjar": {
+    "path": "/images/portrait-unavailable.svg",
+    "width": 480,
+    "height": 640,
+    "sourceUrl": "https://www.imdb.com/name/nm15884712/",
+    "imageUrl": null,
+    "alt": "No IMDb portrait available for Isack Hadjar",
+    "imageUnavailable": true
+  },
+  "felix-kjellberg": {
+    "path": "/images/felix-kjellberg.jpg",
+    "width": 480,
+    "height": 270,
+    "sourceUrl": "https://www.imdb.com/name/nm5579304/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BN2IzODljYzItNWMxZC00YzNiLWFlMDUtMTRlZjU3NmUxOTQ1XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Felix Kjellberg",
+    "caption": "Felix Kjellberg and Marzia Kjellberg at an event for PewDiePie (2010)"
+  },
+  "max-verstappen": {
+    "path": "/images/max-verstappen.jpg",
+    "width": 480,
+    "height": 480,
+    "sourceUrl": "https://www.imdb.com/name/nm6722413/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMWQwYTY4YTUtODU5Yi00MDVmLTg2NjktMzUxYWMwODk4OTZhXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Max Verstappen",
+    "caption": "Max Verstappen"
   }
 }

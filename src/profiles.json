@@ -370,5 +370,135 @@
     "roles": ["Actor", "Producer"],
     "knownFor": ["The Matrix", "Speed", "Point Break", "John Wick"],
     "references": [{ "label": "IMDb biography", "url": "https://www.imdb.com/name/nm0000206/bio/" }]
+  },
+  "alan-morrison": {
+    "summary": "Alan Morrison is an actor, writer, and producer who co-founded the comedy group Viva La Dirt League. His screen credits include Epic NPC Man, PUBG Logic, Bored, and Baelin's Route: An Epic NPC Man Adventure, combining online sketches with narrative films.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["Epic NPC Man", "PUBG Logic", "Bored", "Baelin's Route: An Epic NPC Man Adventure"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm3290082/" },
+      { "label": "Auckland Council: Viva La Dirt League", "url": "https://aucklandeconomicdevelopment.com/te-puna-creative/case-studies/west-aucklands-youtube-stars-rise-viva-la-dirt-league" }
+    ]
+  },
+  "adam-king": {
+    "summary": "Adam King is an actor, director, and producer who co-founded Viva La Dirt League. His work with the group includes Epic NPC Man, Bored, Witcher Logic, and Baelin's Route: An Epic NPC Man Adventure, bringing together gaming parody and character comedy.",
+    "roles": ["Actor", "Director", "Producer"],
+    "knownFor": ["Epic NPC Man", "Bored", "Witcher Logic", "Baelin's Route: An Epic NPC Man Adventure"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm5842157/" },
+      { "label": "Auckland Council: Viva La Dirt League", "url": "https://aucklandeconomicdevelopment.com/te-puna-creative/case-studies/west-aucklands-youtube-stars-rise-viva-la-dirt-league" }
+    ]
+  },
+  "ben-van-lier": {
+    "summary": "Ben Van Lier is an actor and writer whose work includes Viva La Dirt League's Epic NPC Man and Techtown. His other screen credits include The Water Horse and American Playboy: The Hugh Hefner Story, alongside writing and performing in theatre.",
+    "roles": ["Actor", "Writer", "Director"],
+    "knownFor": ["Epic NPC Man", "Techtown", "The Water Horse", "American Playboy: The Hugh Hefner Story"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm2866114/" }]
+  },
+  "britt-scott-clark": {
+    "summary": "Britt Scott Clark is an actress, writer, and director who played Mia Halston in Doctor Doctor. Her screen credits include Shortland Street, My Life Is Murder, and Ablaze, alongside writing and performing with the comedy group Viva La Dirt League.",
+    "roles": ["Actress", "Writer", "Director"],
+    "knownFor": ["Doctor Doctor", "Shortland Street", "My Life Is Murder", "Ablaze"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm7794173/" }]
+  },
+  "byron-coll": {
+    "summary": "Byron Coll works as an actor and composer, with screen credits including The Luminaries, Top of the Lake, and Shadow in the Cloud. His film work also includes Daffodils, alongside his work in television and music.",
+    "roles": ["Actor", "Composer"],
+    "knownFor": ["The Luminaries", "Top of the Lake", "Shadow in the Cloud", "Daffodils"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm3750475/" }]
+  },
+  "hamish-parkinson": {
+    "summary": "Hamish Parkinson is an actor, writer, and director whose work includes screen comedy and live performance. His credits include Thor: Ragnarok, Hunt for the Wilderpeople, and Viva La Dirt League, and he co-created the comedy project Fuq Boiz with Ryan Richards.",
+    "roles": ["Actor", "Writer", "Director"],
+    "knownFor": ["Thor: Ragnarok", "Hunt for the Wilderpeople", "Viva La Dirt League", "Fuq Boiz"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm3312641/" },
+      { "label": "Fuq Boiz: creators", "url": "https://fuqboiz.com/about" }
+    ]
+  },
+  "rowan-bettjeman": {
+    "summary": "Rowan Bettjeman is an actor, producer, and director who co-founded Viva La Dirt League. His work includes Bored, D&D Logic, and Baelin's Route: An Epic NPC Man Adventure, with comedy built around gaming and the situations of everyday life.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Bored", "D&D Logic", "Baelin's Route: An Epic NPC Man Adventure", "Viva La Dirt League Presents Final Fantasy"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm3394670/" },
+      { "label": "Auckland Council: Viva La Dirt League", "url": "https://aucklandeconomicdevelopment.com/te-puna-creative/case-studies/west-aucklands-youtube-stars-rise-viva-la-dirt-league" }
+    ]
+  },
+  "rowan-atkinson": {
+    "summary": "Rowan Atkinson is an actor, writer, and producer whose television work includes Mr. Bean, Blackadder, and Not the Nine O'Clock News. His film roles include Johnny English and Four Weddings and a Funeral, following early work in comedy revues.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["Mr. Bean", "Blackadder", "Not the Nine O'Clock News", "Johnny English"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000100/" }]
+  },
+  "cooper-tomlinson": {
+    "summary": "Cooper Tomlinson is an actor, writer, and producer who co-created the sketch-comedy channel That's a Bad Idea with Curry Barker. Their collaborations include the web series Roommates and the found-footage film Milk & Serial, which Tomlinson produced and starred in.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["That's a Bad Idea", "Roommates", "Milk & Serial", "Obsession"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm7831367/" }]
+  },
+  "curry-barker": {
+    "summary": "Curry Barker writes, directs, and performs in films and online comedy. He co-created That's a Bad Idea with Cooper Tomlinson, and his directing work includes the horror short The Chair and the found-footage feature Milk & Serial.",
+    "roles": ["Actor", "Writer", "Director"],
+    "knownFor": ["That's a Bad Idea", "The Chair", "Milk & Serial", "Obsession"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm10533874/" }]
+  },
+  "jeremy-allen-white": {
+    "summary": "Jeremy Allen White is an actor whose television roles include Lip Gallagher in Shameless and Carmy Berzatto in The Bear. His film work includes The Iron Claw, The Rental, and Afterschool, alongside television appearances in Homecoming.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["Shameless", "The Bear", "The Iron Claw", "The Rental"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm2087739/" },
+      { "label": "FX: Jeremy Allen White", "url": "https://www.fxnetworks.com/shows/the-bear/jeremy-allen-white-carmen-berzatto" }
+    ]
+  },
+  "sam-houser": {
+    "summary": "Sam Houser is a video-game producer and co-founder of Rockstar Games. His credits include Grand Theft Auto: San Andreas, Oni, and Max Payne, with work across game production, creative development, and the management of projects at the studio.",
+    "roles": ["Game producer", "Studio co-founder"],
+    "knownFor": ["Grand Theft Auto: San Andreas", "Oni", "Max Payne"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0396759/" },
+      { "label": "Take-Two: Rockstar Games' creative team", "url": "https://ir.take2games.com/static-files/de13b520-a97b-44ca-a33c-842bdbf5b76b" }
+    ]
+  },
+  "mark-fischbach": {
+    "summary": "Mark Fischbach creates videos as Markiplier, with work that includes game commentary, sketch comedy, and interactive stories. His projects include A Date with Markiplier, A Heist with Markiplier, and In Space with Markiplier, which let viewers choose different story paths.",
+    "roles": ["Video creator", "Actor", "Writer"],
+    "knownFor": ["Markiplier", "A Date with Markiplier", "A Heist with Markiplier", "In Space with Markiplier"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm6179964/" },
+      { "label": "In Space with Markiplier", "url": "https://www.youtube.com/watch?v=j64oZLF443g" }
+    ]
+  },
+  "sean-mcloughlin": {
+    "summary": "Seán McLoughlin creates online videos under the name Jacksepticeye. His work includes gameplay and commentary series such as Inside Playthrough and Papers, Please Playthrough, alongside screen appearances including Free Guy and writing and directing credits for his online projects.",
+    "roles": ["Video creator", "Actor", "Writer"],
+    "knownFor": ["Jacksepticeye", "Free Guy", "Inside Playthrough", "Papers, Please Playthrough"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm7681921/" }]
+  },
+  "isack-hadjar": {
+    "summary": "Isack Hadjar is a racing driver who progressed through karting and junior single-seater championships before his Formula 1 debut in 2025. His earlier career included Formula 3 race wins and a runner-up finish in the 2024 Formula 2 championship.",
+    "roles": ["Racing driver", "Sports personality"],
+    "knownFor": ["Formula 1", "FIA Formula 2 Championship", "DAZN F1"],
+    "references": [
+      { "label": "Formula 1 biography", "url": "https://www.formula1.com/en/drivers/isack-hadjar" },
+      { "label": "Formula 2 career history", "url": "https://www.fiaformula2.com/en/information/isack-hadjar-f2-hall-of-fame.1jksR2JPVp2Cu0jFfVunnU" },
+      { "label": "IMDb credits", "url": "https://www.imdb.com/name/nm15884712/" }
+    ]
+  },
+  "felix-kjellberg": {
+    "summary": "Felix Kjellberg is a video creator who publishes as PewDiePie, beginning with video-game commentary and playthroughs. His credited projects include PewDiePie, Scare PewDiePie, Pew News, and Minecraft Epic, bringing together gaming videos, commentary, and online entertainment.",
+    "roles": ["Video creator", "Writer", "Producer"],
+    "knownFor": ["PewDiePie", "Scare PewDiePie", "Pew News", "Minecraft Epic"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm5579304/" }]
+  },
+  "max-verstappen": {
+    "summary": "Max Verstappen is a racing driver and Formula 1 world champion whose career began in karting. He won his first Grand Prix in Spain in 2016 and his first Formula 1 drivers' championship in 2021, racing under a Dutch licence.",
+    "roles": ["Racing driver", "Sports personality"],
+    "knownFor": ["Formula 1", "DAZN F1", "F1: The Movie"],
+    "references": [
+      { "label": "Formula 1 biography", "url": "https://www.formula1.com/en/drivers/max-verstappen" },
+      { "label": "IMDb credits", "url": "https://www.imdb.com/name/nm6722413/" }
+    ]
   }
 }
