@@ -147,6 +147,7 @@ function escapeText(value) {
 // RFC 5545 counts octets, including each continuation space. Iterating code
 // points keeps UTF-8 characters intact when inserting CRLF + SPACE folds.
 function foldLine(line) {
+  if (Buffer.byteLength(line, 'utf8') <= 75) return line;
   const chunks = [];
   let chunk = '';
   let size = 0;
