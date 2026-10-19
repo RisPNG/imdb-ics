@@ -81,8 +81,47 @@ The website uses semantic HTML, a shared stylesheet, system fonts, and a small o
 | Isack Hadjar | [nm15884712](https://www.imdb.com/name/nm15884712/) | `isack-hadjar.ics` |
 | Felix Kjellberg | [nm5579304](https://www.imdb.com/name/nm5579304/) | `felix-kjellberg.ics` |
 | Max Verstappen | [nm6722413](https://www.imdb.com/name/nm6722413/) | `max-verstappen.ics` |
+| Tom Cruise | [nm0000129](https://www.imdb.com/name/nm0000129/) | `tom-cruise.ics` |
+| Nathan Fillion | [nm0277213](https://www.imdb.com/name/nm0277213/) | `nathan-fillion.ics` |
+| Hamish Linklater | [nm0512934](https://www.imdb.com/name/nm0512934/) | `hamish-linklater.ics` |
+| Woody Harrelson | [nm0000437](https://www.imdb.com/name/nm0000437/) | `woody-harrelson.ics` |
+| Liam Neeson | [nm0000553](https://www.imdb.com/name/nm0000553/) | `liam-neeson.ics` |
+| Sebastian Stan | [nm1659221](https://www.imdb.com/name/nm1659221/) | `sebastian-stan.ics` |
+| Shia LaBeouf | [nm0479471](https://www.imdb.com/name/nm0479471/) | `shia-labeouf.ics` |
+| Robert Downey Jr. | [nm0000375](https://www.imdb.com/name/nm0000375/) | `robert-downey-jr.ics` |
+| James Spader | [nm0000652](https://www.imdb.com/name/nm0000652/) | `james-spader.ics` |
+| Dan Stevens | [nm1405398](https://www.imdb.com/name/nm1405398/) | `dan-stevens.ics` |
+| Jesse Eisenberg | [nm0251986](https://www.imdb.com/name/nm0251986/) | `jesse-eisenberg.ics` |
+| Nicholas Hoult | [nm0396558](https://www.imdb.com/name/nm0396558/) | `nicholas-hoult.ics` |
+| Chris Evans | [nm0262635](https://www.imdb.com/name/nm0262635/) | `chris-evans.ics` |
+| Edward Norton | [nm0001570](https://www.imdb.com/name/nm0001570/) | `edward-norton.ics` |
+| Mads Mikkelsen | [nm0586568](https://www.imdb.com/name/nm0586568/) | `mads-mikkelsen.ics` |
+| Mark Ruffalo | [nm0749263](https://www.imdb.com/name/nm0749263/) | `mark-ruffalo.ics` |
+| Chris Hemsworth | [nm1165110](https://www.imdb.com/name/nm1165110/) | `chris-hemsworth.ics` |
+| Paul Bettany | [nm0079273](https://www.imdb.com/name/nm0079273/) | `paul-bettany.ics` |
+| Ewan McGregor | [nm0000191](https://www.imdb.com/name/nm0000191/) | `ewan-mcgregor.ics` |
+| Mary Elizabeth Winstead | [nm0935541](https://www.imdb.com/name/nm0935541/) | `mary-elizabeth-winstead.ics` |
+| Brendan Gleeson | [nm0322407](https://www.imdb.com/name/nm0322407/) | `brendan-gleeson.ics` |
+| Dave Franco | [nm2002649](https://www.imdb.com/name/nm2002649/) | `dave-franco.ics` |
+| Aubrey Plaza | [nm2201555](https://www.imdb.com/name/nm2201555/) | `aubrey-plaza.ics` |
+| Diane Morgan | [nm1854269](https://www.imdb.com/name/nm1854269/) | `diane-morgan.ics` |
+| James Gunn | [nm0348181](https://www.imdb.com/name/nm0348181/) | `james-gunn.ics` |
+| James Franco | [nm0290556](https://www.imdb.com/name/nm0290556/) | `james-franco.ics` |
+| Christopher Lloyd | [nm0000502](https://www.imdb.com/name/nm0000502/) | `christopher-lloyd.ics` |
+| Joaquin Phoenix | [nm0001618](https://www.imdb.com/name/nm0001618/) | `joaquin-phoenix.ics` |
+| Michael J. Fox | [nm0000150](https://www.imdb.com/name/nm0000150/) | `michael-j-fox.ics` |
+| Frank Grillo | [nm0342029](https://www.imdb.com/name/nm0342029/) | `frank-grillo.ics` |
+| Jon Favreau | [nm0269463](https://www.imdb.com/name/nm0269463/) | `jon-favreau.ics` |
+| Hayden Christensen | [nm0159789](https://www.imdb.com/name/nm0159789/) | `hayden-christensen.ics` |
+| Michael Rooker | [nm0740264](https://www.imdb.com/name/nm0740264/) | `michael-rooker.ics` |
+| James D'Arcy | [nm0195439](https://www.imdb.com/name/nm0195439/) | `james-d-arcy.ics` |
+| Daniel Brühl | [nm0117709](https://www.imdb.com/name/nm0117709/) | `daniel-bruhl.ics` |
+| David Denman | [nm0219292](https://www.imdb.com/name/nm0219292/) | `david-denman.ics` |
+| Chukwudi Iwuji | [nm1030244](https://www.imdb.com/name/nm1030244/) | `chukwudi-iwuji.ics` |
+| Steve Agee | [nm0012948](https://www.imdb.com/name/nm0012948/) | `steve-agee.ics` |
+| Gary Oldman | [nm0000198](https://www.imdb.com/name/nm0000198/) | `gary-oldman.ics` |
 
-The configured set contains three interests and 69 people, giving 72 source calendars and one combined calendar, or 73 feeds in total. Edit `SOURCES` in `src/config.mjs` to add or change sources. This is a fixed source list and does not automatically synchronise with an IMDb favourites page.
+The configured set contains three interests and 108 people, giving 111 source calendars and one combined calendar, or 112 feeds in total. Edit `SOURCES` in `src/config.mjs` to add or change sources. This is a fixed source list and does not automatically synchronise with an IMDb favourites page.
 
 Each source includes all titles directly returned by its IMDb interest or credit search. This can include movies, television series, individual credited episodes, shorts, and other title types. The Marvel, Star Wars, and DC interest calendars expand matched series into complete episode lists. People calendars keep their directly credited titles, including series premiere events, and include only episodes directly credited to that person. A series credit alone does not add its other episodes. A person's credits can include more than writing or directing, so source selection remains broad without a role or title-type filter.
 
@@ -165,9 +204,14 @@ Dates come from IMDb's default `releaseDate` field. This is not a request for Ma
 
 A series keeps its original premiere event. Interest calendars add every confirmed episode release date, while people calendars include only their directly credited episodes. Each release date has one event under the series name, and its description lists the season and episode numbers with episode titles. Episodes released together share one event, whether that is a weekly pair or an entire season. Episodes on the premiere date appear in the original event's description. An episode appears only once when both it and its series match.
 
+The combined calendar also lists the matching interests and people in each event's description. A release shared by several sources remains one event, with each matching source listed once. These source labels appear above the episode list, so grouping a batch of episodes keeps their season numbers, episode numbers, and titles intact. Source labels are matched to the release and its included episodes rather than added to every episode of a series merely because a person has a series credit.
+
 For example, two episodes released on the same day appear under the series name with a description such as:
 
 ```text
+Interests: Marvel
+People: Actor A, Actor B
+
 S01E01: Pilot
 S01E02: Second Episode
 ```
@@ -224,9 +268,9 @@ The homepage has the combined subscription, three interest calendars, and an alp
 
 The central palette uses IMDb-inspired yellow accents, a dark header, and system light/dark preferences. Keyboard focus, skip navigation, and print and narrow-screen styles remain available. The copy script uses the browser Clipboard API. If it is unavailable, the visible address can be copied manually. A refused clipboard write selects the address and announces the fallback. CSP permits only the required same-origin stylesheet, script, and images, restricts framing and other unneeded resources, and responses include `X-Content-Type-Options: nosniff`.
 
-The 66 IMDb images were saved once into `public/images/`, with their original source URLs and dimensions recorded in `src/profile-images.json`. Pages never request image metadata or remote images at runtime. Matthew Judge, Kevan Brighting, Hamish Parkinson, Sam Houser, Seán McLoughlin, and Isack Hadjar had no suitable individual portrait when checked and use a labelled neutral placeholder. To replace an image, save the new local asset and update its manifest entry. Keep the provenance URL and accurate dimensions. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
+The 105 IMDb images were saved once into `public/images/`, with their original source URLs and dimensions recorded in `src/profile-images.json`. Pages never request image metadata or remote images at runtime. Matthew Judge, Kevan Brighting, Hamish Parkinson, Sam Houser, Seán McLoughlin, and Isack Hadjar had no suitable individual portrait when checked and use a labelled neutral placeholder. To replace an image, save the new local asset and update its manifest entry. Keep the provenance URL and accurate dimensions. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
 
-The project check validates all 72 source pages as well as homepage loading, ready, saved-data, and error states in both time modes. It checks local navigation and assets, source coverage, image dimensions, accessible address labels, copy targets, and byte budgets. Tests also cover copying success and failure, source-specific release lists, canonical page redirects, and existing feed behaviour.
+The project check validates all 111 source pages as well as homepage loading, ready, saved-data, and error states in both time modes. It checks local navigation and assets, source coverage, image dimensions, accessible address labels, copy targets, and byte budgets. Tests also cover copying success and failure, source-specific release lists, canonical page redirects, and existing feed behaviour.
 
 ### Reference documentation
 

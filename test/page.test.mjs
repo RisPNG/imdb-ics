@@ -109,6 +109,27 @@ test('release rows show complete dates first and expose grouped episode notes an
   assert.match(html, />An unlinked title<\/td>/);
 });
 
+test('combined source attribution stays visible without becoming episode notes', () => {
+  const episodeDescription = 'S01E01: A beginning\nS01E02: The <next> chapter';
+  const html = renderPage({ baseUrl, upcoming: [
+    { id: 'tt1234567', title: 'A combined movie', date: '2026-12-18',
+      sources: ['Edward Norton', 'Mark Ruffalo'], description: 'People: Edward Norton, Mark Ruffalo', episodeDescription: '' },
+    { id: 'tt2345678-2026-12-19', titleId: 'tt2345678', title: 'A combined series', date: '2026-12-19',
+      sources: ['DC', 'James Gunn'], episodeIds: ['tt3456789', 'tt4567890'],
+      description: `${episodeDescription}\n\nPeople: James Gunn\nInterests: DC`, episodeDescription },
+  ] });
+  const rows = [...html.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((match) => match[1]);
+  const movie = rows.find((row) => row.includes('A combined movie'));
+  const series = rows.find((row) => row.includes('A combined series'));
+  assert(movie && series);
+  assert.match(movie, /<p class="release-meta">Edward Norton, Mark Ruffalo<\/p>/);
+  assert.doesNotMatch(movie, /<details\b|Episode details|People:/);
+  assert.match(series, /<p class="release-meta">DC, James Gunn<\/p>/);
+  assert.match(series, /<details class="episode-notes"><summary>2 episodes<\/summary><p>S01E01: A beginning\nS01E02: The &lt;next&gt; chapter<\/p><\/details>/);
+  assert.doesNotMatch(series, /People:|Interests:/);
+  assert.equal((html.match(/class="episode-notes"/g) || []).length, 1);
+});
+
 test('escapes source data in text and attribute contexts and rejects active URLs', () => {
   const attack = '"><img src=x onerror=alert(1)>';
   const html = renderPage({ baseUrl, feeds: [{ ...feed, label: attack, subscriptionUrl: 'javascript:alert(1)',

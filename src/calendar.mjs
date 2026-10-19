@@ -24,6 +24,9 @@ export function isValidEvent(event) {
   const titleId = event?.titleId ?? event?.id;
   return event && TITLE_ID.test(titleId) && (event.id === titleId || event.id === `${titleId}-${event.date}`)
     && (event.description === undefined || typeof event.description === 'string')
+    && (event.episodeDescription === undefined || typeof event.episodeDescription === 'string')
+    && (event.sourceLabels === undefined || (event.sourceLabels
+      && ['interests', 'people'].every((kind) => Array.isArray(event.sourceLabels[kind]) && event.sourceLabels[kind].every((label) => typeof label === 'string'))))
     && (event.episodeIds === undefined || (Array.isArray(event.episodeIds) && event.episodeIds.every((id) => TITLE_ID.test(id))))
     && typeof event.title === 'string'
     && event.title.trim() && isCompleteDate(event.date) && STATUSES.has(event.status)
@@ -34,9 +37,49 @@ export function isValidEvent(event) {
 function savedEvents(previousEvents) {
   return Object.fromEntries(Object.values(previousEvents ?? {})
     .filter(isValidEvent)
-    .map(({ id, titleId = id, title, date, description = '', episodeIds = [], createdAt, modifiedAt, sequence, status }) => [id, {
-      id, titleId, title, date, description, episodeIds, createdAt, modifiedAt, sequence, status,
+    .map(({ id, titleId = id, title, date, description = '', episodeDescription = description, sourceLabels, episodeIds = [], createdAt, modifiedAt, sequence, status }) => [id, {
+      id, titleId, title, date, description, episodeDescription, ...(sourceLabels ? { sourceLabels } : {}), episodeIds, createdAt, modifiedAt, sequence, status,
     }]));
+}
+
+export function attributeReleases(events, sources) {
+  const releases = [...events];
+  if (!releases.length) return releases;
+  const ids = new Set();
+  for (const event of releases) {
+    ids.add(event.id);
+    for (const id of event.episodeIds ?? []) ids.add(id);
+  }
+  const memberships = new Map();
+  for (const source of sources) {
+    for (const title of source.titles ?? []) {
+      for (const entry of [title, ...(title?.episodes ?? [])]) {
+        if (!ids.has(entry?.id)) continue;
+        let labels = memberships.get(entry.id);
+        if (!labels) {
+          labels = { interests: new Set(), people: new Set() };
+          memberships.set(entry.id, labels);
+        }
+        labels[source.kind === 'interest' ? 'interests' : 'people'].add(source.label);
+      }
+    }
+  }
+  return releases.map((event) => {
+    const interests = new Set();
+    const people = new Set();
+    for (const id of new Set([event.id, ...(event.episodeIds ?? [])])) {
+      const labels = memberships.get(id);
+      for (const label of labels?.interests ?? []) interests.add(label);
+      for (const label of labels?.people ?? []) people.add(label);
+    }
+    const sourceLabels = { interests: [...interests].sort(compareText), people: [...people].sort(compareText) };
+    const attribution = [
+      sourceLabels.interests.length ? `Interests: ${sourceLabels.interests.join(', ')}` : '',
+      sourceLabels.people.length ? `People: ${sourceLabels.people.join(', ')}` : '',
+    ].filter(Boolean).join('\n');
+    const episodeDescription = event.episodeDescription ?? event.description ?? '';
+    return { ...event, sourceLabels, episodeDescription, description: [attribution, episodeDescription].filter(Boolean).join('\n\n') };
+  });
 }
 
 /**
@@ -44,7 +87,7 @@ function savedEvents(previousEvents) {
  * upstream refresh must keep the previous state, rather than cancel its events.
  * Cancellation records deliberately remain in state so clients can remove them.
  */
-export function reconcileEvents(previousEvents, titles, { now = new Date() } = {}) {
+export function reconcileEvents(previousEvents, titles, { now = new Date(), sources } = {}) {
   const changedAt = timestamp(now);
   if (!changedAt) throw new TypeError('now must be a valid date');
   const previous = savedEvents(previousEvents);
@@ -78,7 +121,7 @@ export function reconcileEvents(previousEvents, titles, { now = new Date() } = {
       if (!existing || compareText(candidateKey, existingKey) < 0) parents.set(candidate.id, candidate);
     } else {
       current.set(record.id, {
-        id: record.id, titleId: record.id, title: record.title, date: record.date, description: '', episodeIds: [],
+        id: record.id, titleId: record.id, title: record.title, date: record.date, description: '', episodeDescription: '', episodeIds: [],
       });
     }
   }
@@ -106,8 +149,9 @@ export function reconcileEvents(previousEvents, titles, { now = new Date() } = {
         : number != null ? `Episode ${number}` : season != null ? `Season ${season}` : '';
       return `${label ? `${label}: ` : ''}${episode.title}`;
     }).join('\n');
-    current.set(group.id, { ...group, description, episodeIds: episodes.map((episode) => episode.id) });
+    current.set(group.id, { ...group, description, episodeDescription: description, episodeIds: episodes.map((episode) => episode.id) });
   }
+  if (sources) for (const event of attributeReleases(current.values(), sources)) current.set(event.id, event);
 
   const events = {};
   const ids = [...new Set([...Object.keys(previous), ...current.keys()])].sort(compareText);
@@ -125,7 +169,9 @@ export function reconcileEvents(previousEvents, titles, { now = new Date() } = {
     if (!before) {
       events[id] = { ...title, createdAt: changedAt, modifiedAt: changedAt, sequence: 0, status: 'CONFIRMED' };
     } else if (before.title !== title.title || before.date !== title.date || before.titleId !== title.titleId
-        || before.description !== title.description || JSON.stringify(before.episodeIds) !== JSON.stringify(title.episodeIds)
+        || before.description !== title.description || before.episodeDescription !== title.episodeDescription
+        || JSON.stringify(before.sourceLabels ?? {}) !== JSON.stringify(title.sourceLabels ?? {})
+        || JSON.stringify(before.episodeIds) !== JSON.stringify(title.episodeIds)
         || before.status !== 'CONFIRMED') {
       events[id] = { ...before, ...title, modifiedAt: changedAt, sequence: before.sequence + 1, status: 'CONFIRMED' };
     } else {

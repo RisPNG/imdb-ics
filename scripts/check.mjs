@@ -77,7 +77,7 @@ for (const directory of ['src', 'scripts', 'test']) {
 }
 const clientSyntax = spawnSync(process.execPath, ['--check', 'public/enhance.js'], { cwd: root, encoding: 'utf8' });
 assert.equal(clientSyntax.status, 0, clientSyntax.stderr);
-const htmlBudget = 150 * 1024;
+const htmlBudget = 8192 + 1536 * (SOURCES.length + 1);
 let largestHtml = '';
 async function validatePage(html, label, feeds) {
   assert.equal((html.match(/<h1\b/g) || []).length, 1, `${label}: The page must have one primary heading.`);

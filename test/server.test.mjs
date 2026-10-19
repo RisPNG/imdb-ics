@@ -123,8 +123,9 @@ test('episode descriptions retain series titles and links and invalidate cached 
   assert.equal(body.match(/SUMMARY:A series\r\n/g).length, 2);
   assert.match(body, /UID:tt3456789@release-calendar\r\n/);
   assert.match(body, /UID:tt3456789-2026-11-26@release-calendar\r\n/);
-  assert.match(body, /DESCRIPTION:S01E01: The beginning\\nS01E02: A second\\, unexpected\\; chapter\r\n/);
-  assert.match(body, /DESCRIPTION:S01E03: Next week\r\n/);
+  assert.match(body, /DESCRIPTION:Interests: DC\\, Marvel\\, Star Wars\\nPeople: /);
+  assert.match(body, /\\n\\nS01E01: The beginning\\nS01E02: A second\\, unexpected\\; chapter\r\n/);
+  assert.match(body, /\\n\\nS01E03: Next week\r\n/);
   assert.equal(body.match(/URL:https:\/\/www.imdb.com\/title\/tt3456789\/\r\n/g).length, 2);
   const sourceFeed = await fetch(`${origin}/calendars/marvel.ics`);
   assert.match((await sourceFeed.text()).replace(/\r\n /g, ''), /DESCRIPTION:S01E03: Next week\r\n/);
@@ -142,9 +143,59 @@ test('episode descriptions retain series titles and links and invalidate cached 
   assert.notEqual(changed.headers.get('etag'), etag);
   assert.equal(changed.headers.get('last-modified'), clock.toUTCString());
   const updated = (await changed.text()).replace(/\r\n /g, '');
-  assert.match(updated, /DESCRIPTION:S01E01: The beginning\\nS01E02: A revised chapter\r\n/);
+  assert.match(updated, /\\n\\nS01E01: The beginning\\nS01E02: A revised chapter\r\n/);
   assert.equal(store.feed('all').events[series.id].sequence, 1);
   assert.equal(store.feed('all').events[`${series.id}-2026-11-26`].sequence, 0);
+});
+
+test('subscribe-all lists matching interests and people once while retaining single, batch, and premiere episode details', async (t) => {
+  let clock = new Date('2026-10-19T00:00:00Z');
+  const movie = { id: 'tt1234567', title: 'A shared movie', date: '2026-11-18' };
+  const parent = { id: 'tt3456789', title: 'A series', date: '2026-11-19', type: 'tvSeries' };
+  const premiere = { id: 'tt4567890', title: 'The beginning', date: parent.date, type: 'tvEpisode',
+    series: { id: parent.id, title: parent.title, date: parent.date, season: 1, episode: 1 } };
+  const first = { ...premiere, id: 'tt5678901', title: 'A second chapter', date: '2026-11-26', series: { ...premiere.series, episode: 2 } };
+  const second = { ...first, id: 'tt6789012', title: 'A third chapter', series: { ...premiere.series, episode: 3 } };
+  const single = { ...first, id: 'tt7890123', title: 'Next week', date: '2026-12-03', series: { ...premiere.series, episode: 4 } };
+  const expanded = { ...parent, episodes: [premiere, first, second, single] };
+  const data = {
+    marvel: [movie, expanded], 'star-wars': [movie, expanded],
+    'vince-gilligan': [movie, parent, premiere, first], 'justin-roiland': [movie, second, single],
+  };
+  const { store, origin } = await runningApp(t, {}, { clock: () => clock,
+    loader: async (source) => ({ titles: data[source.slug] ?? [], total: data[source.slug]?.length ?? 0, omitted: 0, warnings: [] }),
+  });
+  await store.refresh();
+  const response = await fetch(`${origin}/calendars/all.ics`);
+  const etag = response.headers.get('etag');
+  const calendar = (await response.text()).replace(/\r\n /g, '');
+  const events = calendar.split('BEGIN:VEVENT\r\n').slice(1);
+  assert.equal(events.length, 4);
+  const movieEvent = events.find((event) => event.startsWith(`UID:${movie.id}@`));
+  assert.match(movieEvent, /DESCRIPTION:Interests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\, Vince Gilligan\r\n/);
+  const premiereEvent = events.find((event) => event.startsWith(`UID:${parent.id}@`));
+  assert.match(premiereEvent, /DESCRIPTION:Interests: Marvel\\, Star Wars\\nPeople: Vince Gilligan\\n\\nS01E01: The beginning\r\n/);
+  const batchEvent = events.find((event) => event.startsWith(`UID:${parent.id}-${first.date}@`));
+  assert.match(batchEvent, /DESCRIPTION:Interests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\, Vince Gilligan\\n\\nS01E02: A second chapter\\nS01E03: A third chapter\r\n/);
+  const singleEvent = events.find((event) => event.startsWith(`UID:${parent.id}-${single.date}@`));
+  assert.match(singleEvent, /DESCRIPTION:Interests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\n\\nS01E04: Next week\r\n/);
+  for (const event of events) {
+    const description = event.match(/^DESCRIPTION:(.*)$/m)?.[1];
+    for (const label of ['Marvel', 'Star Wars', 'Justin Roiland', 'Vince Gilligan']) {
+      assert((description.match(new RegExp(label, 'g')) ?? []).length <= 1);
+    }
+  }
+  await store.refresh();
+  assert.equal((await fetch(`${origin}/calendars/all.ics`, { headers: { 'If-None-Match': etag } })).status, 304);
+  data['vince-gilligan'] = [];
+  clock = new Date('2026-10-20T00:00:00Z');
+  await store.refresh();
+  const changed = await fetch(`${origin}/calendars/all.ics`, { headers: { 'If-None-Match': etag } });
+  assert.equal(changed.status, 200);
+  assert.notEqual(changed.headers.get('etag'), etag);
+  assert.equal((await changed.text()).match(/BEGIN:VEVENT/g).length, 4);
+  assert.equal(store.feed('all').events[movie.id].sequence, 1);
+  assert.equal(store.feed('all').events[`${parent.id}-${single.date}`].sequence, 0);
 });
 
 test('public homepage exposes every configured subscription at the request origin', async (t) => {

@@ -102,7 +102,9 @@ test('adding a source keeps the saved combined feed available until the new sour
   await expanded.refresh();
   assert.equal(expanded.feed('all').stale, false);
   assert.equal(expanded.feed('three').stale, false);
-  assert.deepEqual(expanded.feed('all').events[title.id], refreshed[title.id]);
+  assert.equal(expanded.feed('all').events[title.id].sequence, refreshed[title.id].sequence + 1);
+  assert.equal(expanded.feed('all').events[title.id].createdAt, refreshed[title.id].createdAt);
+  assert.equal(expanded.feed('all').events[title.id].description, 'Interests: one, two\nPeople: three');
   assert.deepEqual(expanded.feed('all').events[removedTitle.id], previous.events[removedTitle.id]);
   assert.equal(expanded.feed('all').events[newTitle.id].status, 'CONFIRMED');
   assert.equal(expanded.feed('all').events[newTitle.id].sequence, 0);
@@ -179,7 +181,8 @@ test('series and directly matched episodes share release groups, omission counts
   const events = store.feed('all').events;
   assert.deepEqual(Object.keys(events), [series.id, `${series.id}-2026-11-26`]);
   assert.deepEqual(events[series.id].episodeIds, ['tt4567890', 'tt5678901']);
-  assert.equal(events[series.id].description, 'S01E01: The beginning\nS01E02: Another beginning');
+  assert.equal(events[series.id].episodeDescription, 'S01E01: The beginning\nS01E02: Another beginning');
+  assert.equal(events[series.id].description, 'Interests: one, two\n\nS01E01: The beginning\nS01E02: Another beginning');
   const page = store.pageData();
   assert.deepEqual(page.upcoming.find((event) => event.id === series.id).sources, ['one', 'two']);
   assert.deepEqual(page.upcoming.find((event) => event.date === '2026-11-26').sources, ['one']);
@@ -214,17 +217,20 @@ test('version 1 snapshots retain movie revisions and cancellations while migrati
   t.after(() => migrated.stop());
   await migrated.initialize();
   assert.equal(migrated.snapshot.version, 2);
-  assert.equal(renderCalendar({ events: migrated.feed('all').events }), renderCalendar({ events }));
+  assert.equal(renderCalendar({ events: migrated.feed('one').events }), renderCalendar({ events }));
+  assert.equal(migrated.feed('all').events[movie.id].sequence, 4);
+  assert.equal(migrated.feed('all').events[episode.id].sequence, 3);
+  assert.equal(migrated.feed('all').events[movie.id].description, 'Interests: one, two');
   await migrated.refresh();
   const combined = migrated.feed('all').events;
   assert.equal(combined[episode.id].status, 'CANCELLED');
-  assert.equal(combined[episode.id].sequence, 3);
+  assert.equal(combined[episode.id].sequence, 4);
   assert.equal(combined[episode.id].createdAt, createdAt);
   assert.equal(combined[series.id].titleId, series.id);
-  assert.equal(combined[series.id].description, 'S01E01: The beginning');
+  assert.equal(combined[series.id].description, 'Interests: one, two\n\nS01E01: The beginning');
   assert.deepEqual(combined[series.id].episodeIds, [episode.id]);
-  assert.equal(combined[movie.id].sequence, 3);
-  assert.equal(combined[movie.id].modifiedAt, createdAt);
+  assert.equal(combined[movie.id].sequence, 4);
+  assert.equal(combined[movie.id].modifiedAt, clock.toISOString());
   assert.equal(combined[cancellation.id].sequence, 7);
   assert.equal(combined[cancellation.id].status, 'CANCELLED');
   const bytes = renderCalendar({ events: combined });
@@ -316,4 +322,58 @@ test('existing UTC snapshots migrate to default all-day events once while preser
   const secondRestart = new CalendarStore(allDayConfig, { logger: quiet });
   await secondRestart.initialize();
   assert.equal(secondRestart.feed('all').events[title.id].sequence, 1, 'restarting does not repeatedly revise an already migrated event');
+});
+
+test('combined source changes revise the same release once and date changes retain cancellation history', async (t) => {
+  let clock = new Date('2026-10-19T00:00:00Z');
+  const followed = [
+    { slug: 'marvel', kind: 'interest', id: 'in0000248', label: 'Marvel' },
+    { slug: 'star-wars', kind: 'interest', id: 'in0000243', label: 'Star Wars' },
+    { slug: 'vince', kind: 'name', id: 'nm0319213', label: 'Vince Gilligan' },
+    { slug: 'justin', kind: 'name', id: 'nm1551598', label: 'Justin Roiland' },
+  ];
+  const parent = { id: 'tt3456789', title: 'A series', date: '2026-11-19', type: 'tvSeries' };
+  const first = { id: 'tt4567890', title: 'The beginning', date: parent.date, type: 'tvEpisode',
+    series: { id: parent.id, title: parent.title, date: parent.date, season: 1, episode: 1 } };
+  const second = { ...first, id: 'tt5678901', title: 'A second chapter', date: '2026-11-26', series: { ...first.series, episode: 2 } };
+  const third = { ...second, id: 'tt6789012', title: 'A third chapter', series: { ...first.series, episode: 3 } };
+  const next = { ...second, id: 'tt7890123', title: 'Next week', date: '2026-12-03', series: { ...first.series, episode: 4 } };
+  const expanded = { ...parent, episodes: [first, second, third, next] };
+  const data = { marvel: [title, expanded], 'star-wars': [title, expanded], vince: [title, parent, first, second], justin: [title, third, next] };
+  const { store, config } = await setup(t, async (source) => result(data[source.slug]), { clock: () => clock });
+  config.sources = followed;
+  await store.refresh();
+  const initial = structuredClone(store.feed('all').events);
+  assert.equal(Object.values(initial).filter((event) => event.status === 'CONFIRMED').length, 4);
+  assert.deepEqual(initial[`${parent.id}-${next.date}`].sourceLabels.people, ['Justin Roiland']);
+  assert.deepEqual(store.pageData().upcoming.find((event) => event.id === `${parent.id}-${next.date}`).sources, ['Marvel', 'Star Wars', 'Justin Roiland']);
+  const bytes = renderCalendar({ events: initial });
+  clock = new Date('2026-10-20T00:00:00Z');
+  await store.refresh();
+  assert.equal(renderCalendar({ events: store.feed('all').events }), bytes);
+
+  data.vince = [];
+  clock = new Date('2026-10-21T00:00:00Z');
+  await store.refresh();
+  const removed = structuredClone(store.feed('all').events);
+  assert.equal(Object.keys(removed).length, 4);
+  for (const id of [title.id, parent.id, `${parent.id}-${second.date}`]) {
+    assert.equal(removed[id].sequence, initial[id].sequence + 1);
+    assert.equal(removed[id].createdAt, initial[id].createdAt);
+    assert(!removed[id].description.includes('Vince Gilligan'));
+  }
+  assert.deepEqual(removed[`${parent.id}-${next.date}`], initial[`${parent.id}-${next.date}`]);
+
+  next.date = '2026-12-10';
+  clock = new Date('2026-10-22T00:00:00Z');
+  await store.refresh();
+  const moved = store.feed('all').events;
+  assert.equal(moved[`${parent.id}-2026-12-03`].status, 'CANCELLED');
+  assert.equal(moved[`${parent.id}-2026-12-03`].sequence, 1);
+  assert.equal(moved[`${parent.id}-2026-12-10`].status, 'CONFIRMED');
+  assert.deepEqual(moved[`${parent.id}-2026-12-10`].episodeIds, [next.id]);
+  assert.equal(moved[`${parent.id}-2026-12-10`].description, 'Interests: Marvel, Star Wars\nPeople: Justin Roiland\n\nS01E04: Next week');
+  const restored = new CalendarStore(config, { logger: quiet, clock: () => clock });
+  await restored.initialize();
+  assert.equal(renderCalendar({ events: restored.feed('all').events }), renderCalendar({ events: moved }));
 });

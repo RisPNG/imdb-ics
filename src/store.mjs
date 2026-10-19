@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { gzip as gzipCallback, gunzip as gunzipCallback } from 'node:zlib';
 import { promisify } from 'node:util';
-import { isValidEvent, reconcileEvents } from './calendar.mjs';
+import { attributeReleases, isValidEvent, reconcileEvents } from './calendar.mjs';
 import { fetchSource } from './imdb.mjs';
 
 const gzip = promisify(gzipCallback);
@@ -110,6 +110,11 @@ export class CalendarStore {
       if (error.code !== 'ENOENT') this.logger.warn(`Calendar cache could not be loaded: ${errorMessage(error)}`);
     }
     this.applyTimeMode();
+    if (this.snapshot.combined) {
+      const previous = this.snapshot.combined;
+      this.reconcileCombined(this.clock().toISOString(), previous.updatedAt);
+      if (Object.values(this.snapshot.combined.events).some((event) => event.sequence !== previous.events[event.id]?.sequence)) await this.persist();
+    }
   }
 
   applyTimeMode() {
@@ -160,17 +165,14 @@ export class CalendarStore {
     });
     const today = this.clock().toISOString().slice(0, 10);
     const selected = sourceSlug === 'all' ? combined : this.feed(sourceSlug);
-    const upcoming = selected ? Object.values(selected.events)
+    const releases = selected ? Object.values(selected.events)
       .filter((event) => event.status === 'CONFIRMED' && event.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title) || a.id.localeCompare(b.id))
-      .slice(0, 12).map((event) => {
-        const ids = new Set([event.id, ...(event.episodeIds ?? [])]);
-        return { ...event, sources: this.config.sources
-          .filter((source) => Object.values(this.snapshot.sources[source.slug]?.events || {})
-            .some((candidate) => candidate.status === 'CONFIRMED'
-              && (ids.has(candidate.id) || candidate.episodeIds?.some((id) => ids.has(id)))))
-          .map((source) => source.label) };
-      }) : [];
+      .slice(0, 12) : [];
+    const attributed = sourceSlug === 'all' ? releases : attributeReleases(releases, this.config.sources.map((source) => ({
+      kind: source.kind, label: source.label, titles: this.snapshot.sources[source.slug]?.titles,
+    })));
+    const upcoming = attributed.map((event) => ({ ...event, sources: [...event.sourceLabels.interests, ...event.sourceLabels.people] }));
     const updatedAt = sourceSlug === 'all' ? (individual.every((feed) => feed.updatedAt)
       ? individual.map((feed) => feed.updatedAt).sort()[0] : null) : selected?.updatedAt || null;
     return { baseUrl, feeds, upcoming, updatedAt, stale: !!selected?.stale, sourceSlug,
@@ -219,11 +221,17 @@ export class CalendarStore {
     }
     if ((refreshed || !this.snapshot.combined)
         && (this.snapshot.combined || this.config.sources.every((source) => this.snapshot.sources[source.slug]?.lastSuccessAt))) {
-      const titles = this.config.sources.flatMap((source) => this.snapshot.sources[source.slug]?.titles || []);
-      this.snapshot.combined = { events: reconcileEvents(this.snapshot.combined?.events || {}, titles, { now: this.clock().toISOString() }),
-        updatedAt: this.clock().toISOString() };
+      this.reconcileCombined(this.clock().toISOString());
     }
     await this.persist();
+  }
+
+  reconcileCombined(now, updatedAt = now) {
+    const sources = this.config.sources.map((source) => ({
+      kind: source.kind, label: source.label, titles: this.snapshot.sources[source.slug]?.titles,
+    }));
+    const titles = this.config.sources.flatMap((source) => this.snapshot.sources[source.slug]?.titles || []);
+    this.snapshot.combined = { events: reconcileEvents(this.snapshot.combined?.events || {}, titles, { now, sources }), updatedAt };
   }
 
   async persist() {

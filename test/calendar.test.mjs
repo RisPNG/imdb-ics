@@ -315,3 +315,52 @@ test('switching a filmography to credited episodes retires unrelated groups with
   const combined = reconcile(before, [expanded, series, credited], secondRefresh);
   assert.deepEqual(combined, before, 'the interest still supplies the complete episode membership');
 });
+
+test('combined attribution merges interests and credited people without duplicating releases or episode lists', () => {
+  const first = episode('tt20258964', 1, '2025-04-22', 'One Year Later');
+  const second = episode('tt20603288', 2, first.date, 'Sagrona Teema');
+  const next = episode('tt20603294', 4, '2025-04-29', 'Ever Been to Ghorman?');
+  const expanded = { ...series, episodes: [first, second, next] };
+  const sources = [
+    { kind: 'interest', label: 'Star Wars', titles: [title, expanded] },
+    { kind: 'interest', label: 'Marvel', titles: [title, expanded] },
+    { kind: 'name', label: 'Vince Gilligan', titles: [title, series, first] },
+    { kind: 'name', label: 'Justin Roiland', titles: [title, second, next] },
+  ].map((source) => ({ ...source, events: reconcile({}, source.titles) }));
+  const events = reconcileEvents({}, sources.flatMap((source) => source.titles), { now: firstRefresh, sources });
+  assert.equal(Object.keys(events).length, 4);
+  assert.deepEqual(events[title.id].sourceLabels, { interests: ['Marvel', 'Star Wars'], people: ['Justin Roiland', 'Vince Gilligan'] });
+  assert.equal(events[title.id].description, 'Interests: Marvel, Star Wars\nPeople: Justin Roiland, Vince Gilligan');
+  assert.equal(events[title.id].episodeDescription, '');
+  assert.equal(events[series.id].description, 'Interests: Marvel, Star Wars\nPeople: Vince Gilligan');
+  const batch = events[`${series.id}-${first.date}`];
+  assert.deepEqual(batch.episodeIds, [first.id, second.id]);
+  assert.equal(batch.description, 'Interests: Marvel, Star Wars\nPeople: Justin Roiland, Vince Gilligan\n\nS02E01: One Year Later\nS02E02: Sagrona Teema');
+  assert.equal(batch.episodeDescription, 'S02E01: One Year Later\nS02E02: Sagrona Teema');
+  assert.deepEqual(events[`${series.id}-${next.date}`].sourceLabels.people, ['Justin Roiland']);
+  const reversed = sources.toReversed().map((source) => ({ ...source, titles: source.titles.toReversed() }));
+  assert.deepEqual(reconcileEvents(events, reversed.flatMap((source) => source.titles), { now: secondRefresh, sources: reversed }), events);
+  const ics = unfold(renderCalendar({ events }));
+  assert.equal(ics.match(/BEGIN:VEVENT\r\n/g).length, 4);
+  assert.equal(ics.match(/UID:tt9253284-2025-04-22@release-calendar\r\n/g).length, 1);
+  assert.match(ics, /DESCRIPTION:Interests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\, Vince Gilligan\\n\\nS02E01: One Year Later\\nS02E02: Sagrona Teema\r\n/);
+});
+
+test('source attribution follows matched title and episode IDs after selecting their canonical dates', () => {
+  const first = episode('tt20258964', 1, '2025-04-22');
+  const second = episode('tt20603288', 2, '2025-04-29');
+  const changed = { ...first, date: second.date };
+  const undated = { ...title, date: null };
+  const sources = [
+    { kind: 'interest', label: 'Star Wars', titles: [{ ...series, episodes: [first, second] }, title] },
+    { kind: 'name', label: 'Earlier credit', titles: [first] },
+    { kind: 'name', label: 'Conflicting date', titles: [changed, { ...title, date: '2027-01-01' }] },
+    { kind: 'name', label: 'Undated credit', titles: [undated] },
+    { kind: 'name', label: 'Series credit', titles: [series] },
+  ].map((source) => ({ ...source, events: reconcile({}, source.titles) }));
+  const events = reconcileEvents({}, sources.flatMap((source) => source.titles), { now: firstRefresh, sources });
+  assert.deepEqual(events[`${series.id}-${first.date}`].sourceLabels.people, ['Conflicting date', 'Earlier credit']);
+  assert.deepEqual(events[`${series.id}-${second.date}`].sourceLabels.people, []);
+  assert.deepEqual(events[title.id].sourceLabels.people, ['Conflicting date', 'Undated credit']);
+  assert.deepEqual(events[series.id].sourceLabels.people, ['Series credit']);
+});

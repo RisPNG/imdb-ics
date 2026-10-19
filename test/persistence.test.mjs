@@ -12,7 +12,7 @@ import { execFile as execFileCallback } from 'node:child_process';
 import { promisify } from 'node:util';
 import { CalendarStore } from '../src/store.mjs';
 import { loadConfig } from '../src/config.mjs';
-import { renderCalendar } from '../src/calendar.mjs';
+import { reconcileEvents, renderCalendar } from '../src/calendar.mjs';
 
 const execFile = promisify(execFileCallback);
 const quiet = { info() {}, warn() {} };
@@ -34,22 +34,27 @@ async function setup(t) {
   return { dataDir, config };
 }
 
-test('migrates legacy JSON to compressed storage without changing event history', async (t) => {
+test('migrates legacy JSON and adds source attribution once while preserving event identity and history', async (t) => {
   const { dataDir, config } = await setup(t);
   await writeFile(join(dataDir, 'snapshot.json'), JSON.stringify(legacySnapshot));
   const store = new CalendarStore(config, { logger: quiet });
   await store.initialize();
   const original = renderCalendar({ events: legacySnapshot.combined.events });
-  assert.equal(renderCalendar({ events: store.feed('all').events }), original);
+  assert.equal(renderCalendar({ events: store.feed('one').events }), original);
+  assert.equal(store.feed('all').events[event.id].sequence, event.sequence + 1);
+  assert.equal(store.feed('all').events[event.id].createdAt, event.createdAt);
+  assert.equal(store.feed('all').events[event.id].description, 'People: One');
+  const attributed = renderCalendar({ events: store.feed('all').events });
   await store.persist();
   assert.equal(store.persistenceError, null);
   await assert.rejects(stat(join(dataDir, 'snapshot.json')), { code: 'ENOENT' });
   const saved = JSON.parse(gunzipSync(await readFile(join(dataDir, 'snapshot.json.gz'))));
   assert.equal(saved.version, 2);
-  assert.deepEqual(saved.combined.events[event.id], event);
+  assert.equal(saved.combined.events[event.id].sequence, event.sequence + 1);
+  assert.deepEqual(saved.sources.one.events[event.id], event);
   const restored = new CalendarStore(config, { logger: quiet });
   await restored.initialize();
-  assert.equal(renderCalendar({ events: restored.feed('all').events }), original);
+  assert.equal(renderCalendar({ events: restored.feed('all').events }), attributed);
 });
 
 test('prefers the compressed snapshot over an older legacy file', async (t) => {
@@ -60,7 +65,42 @@ test('prefers the compressed snapshot over an older legacy file', async (t) => {
   await writeFile(join(dataDir, 'snapshot.json.gz'), gzipSync(JSON.stringify(newer)));
   const store = new CalendarStore(config, { logger: quiet });
   await store.initialize();
-  assert.equal(store.feed('all').events[event.id].sequence, 5);
+  assert.equal(store.feed('all').events[event.id].sequence, 6);
+});
+
+test('existing compressed episode snapshots gain attribution before any refresh and persist it across later restarts', async (t) => {
+  const { dataDir, config } = await setup(t);
+  const parent = { id: 'tt2345678', title: 'A series', date: '2026-11-19' };
+  const episode = { id: 'tt3456789', title: 'A chapter', date: '2026-11-26',
+    series: { id: parent.id, title: parent.title, date: parent.date, season: 1, episode: 1 } };
+  const titles = [{ id: event.id, title: event.title, date: event.date }, parent, episode];
+  const events = reconcileEvents({}, titles, { now: createdAt });
+  for (const event of Object.values(events)) delete event.episodeDescription;
+  const removed = { ...event, id: 'tt4567890', sequence: 7, status: 'CANCELLED' };
+  events[removed.id] = removed;
+  const snapshot = { version: 2, eventTimeMode: config.eventTimeMode, sources: {
+    one: { titles, events, total: titles.length, omitted: 0, warnings: [], lastSuccessAt: createdAt, lastAttemptAt: createdAt, error: null },
+  }, combined: { events, updatedAt: createdAt } };
+  await writeFile(join(dataDir, 'snapshot.json.gz'), gzipSync(JSON.stringify(snapshot)));
+  const changedAt = '2026-10-19T00:00:00.000Z';
+  const store = new CalendarStore(config, { logger: quiet, clock: () => new Date(changedAt), loader: () => assert.fail('Startup must use the saved snapshot.') });
+  await store.initialize();
+  const migrated = store.feed('all').events;
+  assert.equal(migrated[event.id].sequence, events[event.id].sequence + 1);
+  assert.equal(migrated[event.id].createdAt, events[event.id].createdAt);
+  assert.equal(migrated[event.id].modifiedAt, changedAt);
+  assert.equal(migrated[`${parent.id}-${episode.date}`].description, 'People: One\n\nS01E01: A chapter');
+  assert.equal(migrated[`${parent.id}-${episode.date}`].episodeDescription, 'S01E01: A chapter');
+  assert.equal(migrated[removed.id].sequence, 7);
+  assert.equal(migrated[removed.id].status, 'CANCELLED');
+  assert.deepEqual(store.feed('one').events, events);
+  const persisted = JSON.parse(gunzipSync(await readFile(join(dataDir, 'snapshot.json.gz'))));
+  assert.deepEqual(persisted.combined.events, migrated);
+  const bytes = renderCalendar({ events: migrated });
+  const restored = new CalendarStore(config, { logger: quiet, clock: () => new Date('2026-10-19T01:00:00Z') });
+  await restored.initialize();
+  assert.equal(renderCalendar({ events: restored.feed('all').events }), bytes);
+  assert.equal(restored.feed('all').events[event.id].sequence, migrated[event.id].sequence);
 });
 
 for (const [name, bytes] of [
@@ -175,6 +215,14 @@ test('53 overlapping filmographies round-trip more than 16 MiB under the configu
     assert.equal(Object.keys(restored.feed('all').events).length, count);
     assert.equal(Object.keys(restored.feed('person-52').events).length, 1500);
     assert.deepEqual(restored.feed('person-52').events.tt1039999, sourceEvent);
+    const pageStarted = performance.now();
+    let requestRss = process.memoryUsage().rss;
+    for (let index = 0; index < 10; index += 1) {
+      const page = restored.pageData(config.baseUrl, 'person-52');
+      assert.equal(page.upcoming.length, 12);
+      requestRss = Math.max(requestRss, process.memoryUsage().rss);
+    }
+    const sourcePageMs = Math.round((performance.now() - pageStarted) / 10);
     const feed = restored.feed('all');
     const renderStarted = performance.now();
     const body = renderCalendar({ name: feed.label, description: feed.description, events: feed.events, eventTimeMode: config.eventTimeMode });
@@ -183,12 +231,12 @@ test('53 overlapping filmographies round-trip more than 16 MiB under the configu
     assert.equal(etag.length, 64);
     assert(response.subarray(0, 17).equals(Buffer.from('BEGIN:VCALENDAR\\r\\n')));
     assert.equal(body.match(/BEGIN:VEVENT/g).length, count);
-    console.log(JSON.stringify({ rawBytes, count, calendarBytes: response.length, renderMs: Math.round(performance.now() - renderStarted), elapsedMs: Math.round(performance.now() - started), rssMiB: Math.round(Math.max(refreshRss, process.memoryUsage().rss) / 1024 / 1024) }));
+    console.log(JSON.stringify({ rawBytes, count, calendarBytes: response.length, renderMs: Math.round(performance.now() - renderStarted), elapsedMs: Math.round(performance.now() - started), sourcePageMs, rssMiB: Math.round(Math.max(refreshRss, requestRss, process.memoryUsage().rss) / 1024 / 1024) }));
   `;
   const { stdout } = await execFile(process.execPath, ['--max-old-space-size=192', '--expose-gc', '--input-type=module', '--eval', code], { timeout: 60_000 });
   const result = JSON.parse(stdout);
   assert(result.rawBytes > 16 * 1024 * 1024);
   assert.equal(result.count, 40_500);
   assert(result.rssMiB < 512, `Scale fixture used ${result.rssMiB} MiB RSS.`);
-  t.diagnostic(`53 sources × 1500 credits: ${(result.rawBytes / 1024 / 1024).toFixed(1)} MiB raw, ${(result.calendarBytes / 1024 / 1024).toFixed(1)} MiB calendar in ${result.renderMs} ms, ${result.elapsedMs} ms total, ${result.rssMiB} MiB RSS.`);
+  t.diagnostic(`53 sources × 1500 credits: ${(result.rawBytes / 1024 / 1024).toFixed(1)} MiB raw, ${(result.calendarBytes / 1024 / 1024).toFixed(1)} MiB calendar in ${result.renderMs} ms, ${result.elapsedMs} ms total, ${result.sourcePageMs} ms/source page, ${result.rssMiB} MiB RSS.`);
 });

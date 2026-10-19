@@ -500,5 +500,251 @@
       { "label": "Formula 1 biography", "url": "https://www.formula1.com/en/drivers/max-verstappen" },
       { "label": "IMDb credits", "url": "https://www.imdb.com/name/nm6722413/" }
     ]
+  },
+  "tom-cruise": {
+    "summary": "Tom Cruise is an actor and producer whose films include Top Gun, Jerry Maguire, Minority Report, and the Mission: Impossible series. He made his film debut in Endless Love before taking leading roles in films including Rain Man and Born on the Fourth of July.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Top Gun", "Jerry Maguire", "Minority Report", "Mission: Impossible"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000129/" }]
+  },
+  "nathan-fillion": {
+    "summary": "Nathan Fillion is an actor and producer who portrayed Captain Malcolm Reynolds in Firefly and its feature-film continuation, Serenity. His other screen work includes Castle and Slither, following early experience in improvisational theatre and the daytime series One Life to Live.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Firefly", "Serenity", "Castle", "Slither"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0277213/" }]
+  },
+  "hamish-linklater": {
+    "summary": "Hamish Linklater is an actor, writer, and director whose television roles include Matthew Kimble in The New Adventures of Old Christine and Clark Debussy in Legion. He also portrayed Father Paul in Midnight Mass, alongside film work including The Big Short.",
+    "roles": ["Actor", "Writer", "Director"],
+    "knownFor": ["The New Adventures of Old Christine", "Legion", "Midnight Mass", "The Big Short"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0512934/" }]
+  },
+  "woody-harrelson": {
+    "summary": "Woody Harrelson is an actor and producer whose television work includes Cheers and True Detective. His films include Natural Born Killers, The People vs. Larry Flynt, and The Hunger Games, following studies in theatre arts and English at Hanover College.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Cheers", "True Detective", "Natural Born Killers", "The People vs. Larry Flynt"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000437/" }]
+  },
+  "liam-neeson": {
+    "summary": "Liam Neeson is an actor and producer whose film roles include Oskar Schindler in Schindler's List. His other work includes Darkman, Kinsey, and The Grey, following theatre performances with Belfast's Lyric Players and the Abbey Theatre in Dublin.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Schindler's List", "Darkman", "Kinsey", "The Grey"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000553/" }]
+  },
+  "sebastian-stan": {
+    "summary": "Sebastian Stan is an actor and producer who portrayed Bucky Barnes in Captain America: The First Avenger and The Winter Soldier. His other film work includes I, Tonya, Black Swan, and Logan Lucky, alongside television appearances in Gossip Girl.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Captain America: The First Avenger", "Captain America: The Winter Soldier", "I, Tonya", "The Apprentice"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1659221/" }]
+  },
+  "shia-labeouf": {
+    "summary": "Shia LaBeouf is an actor and writer who wrote and starred in Honey Boy. His other film credits include The Peanut Butter Falcon, Fury, American Honey, and the Transformers films, with performances across independent productions and larger studio films.",
+    "roles": ["Actor", "Writer"],
+    "knownFor": ["Honey Boy", "The Peanut Butter Falcon", "Fury", "Transformers"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0479471/" }]
+  },
+  "robert-downey-jr": {
+    "summary": "Robert Downey Jr. is an actor and producer who portrayed Tony Stark in Iron Man and the Avengers films. His other screen roles include the title characters in Chaplin and Sherlock Holmes, following a childhood film debut in Pound.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Iron Man", "The Avengers", "Chaplin", "Sherlock Holmes"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000375/" }]
+  },
+  "james-spader": {
+    "summary": "James Spader is an actor and producer whose television roles include attorney Alan Shore in The Practice and Boston Legal. His film work includes Sex, Lies, and Videotape and Avengers: Age of Ultron, alongside his television work in The Blacklist.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Boston Legal", "The Blacklist", "Sex, Lies, and Videotape", "Avengers: Age of Ultron"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000652/" }]
+  },
+  "dan-stevens": {
+    "summary": "Dan Stevens is an actor and producer whose screen work includes Downton Abbey, The Guest, and Beauty and the Beast. He portrayed David Haller in Legion and trained with the National Youth Theatre before studying English literature at Cambridge.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Downton Abbey", "The Guest", "Beauty and the Beast", "Legion"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1405398/" },
+      { "label": "FX: Dan Stevens", "url": "https://www.fxnetworks.com/shows/legion/cast/dan-stevens-david-haller" }
+    ]
+  },
+  "jesse-eisenberg": {
+    "summary": "Jesse Eisenberg is an actor, writer, and producer who portrayed Mark Zuckerberg in The Social Network. His other films include The Squid and the Whale and Zombieland, and he voiced the macaw Blu in Rio and its sequel.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["The Social Network", "The Squid and the Whale", "Zombieland", "A Real Pain"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0251986/" }]
+  },
+  "nicholas-hoult": {
+    "summary": "Nicholas Hoult is an actor and producer who played Marcus Brewer in About a Boy and Tony Stonem in Skins. His film roles also include Beast in the X-Men films and Nux in Mad Max: Fury Road.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["About a Boy", "Skins", "X-Men: Days of Future Past", "Mad Max: Fury Road"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0396558/" }]
+  },
+  "chris-evans": {
+    "summary": "Chris Evans is an actor, producer, and director whose film work includes the Captain America films and The Avengers. He began performing in school productions and community theatre before moving into television and films such as Not Another Teen Movie.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Captain America: The First Avenger", "Captain America: The Winter Soldier", "Captain America: Civil War", "The Avengers"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0262635/" }]
+  },
+  "edward-norton": {
+    "summary": "Edward Norton is an actor, writer, and producer whose films include Primal Fear, American History X, Fight Club, and Birdman. He studied history at Yale and worked on stage in New York before moving into leading film roles.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["Primal Fear", "American History X", "Fight Club", "Birdman or (The Unexpected Virtue of Ignorance)"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0001570/" }]
+  },
+  "mads-mikkelsen": {
+    "summary": "Mads Mikkelsen is an actor and producer who portrayed Hannibal Lecter in the television series Hannibal. His films include The Hunt, Another Round, and Doctor Strange, following earlier screen work in Pusher and the police series Unit One.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Hannibal", "The Hunt", "Another Round", "Doctor Strange"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0586568/" }]
+  },
+  "mark-ruffalo": {
+    "summary": "Mark Ruffalo is an actor, writer, and producer whose films include Spotlight, The Kids Are All Right, The Avengers, and Poor Things. He trained at the Stella Adler Conservatory and co-founded the Orpheus Theatre Company before developing his screen career.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["Spotlight", "The Kids Are All Right", "The Avengers", "Poor Things"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0749263/" }]
+  },
+  "chris-hemsworth": {
+    "summary": "Chris Hemsworth is an actor and producer who portrayed Thor in Marvel films including The Avengers and Thor: Ragnarok. His earlier screen work includes playing Kim Hyde in Home and Away and appearing in the film Star Trek.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Thor", "The Avengers", "Thor: Ragnarok", "Home and Away"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1165110/" }]
+  },
+  "paul-bettany": {
+    "summary": "Paul Bettany is an actor and writer whose screen work includes A Knight's Tale and A Beautiful Mind. He voiced J.A.R.V.I.S. and portrayed Vision in Marvel films, continuing the latter role in the television series WandaVision.",
+    "roles": ["Actor", "Writer"],
+    "knownFor": ["WandaVision", "A Knight's Tale", "A Beautiful Mind", "Master and Commander: The Far Side of the World"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0079273/" }]
+  },
+  "ewan-mcgregor": {
+    "summary": "Ewan McGregor is an actor and producer whose films include Trainspotting, Shallow Grave, and Moulin Rouge! He portrayed Obi-Wan Kenobi in the Star Wars prequels, following training at the Guildhall School of Music and Drama and early work in theatre.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Trainspotting", "Shallow Grave", "Moulin Rouge!", "Star Wars: Episode III - Revenge of the Sith"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000191/" }]
+  },
+  "mary-elizabeth-winstead": {
+    "summary": "Mary Elizabeth Winstead is an actress and producer who played Ramona Flowers in Scott Pilgrim vs. the World. Her other films include Smashed, 10 Cloverfield Lane, and Death Proof, and she also performs music as part of Got a Girl.",
+    "roles": ["Actress", "Producer", "Recording artist"],
+    "knownFor": ["Scott Pilgrim vs. the World", "Smashed", "10 Cloverfield Lane", "Death Proof"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0935541/" }]
+  },
+  "brendan-gleeson": {
+    "summary": "Brendan Gleeson is an actor, producer, and director whose films include In Bruges, The Guard, Calvary, and The Banshees of Inisherin. He worked in theatre before moving into screen roles, including portraying Michael Collins in the television film The Treaty.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["In Bruges", "The Guard", "Calvary", "The Banshees of Inisherin"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0322407/" }]
+  },
+  "dave-franco": {
+    "summary": "Dave Franco is an actor, writer, and producer whose films include Warm Bodies, Now You See Me, Neighbors, and The Disaster Artist. He began his television work with an appearance in 7th Heaven before taking roles in film comedy and drama.",
+    "roles": ["Actor", "Writer", "Producer"],
+    "knownFor": ["Warm Bodies", "Now You See Me", "Neighbors", "The Disaster Artist"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm2002649/" }]
+  },
+  "aubrey-plaza": {
+    "summary": "Aubrey Plaza is an actress, producer, and writer who portrayed April Ludgate in Parks and Recreation. Her films include Safety Not Guaranteed, Ingrid Goes West, and Emily the Criminal, following experience in theatre, improvisation, and sketch comedy at the Upright Citizens Brigade Theater.",
+    "roles": ["Actress", "Producer", "Writer"],
+    "knownFor": ["Parks and Recreation", "Safety Not Guaranteed", "Ingrid Goes West", "Emily the Criminal"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm2201555/" }]
+  },
+  "diane-morgan": {
+    "summary": "Diane Morgan is an actress, writer, and director who created and starred in the comedy series Mandy. She also portrays the fictional interviewer Philomena Cunk, with other television work including Liz in Motherland and Kath in After Life.",
+    "roles": ["Actress", "Writer", "Director"],
+    "knownFor": ["Mandy", "Cunk on Life", "Motherland", "After Life"],
+    "references": [
+      { "label": "United Agents biography and credits", "url": "https://www.unitedagents.co.uk/diane-morgan/" },
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1854269/" }
+    ]
+  },
+  "james-gunn": {
+    "summary": "James Gunn is a writer, director, and producer whose films include Guardians of the Galaxy, Slither, Super, and Superman. His earlier work includes writing Tromeo and Juliet and Scooby-Doo, alongside the novel The Toy Collector.",
+    "roles": ["Writer", "Director", "Producer"],
+    "knownFor": ["Guardians of the Galaxy", "Slither", "Super", "Superman"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0348181/" },
+      { "label": "DC: Superman", "url": "https://www.dc.com/movies/superman-2025" }
+    ]
+  },
+  "james-franco": {
+    "summary": "James Franco is an actor, producer, and director whose screen work includes Freaks and Geeks and the Spider-Man trilogy. His films also include 127 Hours, Pineapple Express, and The Disaster Artist, following training at the Playhouse West acting school.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Freaks and Geeks", "127 Hours", "Pineapple Express", "The Disaster Artist"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0290556/" }]
+  },
+  "christopher-lloyd": {
+    "summary": "Christopher Lloyd is an actor and producer who portrayed Doc Brown in the Back to the Future trilogy and Uncle Fester in The Addams Family films. His other roles include Jim Ignatowski in Taxi and Judge Doom in Who Framed Roger Rabbit.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Back to the Future", "The Addams Family", "Taxi", "Who Framed Roger Rabbit"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000502/" }]
+  },
+  "joaquin-phoenix": {
+    "summary": "Joaquin Phoenix is an actor, producer, and director whose films include Gladiator, Walk the Line, The Master, and Her. He began acting in television as a child and made his feature-film debut in the science-fiction adventure SpaceCamp.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Gladiator", "Walk the Line", "The Master", "Her"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0001618/" }]
+  },
+  "michael-j-fox": {
+    "summary": "Michael J. Fox is an actor and producer whose screen work includes the Back to the Future trilogy and Spin City. He portrayed Alex P. Keaton in Family Ties, following early television roles in Canada and films including Teen Wolf.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Back to the Future", "Family Ties", "Spin City", "Teen Wolf"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000150/" }]
+  },
+  "frank-grillo": {
+    "summary": "Frank Grillo is an actor and producer whose films include The Grey, The Purge: Anarchy, Captain America: The Winter Soldier, and Boss Level. He began acting in school plays and studied business at New York University before pursuing screen work.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["The Grey", "The Purge: Anarchy", "Captain America: The Winter Soldier", "Boss Level"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0342029/" }]
+  },
+  "jon-favreau": {
+    "summary": "Jon Favreau works as an actor, writer, and director, with films including Swingers, Iron Man, and Chef. He wrote and starred in Swingers after working in Chicago's improvisational comedy scene, and his screen roles also include Happy Hogan in Marvel films.",
+    "roles": ["Actor", "Writer", "Director"],
+    "knownFor": ["Swingers", "Iron Man", "Chef", "Avengers: Endgame"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0269463/" }]
+  },
+  "hayden-christensen": {
+    "summary": "Hayden Christensen is an actor and producer who portrayed Anakin Skywalker in the Star Wars prequels. His other films include Life as a House, Shattered Glass, and Jumper, following early work in commercials and television series including Higher Ground.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Star Wars: Episode II - Attack of the Clones", "Star Wars: Episode III - Revenge of the Sith", "Life as a House", "Shattered Glass"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0159789/" }]
+  },
+  "michael-rooker": {
+    "summary": "Michael Rooker is an actor, producer, and director who portrayed Yondu in the Guardians of the Galaxy films. His other film work includes Henry: Portrait of a Serial Killer, Slither, and The Belko Experiment, following early stage work in Chicago.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Guardians of the Galaxy", "Henry: Portrait of a Serial Killer", "Slither", "The Belko Experiment"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0740264/" }]
+  },
+  "james-d-arcy": {
+    "summary": "James D'Arcy is an actor, writer, and director whose films include Cloud Atlas, Dunkirk, and Master and Commander: The Far Side of the World. He trained at LAMDA and appeared in television productions including Silent Witness and The Life and Adventures of Nicholas Nickleby.",
+    "roles": ["Actor", "Writer", "Director"],
+    "knownFor": ["Cloud Atlas", "Dunkirk", "Master and Commander: The Far Side of the World", "The Life and Adventures of Nicholas Nickleby"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0195439/" }]
+  },
+  "daniel-bruhl": {
+    "summary": "Daniel Brühl is an actor and producer whose films include Good Bye Lenin!, Rush, Inglourious Basterds, and Captain America: Civil War. Born in Barcelona and raised in Cologne, he grew up in a multilingual home and works across different languages.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Good Bye Lenin!", "Rush", "Inglourious Basterds", "Captain America: Civil War"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0117709/" }]
+  },
+  "david-denman": {
+    "summary": "David Denman is a screen and stage actor who portrayed Roy in The Office. His films include The Replacements, Brightburn, and Logan Lucky, following training at the American Conservatory Theater and the Juilliard School before his film and television career.",
+    "roles": ["Screen actor", "Stage actor"],
+    "knownFor": ["The Office", "Mare of Easttown", "The Replacements", "Rebel Ridge"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0219292/" }]
+  },
+  "chukwudi-iwuji": {
+    "summary": "Chukwudi Iwuji is an actor whose work spans theatre, film, and television. He performed with the Royal Shakespeare Company as Henry VI, and his screen roles include the High Evolutionary in Guardians of the Galaxy Vol. 3.",
+    "roles": ["Screen actor", "Stage actor"],
+    "knownFor": ["Guardians of the Galaxy Vol. 3", "Designated Survivor", "When They See Us", "The Split"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1030244/" },
+      { "label": "Disney: Guardians of the Galaxy Vol. 3", "url": "https://news.disney.com/guardians-of-the-galaxy-vol-3" }
+    ]
+  },
+  "steve-agee": {
+    "summary": "Steve Agee is an actor, writer, and comedian who portrayed John Economos in The Suicide Squad and Peacemaker. His work also includes New Girl, Guardians of the Galaxy Vol. 2, and collaborations with Sarah Silverman in television comedy.",
+    "roles": ["Actor", "Writer", "Comedian"],
+    "knownFor": ["The Suicide Squad", "Peacemaker", "The Sarah Silverman Program.", "Guardians of the Galaxy Vol. 2"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0012948/" }]
+  },
+  "gary-oldman": {
+    "summary": "Gary Oldman is an actor, producer, and director whose roles include George Smiley in Tinker Tailor Soldier Spy and Winston Churchill in Darkest Hour. His other work includes Sid and Nancy, Dracula, and writing and directing Nil by Mouth.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Tinker Tailor Soldier Spy", "Darkest Hour", "Sid and Nancy", "Dracula"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000198/" }]
   }
 }
