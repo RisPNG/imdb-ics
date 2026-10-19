@@ -118,12 +118,13 @@
   },
   "michael-mando": {
     "path": "/images/michael-mando.jpg",
-    "width": 480,
-    "height": 720,
-    "sourceUrl": "https://www.imdb.com/name/nm3103126/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BOTgwODczMWMtZDcxNC00NjY4LThjNDctNzExMjQ5YThkN2NlXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 668,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Michael_Mando_at_the_2018_San_Diego_Comic-Con.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/Michael_Mando_at_the_2018_San_Diego_Comic-Con.jpg/500px-Michael_Mando_at_the_2018_San_Diego_Comic-Con.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Michael Mando",
-    "caption": "Michael Mando at an event for Spider-Man: Brand New Day (2026)"
+    "caption": "Michael Mando at the 2018 San Diego Comic-Con",
+    "credit": "Gage Skidmore, CC BY-SA 2.0."
   },
   "brad-pitt": {
     "path": "/images/brad-pitt.jpg",
@@ -226,12 +227,13 @@
   },
   "tom-hiddleston": {
     "path": "/images/tom-hiddleston.jpg",
-    "width": 480,
-    "height": 652,
-    "sourceUrl": "https://www.imdb.com/name/nm1089991/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BYTU0NjUyMjktNTBkNS00ZWFjLTgyZmUtZjVhMmU1YTVkOTM2XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 625,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tom_Hiddleston_at_the_2024_Toronto_International_Film_Festival_(cropped).jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Tom_Hiddleston_at_the_2024_Toronto_International_Film_Festival_%28cropped%29.jpg/500px-Tom_Hiddleston_at_the_2024_Toronto_International_Film_Festival_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Tom Hiddleston",
-    "caption": "Tom Hiddleston at an event for Loki (2021)"
+    "caption": "Tom Hiddleston at the 2024 Toronto International Film Festival",
+    "credit": "Kevin Payravi / WikiPortraits, CC BY-SA 4.0."
   },
   "nicolas-cage": {
     "path": "/images/nicolas-cage.jpg",
@@ -262,10 +264,10 @@
   },
   "andrew-santino": {
     "path": "/images/andrew-santino.jpg",
-    "width": 480,
-    "height": 507,
-    "sourceUrl": "https://www.imdb.com/name/nm2747668/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BZmFhMzllZDYtMzRmYi00NmVkLTkzNWYtMTlkMTg5MzYyNDk1XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 300,
+    "height": 300,
+    "sourceUrl": "https://www.summitcomedy.com/andrew-santino/",
+    "imageUrl": "https://www.summitcomedy.com/wp-content/uploads/2019/11/Andrew-Santino.jpeg",
     "alt": "Andrew Santino",
     "caption": "Andrew Santino"
   },
@@ -298,12 +300,13 @@
   },
   "joel-mchale": {
     "path": "/images/joel-mchale.jpg",
-    "width": 480,
-    "height": 640,
-    "sourceUrl": "https://www.imdb.com/name/nm0570364/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BNjQ5Nzk5NDIxNV5BMl5BanBnXkFtZTcwNjM3MzYwNw@@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 667,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Joel_McHale_Photo_Op_GalaxyCon_Raleigh_2023.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/Joel_McHale_Photo_Op_GalaxyCon_Raleigh_2023.jpg/500px-Joel_McHale_Photo_Op_GalaxyCon_Raleigh_2023.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Joel McHale",
-    "caption": "Joel McHale in Earth to Ned (2020)"
+    "caption": "Joel McHale at GalaxyCon Raleigh in 2023",
+    "credit": "Super Festivals, CC BY 2.0."
   },
   "bob-odenkirk": {
     "path": "/images/bob-odenkirk.jpg",
@@ -353,9 +356,9 @@
   "rick-hoffman": {
     "path": "/images/rick-hoffman.jpg",
     "width": 480,
-    "height": 686,
-    "sourceUrl": "https://www.imdb.com/name/nm0389069/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BNTBmNzk1NmEtOWEzNy00ZTg2LTliOTQtODY0Y2U0MmYwZWVlXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "height": 384,
+    "sourceUrl": "https://www.imdb.com/name/nm0389069/mediaviewer/rm4144285186/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BN2M2YjY5MTctYTY4ZC00ZTk3LWIxYTgtMjYwNjQwNDUwNTMwXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
     "alt": "Rick Hoffman",
     "caption": "Rick Hoffman"
   },
@@ -370,21 +373,23 @@
   },
   "anya-taylor-joy": {
     "path": "/images/anya-taylor-joy.jpg",
-    "width": 480,
-    "height": 720,
-    "sourceUrl": "https://www.imdb.com/name/nm5896355/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMGZjYzcxNDEtNTU1Yi00Nzc3LTlhZjQtZTUwZDQxNjQ5MDIzXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 598,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Anya_Taylor-Joy_at_the_2025_Toronto_International_Film_Festival._07_(cropped).jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/Anya_Taylor-Joy_at_the_2025_Toronto_International_Film_Festival._07_%28cropped%29.jpg/500px-Anya_Taylor-Joy_at_the_2025_Toronto_International_Film_Festival._07_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Anya Taylor-Joy",
-    "caption": "Anya Taylor-Joy at an event for Emma. (2020)"
+    "caption": "Anya Taylor-Joy at the 2025 Toronto International Film Festival",
+    "credit": "Sara Komatsu / WikiPortraits, CC BY-SA 4.0."
   },
   "sadie-sink": {
     "path": "/images/sadie-sink.jpg",
-    "width": 480,
-    "height": 720,
-    "sourceUrl": "https://www.imdb.com/name/nm5584750/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BODI0ZTRlM2MtNDYxNy00MWFhLWI4ODItZjllN2RlN2I5NmY4XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 737,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sadie_Sink_(43914734441).jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/Sadie_Sink_%2843914734441%29.jpg/500px-Sadie_Sink_%2843914734441%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Sadie Sink",
-    "caption": "Sadie Sink at an event for The 26th Annual Screen Actors Guild Awards (2020)"
+    "caption": "Sadie Sink at Florida Supercon in 2018",
+    "credit": "Super Festivals, CC BY 2.0."
   },
   "giancarlo-esposito": {
     "path": "/images/giancarlo-esposito.jpg",
@@ -406,12 +411,13 @@
   },
   "jesse-plemons": {
     "path": "/images/jesse-plemons.jpg",
-    "width": 480,
-    "height": 720,
-    "sourceUrl": "https://www.imdb.com/name/nm0687146/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMDJkODUwYzgtOGI1ZS00ZWUyLWE0OTEtODUwNDlhMjg2NDQ4XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 637,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Plemons_at_London_Bugonia_Premiere.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Plemons_at_London_Bugonia_Premiere.jpg/500px-Plemons_at_London_Bugonia_Premiere.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Jesse Plemons",
-    "caption": "Jesse Plemons"
+    "caption": "Jesse Plemons at the London premiere of Bugonia",
+    "credit": "Raph_PH, CC BY 4.0."
   },
   "ethan-hawke": {
     "path": "/images/ethan-hawke.jpg",
@@ -477,22 +483,22 @@
     "caption": "Keanu Reeves in Let's Spend the Night Together: An Interview with Actor Miles Chapin (2022)"
   },
   "matthew-judge": {
-    "path": "/images/portrait-unavailable.svg",
-    "width": 480,
-    "height": 640,
-    "sourceUrl": "https://www.imdb.com/name/nm15158872/",
-    "imageUrl": null,
-    "alt": "No IMDb portrait available for Matthew Judge",
-    "imageUnavailable": true
+    "path": "/images/matthew-judge.jpg",
+    "width": 463,
+    "height": 1016,
+    "sourceUrl": "https://imgflip.com/memetemplate/369373240/DarkViperAu",
+    "imageUrl": "https://i.imgflip.com/63wy7s.jpg",
+    "alt": "Matthew Judge (DarkViperAU)",
+    "caption": "Matthew Judge (DarkViperAU)"
   },
   "kevan-brighting": {
-    "path": "/images/portrait-unavailable.svg",
-    "width": 480,
-    "height": 640,
-    "sourceUrl": "https://www.imdb.com/name/nm2623915/",
-    "imageUrl": null,
-    "alt": "No IMDb portrait available for Kevan Brighting",
-    "imageUnavailable": true
+    "path": "/images/kevan-brighting.jpg",
+    "width": 300,
+    "height": 300,
+    "sourceUrl": "https://www.voiceovers.co.uk/kevan.brighting/",
+    "imageUrl": "https://www.voiceovers.co.uk/photos/voice_155_1779007008_c2b09b_300.jpg",
+    "alt": "Kevan Brighting",
+    "caption": "Kevan Brighting"
   },
   "alan-morrison": {
     "path": "/images/alan-morrison.jpg",
@@ -524,9 +530,9 @@
   "britt-scott-clark": {
     "path": "/images/britt-scott-clark.jpg",
     "width": 480,
-    "height": 320,
-    "sourceUrl": "https://www.imdb.com/name/nm7794173/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BZGMyZjFjYTMtMzE2Ni00NGZmLWFmMjYtYmM5MTJhODhhNzY3XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "height": 352,
+    "sourceUrl": "https://www.imdb.com/name/nm7794173/mediaviewer/rm2661769472/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BN2VhZjdjNWYtZGNlZS00ZGY1LWIwMWMtNWRhNzJlZjVlMTg1XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
     "alt": "Britt Scott Clark",
     "caption": "Britt Scott Clark"
   },
@@ -540,13 +546,13 @@
     "caption": "Byron Coll"
   },
   "hamish-parkinson": {
-    "path": "/images/portrait-unavailable.svg",
+    "path": "/images/hamish-parkinson.jpg",
     "width": 480,
-    "height": 640,
-    "sourceUrl": "https://www.imdb.com/name/nm3312641/",
-    "imageUrl": null,
-    "alt": "No IMDb portrait available for Hamish Parkinson",
-    "imageUnavailable": true
+    "height": 480,
+    "sourceUrl": "https://www.comedy.co.nz/comedians/profiles/hamish-parkinson/",
+    "imageUrl": "https://www.comedy.co.nz/media/354513/HamishParkinsonSQ2015.jpg?anchor=center&mode=crop&width=480&height=480&rnd=130689763390000000",
+    "alt": "Hamish Parkinson",
+    "caption": "Hamish Parkinson"
   },
   "rowan-bettjeman": {
     "path": "/images/rowan-bettjeman.jpg",
@@ -569,11 +575,11 @@
   "cooper-tomlinson": {
     "path": "/images/cooper-tomlinson.jpg",
     "width": 480,
-    "height": 720,
-    "sourceUrl": "https://www.imdb.com/name/nm7831367/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BYTY5ZDkwNTktNDgxOS00NmNiLTkzZGUtZjc2MDRkMDI2NGY4XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "height": 721,
+    "sourceUrl": "https://www.imdb.com/name/nm7831367/mediaviewer/rm2380968194/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BODM0MzIzNzYtYjhmMy00NWU3LWEzYmQtMTBkMjZiMTVjOWRlXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
     "alt": "Cooper Tomlinson",
-    "caption": "Cooper Tomlinson in Obsession (2025)"
+    "caption": "Cooper Tomlinson"
   },
   "curry-barker": {
     "path": "/images/curry-barker.jpg",
@@ -586,21 +592,22 @@
   },
   "jeremy-allen-white": {
     "path": "/images/jeremy-allen-white.jpg",
-    "width": 480,
-    "height": 376,
-    "sourceUrl": "https://www.imdb.com/name/nm2087739/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BZDU3OTU5MTQtNTY1My00OWViLTg2OTktNjM3NjhjZjgzNWE0XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 666,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Jeremy_Allen_White_Springsteen-33_(cropped).jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/30/Jeremy_Allen_White_Springsteen-33_%28cropped%29.jpg/500px-Jeremy_Allen_White_Springsteen-33_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Jeremy Allen White",
-    "caption": "Jeremy Allen White at an event for The Bear (2022)"
+    "caption": "Jeremy Allen White",
+    "credit": "Bryan Berlin (CC BY-SA 4.0)"
   },
   "sam-houser": {
-    "path": "/images/portrait-unavailable.svg",
-    "width": 480,
-    "height": 640,
-    "sourceUrl": "https://www.imdb.com/name/nm0396759/",
-    "imageUrl": null,
-    "alt": "No IMDb portrait available for Sam Houser",
-    "imageUnavailable": true
+    "path": "/images/sam-houser.jpg",
+    "width": 175,
+    "height": 183,
+    "sourceUrl": "https://www.interactive.org/special_awards/details.asp?idSpecialAwards=31",
+    "imageUrl": "https://www.interactive.org/images/hall_of_fame/sam-houser-m.jpg",
+    "alt": "Sam Houser",
+    "caption": "Sam Houser. Photo from the Academy of Interactive Arts & Sciences."
   },
   "mark-fischbach": {
     "path": "/images/mark-fischbach.jpg",
@@ -612,31 +619,32 @@
     "caption": "Mark Fischbach in In Space with Markiplier: Part 1 (2022)"
   },
   "sean-mcloughlin": {
-    "path": "/images/portrait-unavailable.svg",
-    "width": 480,
-    "height": 640,
-    "sourceUrl": "https://www.imdb.com/name/nm7681921/",
-    "imageUrl": null,
-    "alt": "No IMDb portrait available for Seán McLoughlin",
-    "imageUnavailable": true
+    "path": "/images/sean-mcloughlin.jpg",
+    "width": 333,
+    "height": 500,
+    "sourceUrl": "https://shorefire.com/roster/jacksepticeye",
+    "imageUrl": "https://shorefire.com/images/made/f6e51e1825ad4a24/SM_Headshot_1_333_500_s.jpg",
+    "alt": "Seán McLoughlin (Jacksepticeye)",
+    "caption": "Seán McLoughlin (Jacksepticeye). Photo from Shore Fire Media."
   },
   "isack-hadjar": {
-    "path": "/images/portrait-unavailable.svg",
+    "path": "/images/isack-hadjar.jpg",
     "width": 480,
-    "height": 640,
-    "sourceUrl": "https://www.imdb.com/name/nm15884712/",
-    "imageUrl": null,
-    "alt": "No IMDb portrait available for Isack Hadjar",
-    "imageUnavailable": true
+    "height": 480,
+    "sourceUrl": "https://www.redbullracing.com/int-en/drivers/isack-hadjar",
+    "imageUrl": "https://img.redbull.com/images/c_fill,g_auto,w_480,h_480/q_auto,f_jpg/redbullcom/2026/1/14/f1jmlblyv03jzt4n1vkf/isack-hadjar-2026-oracle-red-bull-racing",
+    "alt": "Isack Hadjar",
+    "caption": "Isack Hadjar. Photo from Oracle Red Bull Racing."
   },
   "felix-kjellberg": {
     "path": "/images/felix-kjellberg.jpg",
-    "width": 480,
-    "height": 270,
-    "sourceUrl": "https://www.imdb.com/name/nm5579304/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BN2IzODljYzItNWMxZC00YzNiLWFlMDUtMTRlZjU3NmUxOTQ1XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 536,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pewdiepie_head_shot.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/Pewdiepie_head_shot.jpg/500px-Pewdiepie_head_shot.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Felix Kjellberg",
-    "caption": "Felix Kjellberg and Marzia Kjellberg at an event for PewDiePie (2010)"
+    "caption": "Felix Kjellberg",
+    "credit": "Cold Ones Clips (CC BY 3.0)"
   },
   "max-verstappen": {
     "path": "/images/max-verstappen.jpg",
@@ -667,12 +675,13 @@
   },
   "hamish-linklater": {
     "path": "/images/hamish-linklater.jpg",
-    "width": 480,
-    "height": 584,
-    "sourceUrl": "https://www.imdb.com/name/nm0512934/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMjEwNzE1Mjc1MV5BMl5BanBnXkFtZTgwNTgyMjgyNzE@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 565,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hamish_Linklater_2016.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c8/Hamish_Linklater_2016.jpg/500px-Hamish_Linklater_2016.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Hamish Linklater",
-    "caption": "Hamish Linklater"
+    "caption": "Hamish Linklater",
+    "credit": "Casa de Producție TVR (CC BY 3.0)"
   },
   "woody-harrelson": {
     "path": "/images/woody-harrelson.jpg",
@@ -748,12 +757,13 @@
   },
   "nicholas-hoult": {
     "path": "/images/nicholas-hoult.jpg",
-    "width": 480,
-    "height": 720,
-    "sourceUrl": "https://www.imdb.com/name/nm0396558/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BZDE2YjY4ODUtZjVmMy00ZmE2LTgwZjgtMWJiZGI0NWY3ODAzXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 702,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nicholas_Hoult-67849_(cropped).jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/Nicholas_Hoult-67849_%28cropped%29.jpg/500px-Nicholas_Hoult-67849_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Nicholas Hoult",
-    "caption": "Nicholas Hoult"
+    "caption": "Nicholas Hoult",
+    "credit": "Harald Krichel (CC BY-SA 4.0)"
   },
   "chris-evans": {
     "path": "/images/chris-evans.jpg",
@@ -865,12 +875,13 @@
   },
   "james-gunn": {
     "path": "/images/james-gunn.jpg",
-    "width": 480,
-    "height": 721,
-    "sourceUrl": "https://www.imdb.com/name/nm0348181/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BNzkxMzdkMzItNjg2Mi00ZTY5LTg3ZTgtNDRlZThkOTE3NjEwXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 642,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:James_Gunn_by_Gage_Skidmore_3.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/James_Gunn_by_Gage_Skidmore_3.jpg/500px-James_Gunn_by_Gage_Skidmore_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "James Gunn",
-    "caption": "James Gunn"
+    "caption": "James Gunn",
+    "credit": "Gage Skidmore (CC BY-SA 3.0)"
   },
   "james-franco": {
     "path": "/images/james-franco.jpg",
@@ -883,12 +894,13 @@
   },
   "christopher-lloyd": {
     "path": "/images/christopher-lloyd.jpg",
-    "width": 480,
-    "height": 320,
-    "sourceUrl": "https://www.imdb.com/name/nm0000502/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BZDM3MjdhZjktMGEyMi00NDRmLThhNjUtNGU3MGE1ZDk3MmI0XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 750,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:ChristopherLloyd2022.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/ChristopherLloyd2022.jpg/500px-ChristopherLloyd2022.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Christopher Lloyd",
-    "caption": "Christopher Lloyd"
+    "caption": "Christopher Lloyd",
+    "credit": "Philip Romano (CC BY-SA 4.0)"
   },
   "joaquin-phoenix": {
     "path": "/images/joaquin-phoenix.jpg",
@@ -910,12 +922,13 @@
   },
   "frank-grillo": {
     "path": "/images/frank-grillo.jpg",
-    "width": 480,
-    "height": 584,
-    "sourceUrl": "https://www.imdb.com/name/nm0342029/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BN2NiOTZlYTMtMGNhNS00YWM2LTgxODUtNGM3NzA3NmJlMzU5XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 630,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Frank_Grillo_by_Gage_Skidmore_2.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cd/Frank_Grillo_by_Gage_Skidmore_2.jpg/500px-Frank_Grillo_by_Gage_Skidmore_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Frank Grillo",
-    "caption": "Frank Grillo"
+    "caption": "Frank Grillo",
+    "credit": "Gage Skidmore (CC BY-SA 3.0)"
   },
   "jon-favreau": {
     "path": "/images/jon-favreau.jpg",
@@ -964,30 +977,33 @@
   },
   "david-denman": {
     "path": "/images/david-denman.jpg",
-    "width": 418,
-    "height": 587,
-    "sourceUrl": "https://www.imdb.com/name/nm0219292/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BOGQzNWI5N2UtYmU4Zi00YWIxLTk3NGQtMzFmMzMzMWEwZDcyXkEyXkFqcGc@._V1_QL85_UX418_.jpg",
+    "width": 500,
+    "height": 667,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Daviddenman_(cropped).jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Daviddenman_%28cropped%29.jpg/500px-Daviddenman_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "David Denman",
-    "caption": "David Denman"
+    "caption": "David Denman",
+    "credit": "sagindie from Hollywood, USA (CC BY 2.0)"
   },
   "chukwudi-iwuji": {
     "path": "/images/chukwudi-iwuji.jpg",
-    "width": 480,
-    "height": 720,
-    "sourceUrl": "https://www.imdb.com/name/nm1030244/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMDg4YTNmNmItZWQ1Ni00Nzk1LTliY2ItOTA2MTgxOWNmNTVjXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 751,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chukwudi_Iwuji_2022_(cropped).jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/Chukwudi_Iwuji_2022_%28cropped%29.jpg/500px-Chukwudi_Iwuji_2022_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Chukwudi Iwuji",
-    "caption": "Chukwudi Iwuji"
+    "caption": "Chukwudi Iwuji",
+    "credit": "Chettingbo (CC BY-SA 4.0)"
   },
   "steve-agee": {
     "path": "/images/steve-agee.jpg",
-    "width": 480,
-    "height": 720,
-    "sourceUrl": "https://www.imdb.com/name/nm0012948/",
-    "imageUrl": "https://m.media-amazon.com/images/M/MV5BNWIwMjhiYjQtZDE5MS00Y2Q5LTkyYmYtZWUzYTIxNzYwOTZlXkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "width": 500,
+    "height": 665,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Steve_Agee_by_Gage_Skidmore_3.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Steve_Agee_by_Gage_Skidmore_3.jpg/500px-Steve_Agee_by_Gage_Skidmore_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "alt": "Steve Agee",
-    "caption": "Steve Agee at an event for Peacemaker (2022)"
+    "caption": "Steve Agee",
+    "credit": "Gage Skidmore (CC BY-SA 3.0)"
   },
   "gary-oldman": {
     "path": "/images/gary-oldman.jpg",

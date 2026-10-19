@@ -37,6 +37,7 @@ for (const source of SOURCES) {
   assert(Number.isInteger(image.height) && image.height > 0, `Missing image height: ${source.slug}.`);
   assert(typeof image.alt === 'string' && image.alt.trim(), `Missing image text alternative: ${source.slug}.`);
   assert.equal(new URL(image.sourceUrl).protocol, 'https:');
+  if (image.credit !== undefined) assert(typeof image.credit === 'string' && image.credit.trim(), `Missing image credit: ${source.slug}.`);
   if (image.imageUnavailable) {
     assert.equal(image.imageUrl, null);
     assert(image.path.endsWith('.svg'));

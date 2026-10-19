@@ -254,7 +254,7 @@ The upstream boundary is confined to `src/imdb.mjs`, so a supported provider can
 | `src/store.mjs` | Daily scheduling, retries, deduplication, atomic persistence |
 | `src/page.mjs` | One small shared HTML layout with escaped source data |
 | `src/profiles.json` | Authored biographies, background information, known works, and reference links |
-| `src/profile-images.json` | Local image paths, dimensions, and IMDb provenance |
+| `src/profile-images.json` | Local image paths, dimensions, and source credits |
 | `src/server.mjs` | Public HTTP routes, cached feeds, ETags, response headers |
 | `public/style.css` | Shared layout, central colour palette, responsive, dark, and print styles |
 | `public/enhance.js` | Optional one-click address copying with accessible feedback |
@@ -268,7 +268,7 @@ The homepage has the combined subscription, three interest calendars, and an alp
 
 The central palette uses IMDb-inspired yellow accents, a dark header, and system light/dark preferences. Keyboard focus, skip navigation, and print and narrow-screen styles remain available. The copy script uses the browser Clipboard API. If it is unavailable, the visible address can be copied manually. A refused clipboard write selects the address and announces the fallback. CSP permits only the required same-origin stylesheet, script, and images, restricts framing and other unneeded resources, and responses include `X-Content-Type-Options: nosniff`.
 
-The 105 IMDb images were saved once into `public/images/`, with their original source URLs and dimensions recorded in `src/profile-images.json`. Pages never request image metadata or remote images at runtime. Matthew Judge, Kevan Brighting, Hamish Parkinson, Sam Houser, Seán McLoughlin, and Isack Hadjar had no suitable individual portrait when checked and use a labelled neutral placeholder. To replace an image, save the new local asset and update its manifest entry. Keep the provenance URL and accurate dimensions. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
+The 111 images are saved in `public/images/`, with their source URLs and dimensions recorded in `src/profile-images.json`. People use single-person headshots or portraits framed around the head and shoulders. Keep suitable portraits when updating the collection, and replace missing pictures or wider shots selectively. Use an existing source portrait rendition where available. IMDb, official profiles, agency pages, and Wikimedia Commons provide the saved photos. Commons images retain their photographer and licence credits in the manifest and on the profile page. Pages never request image metadata or remote images at runtime. To replace an image, save the new local asset and update its manifest entry with the source URL, accurate dimensions, and any required credit. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
 
 The project check validates all 111 source pages as well as homepage loading, ready, saved-data, and error states in both time modes. It checks local navigation and assets, source coverage, image dimensions, accessible address labels, copy targets, and byte budgets. Tests also cover copying success and failure, source-specific release lists, canonical page redirects, and existing feed behaviour.
 
