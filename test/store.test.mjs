@@ -133,6 +133,127 @@ test('snapshot restart preserves event bytes and revisions; removal cancels only
   assert.equal(store.feed('all').events[title.id].sequence, 2);
 });
 
+test('combined publication limits dates while retaining full source history, cancellations, and grouped episode attribution', async (t) => {
+  let clock = new Date('2026-10-20T00:00:00Z');
+  const boundaries = ['2023-12-31', '2024-01-01', '2029-12-31', '2030-01-01'].map((date, index) => ({
+    id: `tt${2000000 + index}`, title: `A boundary release ${date}`, date,
+  }));
+  const withdrawn = ['2023-06-01', '2026-11-19', '2030-06-01'].map((date, index) => ({
+    id: `tt${3000000 + index}`, title: `A withdrawn release ${date}`, date,
+  }));
+  const series = { id: 'tt4000000', title: 'A series', date: '2023-01-01', type: 'tvSeries', episodes: [1, 2].map((number) => ({
+    id: `tt${4000000 + number}`, title: `Chapter ${number}`, date: '2026-11-26', type: 'tvEpisode',
+    series: { id: 'tt4000000', title: 'A series', date: '2023-01-01', season: 1, episode: number },
+  })) };
+  let titles = [...boundaries, ...withdrawn, series];
+  const { store, config, dataDir } = await setup(t, async () => result(titles), { clock: () => clock });
+  assert.deepEqual(store.pageData().feeds[0].dateRange, { start: '2024-01-01', end: '2029-12-31' });
+  await store.refresh();
+  titles = [...boundaries, series];
+  clock = new Date('2026-10-21T00:00:00Z');
+  await store.refresh();
+  const archive = store.snapshot.combined.events;
+  const publication = store.feed('all');
+  const group = `${series.id}-2026-11-26`;
+  assert.deepEqual(publication.dateRange, { start: '2024-01-01', end: '2029-12-31' });
+  assert.equal(publication.modifiedAt, clock.toISOString());
+  assert.equal(publication.updatedAt, clock.toISOString());
+  assert(publication.description.includes('2024-01-01 through 2029-12-31'));
+  assert.deepEqual(Object.keys(publication.events).sort(), [boundaries[1].id, boundaries[2].id, withdrawn[1].id, group].sort());
+  assert.equal(publication.events[withdrawn[1].id].status, 'CANCELLED');
+  assert.equal(publication.events[withdrawn[1].id].sequence, 1);
+  for (const [id, event] of Object.entries(publication.events)) assert.equal(event, archive[id], 'publication retains the archived event object and revisions');
+  assert.deepEqual(publication.events[group].episodeIds, series.episodes.map((episode) => episode.id));
+  assert.equal(publication.events[group].description, 'Interests: one, two\n\nS01E01: Chapter 1\nS01E02: Chapter 2');
+  for (const slug of ['one', 'two']) {
+    assert.equal(Object.keys(store.feed(slug).events).length, 9);
+    assert.equal(store.feed(slug).events[boundaries[0].id].status, 'CONFIRMED');
+    assert.equal(store.feed(slug).events[boundaries[3].id].status, 'CONFIRMED');
+    assert.equal(store.feed(slug).events[withdrawn[0].id].status, 'CANCELLED');
+    assert.equal(store.feed(slug).events[withdrawn[2].id].status, 'CANCELLED');
+    assert.equal(store.feed(slug).dateRange, undefined);
+  }
+  const page = store.pageData();
+  assert.equal(page.feeds[0].count, 3);
+  assert.equal(page.feeds[1].count, 6);
+  assert.deepEqual(page.feeds[0].dateRange, publication.dateRange);
+  assert.deepEqual(page.upcoming.map((event) => event.id), [group, boundaries[2].id]);
+  assert(store.pageData(undefined, 'one').upcoming.some((event) => event.id === boundaries[3].id));
+  const saved = JSON.parse(gunzipSync(await readFile(join(dataDir, 'snapshot.json.gz'))));
+  assert.deepEqual(saved.combined.events, archive);
+  assert.equal(saved.combined.events[withdrawn[0].id].status, 'CANCELLED');
+  assert.equal(saved.combined.events[withdrawn[2].id].status, 'CANCELLED');
+  const restored = new CalendarStore(config, { logger: quiet, clock: () => clock });
+  t.after(() => restored.stop());
+  await restored.initialize();
+  assert.deepEqual(restored.snapshot.combined.events, archive);
+  assert.deepEqual(restored.feed('all').events, publication.events);
+});
+
+test('combined publication rolls over at UTC January 1 without refreshing or changing archived events', async (t) => {
+  let clock = new Date('2026-12-31T23:59:59.999Z');
+  let calls = 0;
+  const dates = ['2024-01-01', '2024-12-31', '2025-01-01', '2029-12-31', '2030-01-01', '2030-12-31', '2031-01-01'];
+  const titles = dates.map((date, index) => ({ id: `tt${5000000 + index}`, title: `A release ${date}`, date }));
+  const { store, config, dataDir } = await setup(t, async () => { calls++; return result(titles); }, { clock: () => clock });
+  await store.refresh();
+  const archive = store.snapshot.combined.events;
+  const archivedBytes = JSON.stringify(archive);
+  const disk = await readFile(join(dataDir, 'snapshot.json.gz'));
+  const previous = store.feed('all');
+  const sourceEvents = store.feed('one').events;
+  assert.equal(store.feed('all').events, previous.events, 'repeated requests reuse the same publication map');
+  assert.equal(store.feed('all').modifiedAt, previous.modifiedAt);
+  assert.deepEqual(Object.values(previous.events).map((event) => event.date), dates.slice(0, 4));
+  clock = new Date('2027-01-01T00:00:00Z');
+  const current = store.feed('all');
+  assert.notEqual(current.events, previous.events);
+  assert.equal(store.feed('all').events, current.events, 'the new year also has one stable publication map');
+  assert.deepEqual(current.dateRange, { start: '2025-01-01', end: '2030-12-31' });
+  assert.deepEqual(Object.values(current.events).map((event) => event.date), dates.slice(2, 6));
+  assert.equal(current.modifiedAt, clock.toISOString());
+  assert.equal(current.updatedAt, previous.updatedAt, 'publication does not pretend that upstream data was refreshed');
+  assert.equal(calls, config.sources.length);
+  assert.equal(store.snapshot.combined.events, archive);
+  assert.equal(JSON.stringify(archive), archivedBytes);
+  assert.equal(store.feed('one').events, sourceEvents);
+  for (const [id, event] of Object.entries(current.events)) assert.equal(event, archive[id]);
+  assert.deepEqual(await readFile(join(dataDir, 'snapshot.json.gz')), disk, 'year rollover does not rewrite or prune persisted history');
+  clock = new Date('2027-06-01T00:00:00Z');
+  assert.equal(store.feed('all').events, current.events);
+  await store.refresh();
+  assert.notEqual(store.feed('all').events, current.events, 'a refreshed archive invalidates the publication cache');
+  assert.deepEqual(store.feed('all').events, current.events, 'an unchanged refresh preserves every published event value');
+});
+
+test('moving a release outside the combined window revises publication metadata while keeping its full source record', async (t) => {
+  let clock = new Date('2026-10-20T00:00:00Z');
+  let date = '2026-11-19';
+  const { store } = await setup(t, async () => result([{ ...title, date }]), { clock: () => clock });
+  await store.refresh();
+  const first = store.feed('all');
+  const original = first.events[title.id];
+  date = '2030-01-01';
+  clock = new Date('2026-10-21T00:00:00Z');
+  await store.refresh();
+  const outside = store.feed('all');
+  assert.deepEqual(outside.events, {});
+  assert.equal(outside.modifiedAt, clock.toISOString());
+  assert(outside.modifiedAt > first.modifiedAt);
+  assert.equal(store.feed('all').modifiedAt, outside.modifiedAt, 'repeated requests preserve the publication revision');
+  assert.equal(store.snapshot.combined.events[title.id].status, 'CONFIRMED');
+  assert.equal(store.snapshot.combined.events[title.id].sequence, original.sequence + 1);
+  assert.equal(store.snapshot.combined.events[title.id].createdAt, original.createdAt);
+  assert.equal(store.snapshot.combined.events[title.id].date, date);
+  assert.equal(store.feed('one').events[title.id].date, date);
+  date = '2028-11-19';
+  clock = new Date('2026-10-22T00:00:00Z');
+  await store.refresh();
+  assert.equal(store.feed('all').events[title.id], store.snapshot.combined.events[title.id]);
+  assert.equal(store.feed('all').events[title.id].sequence, original.sequence + 2);
+  assert.equal(store.feed('all').events[title.id].createdAt, original.createdAt);
+});
+
 test('simultaneous refresh calls share one job and fresh saved data is not refetched', async (t) => {
   let calls = 0;
   let release;
@@ -150,13 +271,17 @@ test('simultaneous refresh calls share one job and fresh saved data is not refet
 
 test('combined omission counts deduplicate undated titles and prefer an available complete date', async (t) => {
   const unknown = { id: 'tt2345678', title: 'An undated title', date: null };
+  const historical = { id: 'tt3456789', title: 'An older release', date: '2023-12-31' };
   const { store } = await setup(t, async (item) => result([
     { ...title, date: item.slug === 'one' ? null : title.date }, unknown,
+    { ...historical, date: item.slug === 'one' ? null : historical.date },
   ]));
   await store.refresh();
   const combined = store.pageData().feeds.find((feed) => feed.slug === 'all');
   assert.equal(combined.count, 1);
   assert.equal(combined.omitted, 1);
+  assert.equal(store.feed('all').events[historical.id], undefined);
+  assert.equal(store.snapshot.combined.events[historical.id].date, historical.date, 'a known historical date does not become TBA when outside the published window');
 });
 
 test('series and directly matched episodes share release groups, omission counts, and source attribution', async (t) => {

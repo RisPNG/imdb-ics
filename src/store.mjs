@@ -81,6 +81,7 @@ export class CalendarStore {
     this.clock = clock;
     this.logger = logger;
     this.snapshot = emptySnapshot();
+    this.combinedPublication = null;
     this.refreshing = null;
     this.timer = null;
     this.controller = null;
@@ -157,9 +158,21 @@ export class CalendarStore {
   feed(slug) {
     if (slug === 'all') {
       if (!this.snapshot.combined) return null;
+      const now = this.clock();
+      const year = now.getUTCFullYear();
+      let publication = this.combinedPublication;
+      if (publication?.archive !== this.snapshot.combined.events || publication.year !== year) {
+        const dateRange = { start: `${year - 2}-01-01`, end: `${year + 3}-12-31` };
+        publication = { archive: this.snapshot.combined.events, year, dateRange,
+          events: Object.fromEntries(Object.entries(this.snapshot.combined.events)
+            .filter(([, event]) => event.date >= dateRange.start && event.date <= dateRange.end)),
+          modifiedAt: now.toISOString() };
+        this.combinedPublication = publication;
+      }
       const stale = this.config.sources.some((source) => this.sourceState(source).status !== 'ready');
-      return { label: 'All releases', description: 'Releases from all configured IMDb sources, with series episodes grouped by release date.',
-        events: this.snapshot.combined.events, updatedAt: this.snapshot.combined.updatedAt, stale };
+      return { label: 'All releases', description: `Release dates from ${publication.dateRange.start} through ${publication.dateRange.end} for all configured IMDb sources, with series episodes grouped by release date.`,
+        events: publication.events, dateRange: publication.dateRange, modifiedAt: publication.modifiedAt,
+        updatedAt: this.snapshot.combined.updatedAt, stale };
     }
     const source = this.config.sources.find((candidate) => candidate.slug === slug);
     if (!source) return undefined;
@@ -176,10 +189,12 @@ export class CalendarStore {
         updatedAt: saved?.lastSuccessAt || null, omitted: saved?.omitted || 0 };
     });
     const combined = this.feed('all');
+    const year = this.clock().getUTCFullYear();
     const titles = this.config.sources.flatMap((source) => this.snapshot.sources[source.slug]?.titles || []);
     const all = { slug: 'all', label: 'All releases', url: null, status: combined ? (combined.stale ? 'stale' : 'ready') : (individual.some((feed) => feed.status === 'error') ? 'error' : 'pending'),
+      dateRange: combined?.dateRange ?? { start: `${year - 2}-01-01`, end: `${year + 3}-12-31` },
       count: combined ? Object.values(combined.events).filter((event) => event.status === 'CONFIRMED').length : null,
-      updatedAt: combined?.updatedAt || null, omitted: undatedTitleCount(titles, combined?.events || {}) };
+      updatedAt: combined?.updatedAt || null, omitted: undatedTitleCount(titles, this.snapshot.combined?.events || {}) };
     const feeds = [all, ...individual].map((feed) => {
       const subscriptionUrl = `${baseUrl}/calendars/${feed.slug}.ics`;
       return { ...feed, subscriptionUrl, webcalUrl: subscriptionUrl.replace(/^https?:/, 'webcal:') };

@@ -96,7 +96,7 @@ export async function createApp(config, options = {}) {
           length += Buffer.byteLength(chunk);
           if (++count % 256 === 0) await setImmediate();
         }
-        let modifiedAt = '';
+        let modifiedAt = feed.modifiedAt || '';
         for (const event of Object.values(feed.events)) if (event.modifiedAt > modifiedAt) modifiedAt = event.modifiedAt;
         return { etag: `"${hash.digest('hex')}"`, length, lastModified: new Date(modifiedAt || feed.updatedAt).toUTCString() };
       })() };

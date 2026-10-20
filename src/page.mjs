@@ -50,10 +50,13 @@ function renderSubscription(feed, index, baseUrl) {
   const sourceUrl = safeUrl(feed.url, baseUrl);
   const inputId = `subscription-${index}`;
   const updated = updateTime(feed.updatedAt);
+  const rangeStart = validDate(feed.dateRange?.start);
+  const rangeEnd = validDate(feed.dateRange?.end);
   const omitted = Number.isSafeInteger(feed.omitted) && feed.omitted > 0
     ? `<span>${feed.omitted.toLocaleString('en-GB')} TBA</span>` : '';
   return `<div class="subscription">
     <p class="feed-state"><span>${escape(feedState(feed))}</span>${omitted}</p>
+    ${rangeStart && rangeEnd ? `<p class="feed-detail">Includes <time datetime="${escape(feed.dateRange.start)}">${escape(dateFormatter.format(rangeStart))}</time> through <time datetime="${escape(feed.dateRange.end)}">${escape(dateFormatter.format(rangeEnd))}</time>. Rolls forward each year.</p>` : ''}
     <div class="subscription-actions">${webcalUrl || subscriptionUrl
     ? `<a class="subscribe" href="${escape(webcalUrl || subscriptionUrl)}">Subscribe<span class="sr-only"> to ${escape(feed.label)}</span></a>`
     : '<p class="unavailable">Subscription unavailable</p>'}${sourceUrl ? `<a class="source-link" href="${escape(sourceUrl)}" rel="noreferrer">View on IMDb<span class="sr-only">: ${escape(feed.label)}</span></a>` : ''}</div>

@@ -163,6 +163,47 @@ test('disconnecting during a gzip calendar stream leaves later requests healthy'
   assert.deepEqual(warnings, []);
 });
 
+test('the combined date window rolls over without a refresh or a stale conditional response', async (t) => {
+  let clock = new Date('2026-12-31T23:59:00Z');
+  const titles = [
+    { id: 'tt1999001', title: 'The outgoing boundary', date: '2024-01-01' },
+    { id: 'tt1999002', title: 'The incoming boundary', date: '2030-12-31' },
+    { id: 'tt1999003', title: 'An unchanged release', date: '2026-11-19' },
+  ];
+  const { store, origin } = await runningApp(t, {}, {
+    clock: () => clock,
+    loader: async (source) => ({ titles: source === SOURCES[0] ? titles : [], total: source === SOURCES[0] ? titles.length : 0, warnings: [] }),
+  });
+  await store.refresh();
+  const archive = store.snapshot.combined.events;
+  const source = await fetch(`${origin}/calendars/${SOURCES[0].slug}.ics`);
+  const full = await source.text();
+  assert(full.includes('DTSTART;VALUE=DATE:20240101'));
+  assert(full.includes('DTSTART;VALUE=DATE:20301231'));
+  const first = await fetch(`${origin}/calendars/all.ics`, { headers: { 'Accept-Encoding': 'identity' } });
+  const before = await first.text();
+  assert(before.includes('DTSTART;VALUE=DATE:20240101'));
+  assert(!before.includes('DTSTART;VALUE=DATE:20301231'));
+  const etag = first.headers.get('etag');
+  const modified = first.headers.get('last-modified');
+  assert.equal((await fetch(`${origin}/calendars/all.ics`, { headers: { 'Accept-Encoding': 'identity', 'If-Modified-Since': modified } })).status, 304);
+
+  clock = new Date('2027-01-01T00:00:00Z');
+  const next = await fetch(`${origin}/calendars/all.ics`, { headers: { 'Accept-Encoding': 'identity', 'If-Modified-Since': modified } });
+  assert.equal(next.status, 200);
+  assert.equal(Date.parse(next.headers.get('last-modified')), clock.getTime());
+  assert.notEqual(next.headers.get('etag'), etag);
+  const after = await next.text();
+  assert(!after.includes('DTSTART;VALUE=DATE:20240101'));
+  assert(after.includes('DTSTART;VALUE=DATE:20301231'));
+  assert(after.includes('DTSTART;VALUE=DATE:20261119'));
+  assert.strictEqual(store.snapshot.combined.events, archive);
+  assert(Object.values(archive).every((event) => event.status === 'CONFIRMED' && event.sequence === 0));
+  const compressed = await fetch(`${origin}/calendars/all.ics`, { headers: { 'Accept-Encoding': 'gzip', 'If-None-Match': `W/${etag.slice(0, -1)}-gzip"` } });
+  assert.equal(compressed.status, 200);
+  assert.equal(await compressed.text(), after);
+});
+
 test('saved combined feeds remain available while new sources warm up and readiness waits for them', async (t) => {
   let failing = true;
   const missing = SOURCES.at(-1);

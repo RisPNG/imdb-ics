@@ -111,7 +111,7 @@ test('streamed snapshots preserve Unicode, quoted text, backslashes, newlines, a
   await store.initialize();
   await store.refresh();
   const cancelled = { ...store.feed('all').events[parent.id], id: 'tt4567890', titleId: 'tt4567890', sequence: 7, status: 'CANCELLED' };
-  store.snapshot.combined.events[cancelled.id] = cancelled;
+  store.snapshot.combined.events = { ...store.snapshot.combined.events, [cancelled.id]: cancelled };
   await store.persist();
   assert.equal(store.persistenceError, null);
   const expected = structuredClone(store.snapshot);

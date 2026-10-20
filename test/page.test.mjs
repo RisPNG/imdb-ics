@@ -11,13 +11,15 @@ const feed = {
 };
 
 test('renders visible subscription links, TBA counts, and complete dates without requiring JavaScript', () => {
-  const html = renderPage({ baseUrl, feeds: [{ ...feed, slug: 'all', kind: undefined, label: 'All releases', url: null }, feed],
+  const html = renderPage({ baseUrl, feeds: [{ ...feed, slug: 'all', kind: undefined, label: 'All releases', url: null,
+    dateRange: { start: '2024-01-01', end: '2029-12-31' } }, feed],
     upcoming: [{ title: 'A release', date: '2026-12-18', sources: ['Marvel'] }], updatedAt: feed.updatedAt });
   assert.match(html, /href="webcal:\/\/calendar\.example\/calendars\/marvel\.ics"/);
   assert.match(html, /value="https:\/\/calendar\.example\/calendars\/marvel\.ics" readonly/);
   assert.match(html, /<time datetime="2026-12-18">[^<]+<\/time>/);
   assert.match(html, /2 releases/);
   assert.match(html, /1 TBA/);
+  assert.match(html, /Includes <time datetime="2024-01-01">1 Jan 2024<\/time> through <time datetime="2029-12-31">31 Dec 2029<\/time>\. Rolls forward each year\./);
   assert.doesNotMatch(html, /without complete dates|Release Calendar/);
   assert.match(html, /Ris(?:&#39;|&apos;|') IMDb ICalendar/);
   assert.equal((html.match(/<h1[\s>]/g) || []).length, 1);
