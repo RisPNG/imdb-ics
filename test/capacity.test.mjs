@@ -9,13 +9,16 @@ import { SOURCES } from '../src/config.mjs';
 
 const execFile = promisify(execFileCallback);
 
-test(`${SOURCES.length} sources preserve full history across streamed HTTP, overlapping refreshes, disconnects, and restart under the production memory limits`, async (t) => {
+test(`${SOURCES.length} sources preserve full history through policy-driven mass cancellations, streamed HTTP, and restart under the production memory limits`, async (t) => {
   const dataDir = await mkdtemp(join(tmpdir(), 'release-calendar-capacity-test-'));
   const historicalSources = 111;
   const sharedTitles = 487;
   const uniqueTitles = 550;
+  const retainedUniqueTitles = uniqueTitles / 2;
   const historicalEvents = sharedTitles + historicalSources * uniqueTitles + 4;
   const expectedEvents = historicalEvents + (SOURCES.length - historicalSources) * 50;
+  const expectedCancelled = (historicalSources - 3) * (uniqueTitles - retainedUniqueTitles) + 1;
+  const expectedConfirmed = expectedEvents - expectedCancelled;
   t.after(() => rm(dataDir, { recursive: true, force: true }));
   const code = `
     import assert from 'node:assert/strict';
@@ -30,6 +33,7 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
     import { loadConfig } from ${JSON.stringify(new URL('../src/config.mjs', import.meta.url).href)};
     import { createApp } from ${JSON.stringify(new URL('../src/server.mjs', import.meta.url).href)};
     import { calendarChunks } from ${JSON.stringify(new URL('../src/calendar.mjs', import.meta.url).href)};
+    import { PEOPLE_EXCLUDED_INTEREST_IDS } from ${JSON.stringify(new URL('../src/imdb.mjs', import.meta.url).href)};
     const dataDir = ${JSON.stringify(dataDir)};
     const sources = Array.from({ length: ${SOURCES.length} }, (_, index) => ({ slug: 'source-' + index,
       id: (index < 3 ? 'in' : 'nm') + (1000000 + index), kind: index < 3 ? 'interest' : 'name', label: (index < 3 ? 'Interest ' : 'Person ') + index }));
@@ -58,6 +62,7 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
         } });
       await store.initialize();
       await store.refresh();
+      for (const saved of Object.values(store.snapshot.sources)) delete saved.excludedInterestIds;
       store.snapshot.combined.events[withdrawn.id] = withdrawn;
       await store.persist();
       assert.equal(store.persistenceError, null);
@@ -70,11 +75,18 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
       process.exit(0);
     }
     if (phase === 'restart') {
+      clock = new Date('2026-10-20T01:00:00.000Z');
       const store = new CalendarStore(config, { clock: () => clock, logger });
       await store.initialize();
       assert.equal(Object.keys(store.feed('all').events).length, ${expectedEvents});
       assert.deepEqual(store.feed('all').events[withdrawn.id], withdrawn);
-      assert.equal(store.feed('all').events.tt1000000.sequence, 0);
+      assert.equal(store.feed('all').events.tt1000000.sequence, 2);
+      assert.equal(Object.values(store.feed('all').events).filter((event) => event.status === 'CONFIRMED').length, ${expectedConfirmed});
+      assert.equal(Object.values(store.feed('all').events).filter((event) => event.status === 'CANCELLED').length, ${expectedCancelled});
+      for (const source of sources) {
+        if (source.kind === 'name') assert.deepEqual(store.snapshot.sources[source.slug].excludedInterestIds, PEOPLE_EXCLUDED_INTEREST_IDS);
+        assert.equal(store.sourceState(source).status, 'ready');
+      }
       const hash = createHash('sha256');
       for (const chunk of calendarChunks({ name: store.feed('all').label, description: store.feed('all').description, events: store.feed('all').events })) hash.update(chunk);
       assert.deepEqual(warnings, []);
@@ -82,11 +94,15 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
       process.exit(0);
     }
     let failed = true;
+    const attempts = [];
     const app = await createApp(config, { clock: () => clock, logger, loader: async (source) => {
       await setImmediate();
-      if (failed && source === sources[0]) throw new Error('A temporary upstream failure.');
+      attempts.push(source.slug);
+      if (failed && source === sources[3]) throw new Error('A temporary upstream failure.');
       const previous = app.store.snapshot.sources[source.slug];
-      const titles = previous ? structuredClone(previous.titles) : Array.from({ length: 50 }, (_, index) => ({
+      const titles = previous ? structuredClone(previous.titles.filter((title) => source.kind !== 'name' || title.series
+        || (Number(title.id.slice(2)) >= ${1000000 + sharedTitles}
+          && (Number(title.id.slice(2)) - ${1000000 + sharedTitles}) % ${uniqueTitles} < ${retainedUniqueTitles}))) : Array.from({ length: 50 }, (_, index) => ({
         id: 'tt' + (8000000000 + sources.indexOf(source) * 50 + index), title: 'A newly followed credit ' + index, date: '2026-11-21', type: 'movie' }));
       return { titles, total: titles.length, warnings: [] };
     } });
@@ -106,6 +122,12 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
     });
     let resume;
     try {
+      const historicalIds = Object.keys(app.store.feed('all').events);
+      const excludedId = 'tt${1000000 + sharedTitles + 3 * uniqueTitles + retainedUniqueTitles}';
+      const formerlyCredited = app.store.feed('all').events[excludedId];
+      assert.equal(formerlyCredited.status, 'CONFIRMED');
+      assert.equal(app.store.sourceState(sources[3]).status, 'stale');
+      assert.equal(app.store.snapshot.sources[sources[3].slug].excludedInterestIds, undefined);
       let coldFinished = false;
       const cold = request('/calendars/all.ics').then((response) => { coldFinished = true; return response; });
       const coldHead = request('/calendars/all.ics', { method: 'HEAD' });
@@ -115,13 +137,14 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
       const first = await cold;
       assert.equal((await coldHead).headers.etag, first.headers.etag);
       assert.equal(first.status, 200);
+      assert.equal(first.headers['x-calendar-stale'], 'true');
       assert.equal(first.headers.etag, '"' + first.hash + '"');
       assert.equal(Number(first.headers['content-length']), first.bytes);
       let received;
       const receiving = new Promise((resolve) => { received = resolve; });
       const slow = request('/calendars/all.ics', {}, (continueReading) => { resume = continueReading; received(); });
       await receiving;
-      const refreshing = app.store.refresh();
+      const refreshing = app.store.refresh({ force: false });
       const head = await request('/calendars/all.ics', { method: 'HEAD' });
       assert.equal(head.bytes, 0);
       assert.equal(head.headers.etag, first.headers.etag);
@@ -137,6 +160,12 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
       assert.equal(app.store.persistenceError, null);
       assert.equal(warnings.length, 1);
       assert.match(warnings[0], /A temporary upstream failure/);
+      assert.equal(attempts.length, sources.length - 3);
+      assert(sources.slice(0, 3).every((source) => !attempts.includes(source.slug)));
+      assert.equal(app.store.feed('all').events[excludedId].status, 'CONFIRMED');
+      assert.equal(app.store.snapshot.sources[sources[3].slug].excludedInterestIds, undefined);
+      assert.deepEqual(app.store.feed('all').events.tt1000000.sourceLabels.people, ['Person 3']);
+      assert.equal(Object.values(app.store.feed('all').events).filter((event) => event.status === 'CANCELLED').length, ${expectedCancelled - (uniqueTitles - retainedUniqueTitles)});
       assert.deepEqual(app.store.feed('all').events[withdrawn.id], withdrawn);
       assert.equal(Object.keys(app.store.feed('all').events).length, ${expectedEvents});
       const batch = app.store.feed('all').events['tt9000000000-2026-11-27'];
@@ -147,9 +176,27 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
       clock = new Date('2026-10-20T00:31:00.000Z');
       await app.store.refresh({ force: false });
       assert.equal(app.store.persistenceError, null);
+      assert.equal(attempts.length, sources.length - 2);
+      assert.equal(attempts.at(-1), sources[3].slug);
+      const events = app.store.feed('all').events;
+      assert(historicalIds.every((id) => events[id]), 'Filtering must retain every historical UID.');
+      assert.equal(events[excludedId].status, 'CANCELLED');
+      assert.equal(events[excludedId].createdAt, formerlyCredited.createdAt);
+      assert.equal(events[excludedId].sequence, formerlyCredited.sequence + 1);
+      assert.equal(events.tt1000000.status, 'CONFIRMED');
+      assert.deepEqual(events.tt1000000.sourceLabels, { interests: ['Interest 0', 'Interest 1', 'Interest 2'], people: [] });
+      assert.equal(events.tt1000000.description, 'Interests: Interest 0, Interest 1, Interest 2');
+      assert.equal(app.store.feed('all').stale, false);
+      for (const source of sources) {
+        if (source.kind === 'name') assert.deepEqual(app.store.snapshot.sources[source.slug].excludedInterestIds, PEOPLE_EXCLUDED_INTEREST_IDS);
+        else assert.equal(app.store.snapshot.sources[source.slug].excludedInterestIds, undefined);
+      }
+      const confirmed = Object.values(events).filter((event) => event.status === 'CONFIRMED').length;
+      const cancelled = Object.values(events).filter((event) => event.status === 'CANCELLED').length;
+      assert.equal(confirmed, ${expectedConfirmed});
+      assert.equal(cancelled, ${expectedCancelled});
       let rawBytes = 0;
       for await (const chunk of createReadStream(join(dataDir, 'snapshot.json.gz')).pipe(createGunzip())) rawBytes += chunk.length;
-      assert(rawBytes > 64 * 1024 * 1024);
       const compressedBytes = (await stat(join(dataDir, 'snapshot.json.gz'))).size;
       assert(compressedBytes < 16 * 1024 * 1024);
       let final;
@@ -171,7 +218,7 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
       assert.equal((await request('/healthz')).status, 200);
       assert.equal((await request('/readyz')).status, 200);
       assert.equal(warnings.length, 1);
-      console.log(JSON.stringify({ phase, hash: final.hash, bytes: final.bytes, rawBytes, compressedBytes, count: Object.keys(app.store.feed('all').events).length, coldHeadersMs: first.headersMs, warmHeadMs: head.headersMs, healthMs: healthy.headersMs, rssMiB: Math.ceil(process.resourceUsage().maxRSS / 1024), elapsedMs: Math.round(performance.now() - started) }));
+      console.log(JSON.stringify({ phase, hash: final.hash, bytes: final.bytes, rawBytes, compressedBytes, count: Object.keys(events).length, confirmed, cancelled, coldHeadersMs: first.headersMs, warmHeadMs: head.headersMs, healthMs: healthy.headersMs, rssMiB: Math.ceil(process.resourceUsage().maxRSS / 1024), elapsedMs: Math.round(performance.now() - started) }));
     } finally { resume?.(); await app.close(); }
   `;
   const results = [];
@@ -182,5 +229,5 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
     results.push(result);
   }
   assert.equal(results[1].hash, results[2].hash, 'Restart must preserve all calendar bytes and revisions.');
-  t.diagnostic(`${SOURCES.length} sources, ${results[1].count} events, ${results[0].rawBytes} raw seed bytes, ${results[1].rawBytes} raw refreshed bytes (${(results[1].rawBytes / 1024 / 1024).toFixed(1)} MiB), ${results[1].compressedBytes} gzip bytes, and ${(results[1].bytes / 1024 / 1024).toFixed(1)} MiB calendar: peak ${Math.max(...results.map((result) => result.rssMiB))} MiB RSS; cold headers ${results[1].coldHeadersMs} ms, warm HEAD ${results[1].warmHeadMs} ms, concurrent health ${results[1].healthMs} ms; ${results.reduce((sum, result) => sum + result.elapsedMs, 0)} ms across seed, HTTP refresh, and restart.`);
+  t.diagnostic(`${SOURCES.length} sources, ${results[1].count} events (${results[1].confirmed} confirmed, ${results[1].cancelled} cancelled), ${results[0].rawBytes} raw seed bytes, ${results[1].rawBytes} raw refreshed bytes (${(results[1].rawBytes / 1024 / 1024).toFixed(1)} MiB), ${results[1].compressedBytes} gzip bytes, and ${(results[1].bytes / 1024 / 1024).toFixed(1)} MiB calendar: peak ${Math.max(...results.map((result) => result.rssMiB))} MiB RSS; cold headers ${results[1].coldHeadersMs} ms, warm HEAD ${results[1].warmHeadMs} ms, concurrent health ${results[1].healthMs} ms; ${results.reduce((sum, result) => sum + result.elapsedMs, 0)} ms across seed, HTTP refresh, and restart.`);
 });

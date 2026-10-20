@@ -866,5 +866,11 @@
     "roles": ["Actor", "Director"],
     "knownFor": ["Perempuan Melayu Terakhir", "Pontianak Harum Sundal Malam", "Impak Maksima", "Town Mall"],
     "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0951132/" }]
+  },
+  "zamarul-hisham": {
+    "summary": "Zamarul Hisham is an actor whose films include Di ambang misteri, Kerat 14, and Blood Brothers: Fury of the Dragon. His television work includes the series Framed.",
+    "roles": ["Actor"],
+    "knownFor": ["Di ambang misteri", "Framed", "Kerat 14", "Blood Brothers: Fury of the Dragon"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1935071/" }]
   }
 }

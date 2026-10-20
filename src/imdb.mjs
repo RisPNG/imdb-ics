@@ -5,6 +5,7 @@ const MAX_PAGES = 1_000;
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 const PAGE_TIMEOUT_MS = 20_000;
 const OPERATION_TIMEOUT_MS = 120_000;
+export const PEOPLE_EXCLUDED_INTEREST_IDS = Object.freeze(['in0000211', 'in0000127']);
 
 export class ImdbError extends Error {
   constructor(message, { code = 'UPSTREAM_ERROR', status, cause } = {}) {
@@ -19,7 +20,7 @@ function queryFor(source, cursor) {
   const after = cursor === null ? '' : `, after: ${JSON.stringify(cursor)}`;
   const filter = source.kind === 'interest'
     ? `interestConstraint: {allInterestIds: ["${source.id}"]}`
-    : source.kind === 'name' ? `titleCreditsConstraint: {anyCredits: [{nameId: "${source.id}"}]}`
+    : source.kind === 'name' ? `titleCreditsConstraint: {anyCredits: [{nameId: "${source.id}"}]}, interestConstraint: {excludeInterestIds: ${JSON.stringify(PEOPLE_EXCLUDED_INTEREST_IDS)}}`
       : `episodicConstraint: {anySeriesIds: ["${source.id}"]}`;
   return `query ${source.kind === 'series' ? 'CalendarEpisodes' : 'CalendarSource'} {
     advancedTitleSearch(first: ${PAGE_SIZE}${after}, constraints: {${filter}}) {
@@ -193,7 +194,7 @@ async function readTitles(source, { fetchImpl, signal }) {
 }
 
 /**
- * Read all directly matching titles, including undated titles, and expand interest series into their complete episode lists. Filmographies retain only directly credited episodes.
+ * Read all directly matching titles, including undated titles, and expand interest series into their complete episode lists. Filmographies exclude News and Talk Show interests and retain only directly credited episodes.
  * The website GraphQL endpoint is not the licensed AWS IMDb API. Entitlement metadata and usage notices are returned as warnings for the caller to expose.
  * Any failed or inconsistent page rejects the entire source; callers should keep their previous complete snapshot.
  */

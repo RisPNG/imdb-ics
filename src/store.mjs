@@ -10,7 +10,7 @@ import Assembler from 'stream-json/assembler.js';
 import { disassembler } from 'stream-json/disassembler.js';
 import { stringer } from 'stream-json/stringer.js';
 import { attributeReleases, isValidEvent, reconcileEvents } from './calendar.mjs';
-import { fetchSource } from './imdb.mjs';
+import { fetchSource, PEOPLE_EXCLUDED_INTEREST_IDS } from './imdb.mjs';
 
 const MAX_SNAPSHOT_BYTES = 96 * 1024 * 1024;
 const MAX_COMPRESSED_BYTES = 16 * 1024 * 1024;
@@ -149,7 +149,8 @@ export class CalendarStore {
   sourceState(source) {
     const saved = this.snapshot.sources[source.slug];
     if (!saved?.lastSuccessAt) return { status: saved?.error ? 'error' : 'pending', saved };
-    const stale = !!saved.error || this.clock().getTime() - Date.parse(saved.lastSuccessAt) >= this.config.refreshIntervalMs;
+    const policyChanged = source.kind === 'name' && JSON.stringify(saved.excludedInterestIds) !== JSON.stringify(PEOPLE_EXCLUDED_INTEREST_IDS);
+    const stale = !!saved.error || policyChanged || this.clock().getTime() - Date.parse(saved.lastSuccessAt) >= this.config.refreshIntervalMs;
     return { status: stale ? 'stale' : 'ready', saved };
   }
 
@@ -216,9 +217,10 @@ export class CalendarStore {
       if (signal.aborted) break;
       const previous = this.snapshot.sources[source.slug];
       const now = this.clock().toISOString();
+      const policyChanged = source.kind === 'name' && JSON.stringify(previous?.excludedInterestIds) !== JSON.stringify(PEOPLE_EXCLUDED_INTEREST_IDS);
       const interval = previous?.error ? this.config.retryIntervalMs : this.config.refreshIntervalMs;
       const checkedAt = previous?.error ? previous.lastAttemptAt : previous?.lastSuccessAt;
-      if (!force && checkedAt && this.clock().getTime() - Date.parse(checkedAt) < interval) continue;
+      if (!force && checkedAt && (previous?.error || !policyChanged) && this.clock().getTime() - Date.parse(checkedAt) < interval) continue;
       try {
         const result = await this.loader(source, { signal, seriesCache });
         if (signal.aborted) break;
@@ -227,15 +229,15 @@ export class CalendarStore {
         const omitted = undatedTitleCount(result.titles, events);
         this.snapshot.sources[source.slug] = { titles: result.titles, events,
           total: result.total, omitted, warnings: result.warnings || [],
+          ...(source.kind === 'name' ? { excludedInterestIds: PEOPLE_EXCLUDED_INTEREST_IDS } : {}),
           lastSuccessAt: now, lastAttemptAt: now, error: null };
         refreshed = true;
         this.logger.info(`Refreshed ${source.slug}: ${result.titles.length} titles, ${omitted} without a complete date.`);
         for (const warning of result.warnings || []) this.logger.warn(`${source.slug}: ${warning}`);
       } catch (error) {
         if (signal.aborted) break;
-        this.snapshot.sources[source.slug] = { titles: previous?.titles || [], events: previous?.events || {},
-          total: previous?.total || 0, omitted: previous?.omitted || 0, warnings: previous?.warnings || [],
-          lastSuccessAt: previous?.lastSuccessAt || null, lastAttemptAt: now, error: errorMessage(error) };
+        this.snapshot.sources[source.slug] = { ...(previous ?? { titles: [], events: {}, total: 0, omitted: 0, warnings: [], lastSuccessAt: null }),
+          lastAttemptAt: now, error: errorMessage(error) };
         this.logger.warn(`Refresh failed for ${source.slug}: ${errorMessage(error)}`);
       }
     }
@@ -309,6 +311,7 @@ export class CalendarStore {
     const due = this.config.sources.map((source) => {
       const saved = this.snapshot.sources[source.slug];
       if (!saved) return now + this.config.retryIntervalMs;
+      if (source.kind === 'name' && !saved.error && JSON.stringify(saved.excludedInterestIds) !== JSON.stringify(PEOPLE_EXCLUDED_INTEREST_IDS)) return now;
       return Date.parse(saved.error ? saved.lastAttemptAt : saved.lastSuccessAt) +
         (saved.error ? this.config.retryIntervalMs : this.config.refreshIntervalMs);
     });

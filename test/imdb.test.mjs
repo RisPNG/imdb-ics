@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchSource, ImdbError } from '../src/imdb.mjs';
+import { fetchSource, ImdbError, PEOPLE_EXCLUDED_INTEREST_IDS } from '../src/imdb.mjs';
 
 const marvel = { id: 'in0000248', kind: 'interest', label: 'Marvel' };
 const person = { id: 'nm0319213', kind: 'name', label: 'Vince Gilligan' };
@@ -32,6 +32,7 @@ test('collects every page, follows opaque cursors, and deduplicates overlapping 
   assert.equal(requests[0].url, 'https://api.graphql.imdb.com/');
   assert.equal(requests[0].headers['x-imdb-client-name'], 'imdb-web-next');
   assert.match(JSON.parse(requests[0].body).query, /allInterestIds: \["in0000248"\]/);
+  for (const request of requests) assert.doesNotMatch(JSON.parse(request.body).query, /excludeInterestIds/);
   assert.ok(JSON.parse(requests[1].body).query.includes(`after: ${JSON.stringify('opaque "cursor" \\ value')}`));
   assert.equal(result.total, 3);
   assert.equal(result.omitted, 1);
@@ -42,16 +43,39 @@ test('collects every page, follows opaque cursors, and deduplicates overlapping 
   ]);
 });
 
-test('uses directly credited titles for a person', async () => {
-  let query;
+test('excludes News and Talk Show interests from every page of directly credited person titles', async () => {
+  const queries = [];
+  const responses = [
+    page([title('tt0903747', 'Breaking Bad', { year: 2008, month: 1, day: 20 }, 'tvSeries')], 3, true, 'filtered next page'),
+    page([episode('tt0959621', 'Pilot', 1, 1, { year: 2008, month: 1, day: 20 }, 'tt0903747'), title('tt0000001', 'Upcoming', null)], 3),
+  ];
   const result = await fetchSource(person, {
     fetchImpl: async (_url, options) => {
-      query = JSON.parse(options.body).query;
-      return json(page([title('tt0903747', 'Breaking Bad', { year: 2008, month: 1, day: 20 })]));
+      queries.push(JSON.parse(options.body).query);
+      return json(responses.shift());
     },
   });
-  assert.match(query, /titleCreditsConstraint: \{anyCredits: \[\{nameId: "nm0319213"\}\]\}/);
+  assert.deepEqual(PEOPLE_EXCLUDED_INTEREST_IDS, ['in0000211', 'in0000127']);
+  assert.equal(Object.isFrozen(PEOPLE_EXCLUDED_INTEREST_IDS), true);
+  assert.equal(queries.length, 2);
+  for (const query of queries) {
+    assert.match(query, /titleCreditsConstraint: \{anyCredits: \[\{nameId: "nm0319213"\}\]\}/);
+    assert.match(query, /interestConstraint: \{excludeInterestIds: \["in0000211","in0000127"\]\}/);
+    assert.doesNotMatch(query, /episodicConstraint/);
+  }
+  assert.match(queries[1], /after: "filtered next page"/);
+  assert.equal(result.total, 3);
+  assert.equal(result.omitted, 1);
+  assert.deepEqual(result.titles.map((entry) => entry.id), ['tt0903747', 'tt0959621', 'tt0000001']);
   assert.equal(result.titles[0].date, '2008-01-20');
+  assert.equal(Object.hasOwn(result.titles[0], 'episodes'), false);
+});
+
+test('accepts a completely excluded person and rejects an incomplete filtered filmography', async () => {
+  assert.deepEqual(await fetchSource(person, { fetchImpl: async () => json(page([])) }), { titles: [], total: 0, omitted: 0, warnings: [] });
+  await assert.rejects(fetchSource(person, {
+    fetchImpl: async () => json(page([title('tt0903747', 'Breaking Bad')], 2)),
+  }), (error) => error.code === 'INCOMPLETE_RESULT');
 });
 
 test('expands a series with single and batch episode release dates without changing its source counts', async () => {
@@ -75,6 +99,7 @@ test('expands a series with single and batch episode release dates without chang
   assert.match(queries[0], /titleType \{ id \}/);
   assert.match(queries[1], /episodicConstraint: \{anySeriesIds: \["tt9253284"\]\}/);
   assert.match(queries[1], /advancedTitleSearch\(first: 100/);
+  for (const query of queries) assert.doesNotMatch(query, /excludeInterestIds/);
   assert.equal(result.total, 1);
   assert.equal(result.omitted, 0);
   assert.deepEqual(result.titles[0], {

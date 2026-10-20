@@ -1195,5 +1195,14 @@
     "imageUrl": "https://image.tmdb.org/t/p/w500/eqS7mGlqQkHRPZjlSBWYIZKpEja.jpg",
     "alt": "Eizlan Yusof",
     "caption": "Eizlan Yusof"
+  },
+  "zamarul-hisham": {
+    "path": "/images/zamarul-hisham.jpg",
+    "width": 500,
+    "height": 593,
+    "sourceUrl": "https://mubi.com/en/cast/zamarul-hisham",
+    "imageUrl": "https://images.mubicdn.net/images/cast_member/775680/cache-547428-1590100380/image-w856.jpg?size=500x",
+    "alt": "Zamarul Hisham",
+    "caption": "Zamarul Hisham"
   }
 }
