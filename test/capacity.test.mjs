@@ -5,11 +5,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFile as execFileCallback } from 'node:child_process';
 import { promisify } from 'node:util';
+import { SOURCES } from '../src/config.mjs';
 
 const execFile = promisify(execFileCallback);
 
-test('119 sources preserve full history across streamed HTTP, overlapping refreshes, disconnects, and restart under the production memory limits', async (t) => {
+test(`${SOURCES.length} sources preserve full history across streamed HTTP, overlapping refreshes, disconnects, and restart under the production memory limits`, async (t) => {
   const dataDir = await mkdtemp(join(tmpdir(), 'release-calendar-capacity-test-'));
+  const expectedEvents = 57_323 + (SOURCES.length - 111) * 50;
   t.after(() => rm(dataDir, { recursive: true, force: true }));
   const code = `
     import assert from 'node:assert/strict';
@@ -24,7 +26,7 @@ test('119 sources preserve full history across streamed HTTP, overlapping refres
     import { createApp } from ${JSON.stringify(new URL('../src/server.mjs', import.meta.url).href)};
     import { calendarChunks } from ${JSON.stringify(new URL('../src/calendar.mjs', import.meta.url).href)};
     const dataDir = ${JSON.stringify(dataDir)};
-    const sources = Array.from({ length: 119 }, (_, index) => ({ slug: 'source-' + index,
+    const sources = Array.from({ length: ${SOURCES.length} }, (_, index) => ({ slug: 'source-' + index,
       id: (index < 3 ? 'in' : 'nm') + (1000000 + index), kind: index < 3 ? 'interest' : 'name', label: (index < 3 ? 'Interest ' : 'Person ') + index }));
     let clock = new Date('2026-10-20T00:00:00.000Z');
     const config = { ...loadConfig({ DATA_DIR: dataDir }), sources };
@@ -65,7 +67,7 @@ test('119 sources preserve full history across streamed HTTP, overlapping refres
     if (phase === 'restart') {
       const store = new CalendarStore(config, { clock: () => clock, logger });
       await store.initialize();
-      assert.equal(Object.keys(store.feed('all').events).length, 57_723);
+      assert.equal(Object.keys(store.feed('all').events).length, ${expectedEvents});
       assert.deepEqual(store.feed('all').events[withdrawn.id], withdrawn);
       assert.equal(store.feed('all').events.tt1000000.sequence, 0);
       const hash = createHash('sha256');
@@ -131,7 +133,7 @@ test('119 sources preserve full history across streamed HTTP, overlapping refres
       assert.equal(warnings.length, 1);
       assert.match(warnings[0], /A temporary upstream failure/);
       assert.deepEqual(app.store.feed('all').events[withdrawn.id], withdrawn);
-      assert.equal(Object.keys(app.store.feed('all').events).length, 57_723);
+      assert.equal(Object.keys(app.store.feed('all').events).length, ${expectedEvents});
       const batch = app.store.feed('all').events['tt9000000000-2026-11-27'];
       assert.match(batch.description, /Interests: Interest 0, Interest 1, Interest 2/);
       assert.match(batch.description, /People: Person 4, Person 5/);
@@ -170,5 +172,5 @@ test('119 sources preserve full history across streamed HTTP, overlapping refres
     results.push(result);
   }
   assert.equal(results[1].hash, results[2].hash, 'Restart must preserve all calendar bytes and revisions.');
-  t.diagnostic(`119 sources, ${results[1].count} events, ${(results[0].rawBytes / 1024 / 1024).toFixed(1)} MiB snapshot and ${(results[1].bytes / 1024 / 1024).toFixed(1)} MiB calendar: peak ${Math.max(...results.map((result) => result.rssMiB))} MiB RSS; cold headers ${results[1].coldHeadersMs} ms, warm HEAD ${results[1].warmHeadMs} ms, concurrent health ${results[1].healthMs} ms; ${results.reduce((sum, result) => sum + result.elapsedMs, 0)} ms across seed, HTTP refresh, and restart.`);
+  t.diagnostic(`${SOURCES.length} sources, ${results[1].count} events, ${(results[0].rawBytes / 1024 / 1024).toFixed(1)} MiB snapshot and ${(results[1].bytes / 1024 / 1024).toFixed(1)} MiB calendar: peak ${Math.max(...results.map((result) => result.rssMiB))} MiB RSS; cold headers ${results[1].coldHeadersMs} ms, warm HEAD ${results[1].warmHeadMs} ms, concurrent health ${results[1].healthMs} ms; ${results.reduce((sum, result) => sum + result.elapsedMs, 0)} ms across seed, HTTP refresh, and restart.`);
 });

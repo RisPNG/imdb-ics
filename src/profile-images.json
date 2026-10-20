@@ -1091,5 +1091,109 @@
     "imageUrl": "https://www.thewayang.com/assets/img/assets/profile/actor/convert/fba1baa0f1dcaac2c2e09da1fbde4fc0.png",
     "alt": "Nasir Bilal Khan",
     "caption": "Nasir Bilal Khan"
+  },
+  "douglas-lim": {
+    "path": "/images/douglas-lim.png",
+    "width": 800,
+    "height": 571,
+    "sourceUrl": "https://www.thewayang.com/celebrities/douglas-lim",
+    "imageUrl": "https://www.thewayang.com/assets/img/assets/profile/actor/convert/b3800465ecff4ed41562eb8c1414f690.png",
+    "alt": "Douglas Lim",
+    "caption": "Douglas Lim"
+  },
+  "zizan-razak": {
+    "path": "/images/zizan-razak.jpg",
+    "width": 300,
+    "height": 450,
+    "sourceUrl": "https://www.themoviedb.org/person/557753-zizan-razak",
+    "imageUrl": "https://media.themoviedb.org/t/p/w300_and_h450_face/fhUm0WI647VT2xsFak5FSKxwd32.jpg",
+    "originalImageUrl": "https://image.tmdb.org/t/p/original/fhUm0WI647VT2xsFak5FSKxwd32.jpg",
+    "alt": "Zizan Razak",
+    "caption": "Zizan Razak"
+  },
+  "lisa-surihani": {
+    "path": "/images/lisa-surihani.jpg",
+    "width": 500,
+    "height": 720,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lisa_Surihani.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Lisa_Surihani.jpg/500px-Lisa_Surihani.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "alt": "Lisa Surihani",
+    "caption": "Lisa Surihani",
+    "credit": "Cheon Fong Liew (CC BY-SA 2.0)"
+  },
+  "sofyank": {
+    "path": "/images/sofyank.jpg",
+    "width": 480,
+    "height": 480,
+    "sourceUrl": "https://www.youtube.com/@Sofyank96",
+    "imageUrl": "https://yt3.googleusercontent.com/ytc/AIdro_kWXJW_9Sig9Ge7r71xm1l04yENs-5n9XvGFLbgvEd_qA=w480-h480-p-fcrop64=1,40000000c0008000-k-c0x00ffffff-no-rj",
+    "originalImageUrl": "https://yt3.googleusercontent.com/ytc/AIdro_kWXJW_9Sig9Ge7r71xm1l04yENs-5n9XvGFLbgvEd_qA=s900-c-k-c0x00ffffff-no-rj",
+    "alt": "Sofyank",
+    "caption": "Sofyank"
+  },
+  "shaheizy-sam": {
+    "path": "/images/shaheizy-sam.png",
+    "width": 800,
+    "height": 800,
+    "sourceUrl": "https://www.thewayang.com/celebrities/shaheizy-sam",
+    "imageUrl": "https://www.thewayang.com/assets/img/assets/profile/actor/convert/5908239c0e33d7c38056a03b33592ecd.png",
+    "alt": "Shaheizy Sam",
+    "caption": "Shaheizy Sam"
+  },
+  "afdlin-shauki": {
+    "path": "/images/afdlin-shauki.jpg",
+    "width": 480,
+    "height": 320,
+    "sourceUrl": "https://www.imdb.com/name/nm0789495/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMWU0OWRmM2MtODhlZC00NmRmLTkwMzEtNTczYzFiNzljMjQ4XkEyXkFqcGc@._V1_QL85_UX480_.jpg",
+    "alt": "Afdlin Shauki",
+    "caption": "Afdlin Shauki"
+  },
+  "beto-kusyairy": {
+    "path": "/images/beto-kusyairy.jpg",
+    "width": 500,
+    "height": 593,
+    "sourceUrl": "https://mubi.com/en/cast/beto-kusyairy",
+    "imageUrl": "https://images.mubicdn.net/images/cast_member/547671/cache-406946-1548240062/image-w856.jpg?size=500x",
+    "alt": "Beto Kusyairy",
+    "caption": "Beto Kusyairy"
+  },
+  "diana-danielle": {
+    "path": "/images/diana-danielle.png",
+    "width": 800,
+    "height": 601,
+    "sourceUrl": "https://www.thewayang.com/celebrities/diana-danielle",
+    "imageUrl": "https://www.thewayang.com/assets/img/assets/profile/actor/convert/13418cbdbac2b2eed0b87c60e3d4ce3d.png",
+    "alt": "Diana Danielle",
+    "caption": "Diana Danielle",
+    "credit": "The Wayang profile."
+  },
+  "harith-iskander": {
+    "path": "/images/harith-iskander.jpg",
+    "width": 500,
+    "height": 670,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Harith_Iskander_interviewed_by_MeleTOP.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Harith_Iskander_interviewed_by_MeleTOP.jpg/500px-Harith_Iskander_interviewed_by_MeleTOP.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "alt": "Harith Iskander",
+    "caption": "Harith Iskander",
+    "credit": "MeleTOP (CC BY 3.0)"
+  },
+  "rahim-razali": {
+    "path": "/images/rahim-razali.jpg",
+    "width": 500,
+    "height": 593,
+    "sourceUrl": "https://mubi.com/en/cast/rahim-razali",
+    "imageUrl": "https://images.mubicdn.net/images/cast_member/133014/cache-417007-1552009642/image-w856.jpg?size=500x",
+    "alt": "Rahim Razali",
+    "caption": "Rahim Razali"
+  },
+  "eizlan-yusof": {
+    "path": "/images/eizlan-yusof.jpg",
+    "width": 500,
+    "height": 748,
+    "sourceUrl": "https://www.themoviedb.org/person/1275338-eizlan-yusof",
+    "imageUrl": "https://image.tmdb.org/t/p/w500/eqS7mGlqQkHRPZjlSBWYIZKpEja.jpg",
+    "alt": "Eizlan Yusof",
+    "caption": "Eizlan Yusof"
   }
 }

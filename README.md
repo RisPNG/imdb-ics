@@ -128,8 +128,19 @@ The website uses semantic HTML, a shared stylesheet, system fonts, and a small o
 | Syafiq Kyle | [nm10224401](https://www.imdb.com/name/nm10224401/) | `syafiq-kyle.ics` |
 | Sharnaaz Ahmad | [nm4459961](https://www.imdb.com/name/nm4459961/) | `sharnaaz-ahmad.ics` |
 | Nasir Bilal Khan | [nm0082091](https://www.imdb.com/name/nm0082091/) | `nasir-bilal-khan.ics` |
+| Douglas Lim | [nm0510525](https://www.imdb.com/name/nm0510525/) | `douglas-lim.ics` |
+| Zizan Razak | [nm3736757](https://www.imdb.com/name/nm3736757/) | `zizan-razak.ics` |
+| Lisa Surihani | [nm3603153](https://www.imdb.com/name/nm3603153/) | `lisa-surihani.ics` |
+| Sofyank | [nm14943881](https://www.imdb.com/name/nm14943881/) | `sofyank.ics` |
+| Shaheizy Sam | [nm3603159](https://www.imdb.com/name/nm3603159/) | `shaheizy-sam.ics` |
+| Afdlin Shauki | [nm0789495](https://www.imdb.com/name/nm0789495/) | `afdlin-shauki.ics` |
+| Beto Kusyairy | [nm3729894](https://www.imdb.com/name/nm3729894/) | `beto-kusyairy.ics` |
+| Diana Danielle | [nm2468471](https://www.imdb.com/name/nm2468471/) | `diana-danielle.ics` |
+| Harith Iskander | [nm0411226](https://www.imdb.com/name/nm0411226/) | `harith-iskander.ics` |
+| Rahim Razali | [nm0713604](https://www.imdb.com/name/nm0713604/) | `rahim-razali.ics` |
+| Eizlan Yusof | [nm0951132](https://www.imdb.com/name/nm0951132/) | `eizlan-yusof.ics` |
 
-The configured set contains three interests and 116 people, giving 119 source calendars and one combined calendar, or 120 feeds in total. Edit `SOURCES` in `src/config.mjs` to add or change sources. This is a fixed source list and does not automatically synchronise with an IMDb favourites page.
+The configured set contains three interests and 127 people, giving 130 source calendars and one combined calendar, or 131 feeds in total. Edit `SOURCES` in `src/config.mjs` to add or change sources. This is a fixed source list and does not automatically synchronise with an IMDb favourites page.
 
 Each source includes all titles directly returned by its IMDb interest or credit search. This can include movies, television series, individual credited episodes, shorts, and other title types. The Marvel, Star Wars, and DC interest calendars expand matched series into complete episode lists. People calendars keep their directly credited titles, including series premiere events, and include only episodes directly credited to that person. A series credit alone does not add its other episodes. A person's credits can include more than writing or directing, so source selection remains broad without a role or title-type filter.
 
@@ -278,11 +289,11 @@ The homepage has the combined subscription, three interest calendars, and an alp
 
 The central palette uses IMDb-inspired yellow accents, a dark header, and system light/dark preferences. Keyboard focus, skip navigation, and print and narrow-screen styles remain available. The copy script uses the browser Clipboard API. If it is unavailable, the visible address can be copied manually. A refused clipboard write selects the address and announces the fallback. CSP permits only the required same-origin stylesheet, script, and images, restricts framing and other unneeded resources, and responses include `X-Content-Type-Options: nosniff`.
 
-The 119 images are saved in `public/images/`, with their source URLs and dimensions recorded in `src/profile-images.json`. People use single-person headshots or portraits framed around the head and shoulders. Keep suitable portraits when updating the collection, and replace missing pictures or wider shots selectively. Use an existing source portrait rendition where available. IMDb, official profiles, agency pages, and Wikimedia Commons provide the saved photos. Commons images retain their photographer and licence credits in the manifest and on the profile page. Pages never request image metadata or remote images at runtime. To replace an image, save the new local asset and update its manifest entry with the source URL, accurate dimensions, and any required credit. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
+The 130 images are saved in `public/images/`, with their source URLs and dimensions recorded in `src/profile-images.json`. People use single-person headshots or portraits framed around the head and shoulders. Keep suitable portraits when updating the collection, and replace missing pictures or wider shots selectively. Use an existing source portrait rendition where available. IMDb, official profiles, agency pages, publishers, and Wikimedia Commons provide the saved photos. Commons images retain their photographer and licence credits in the manifest and on the profile page. Pages never request image metadata or remote images at runtime. To replace an image, save the new local asset and update its manifest entry with the source URL, accurate dimensions, and any required credit. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
 
-The project check validates all 119 source pages as well as homepage loading, ready, saved-data, and error states in both time modes. It checks local navigation and assets, source coverage, image dimensions, accessible address labels, copy targets, and byte budgets. Tests also cover copying success and failure, source-specific release lists, canonical page redirects, and existing feed behaviour.
+The project check validates all 130 source pages as well as homepage loading, ready, saved-data, and error states in both time modes. It checks local navigation and assets, source coverage, image dimensions, accessible address labels, copy targets, and byte budgets. Tests also cover copying success and failure, source-specific release lists, canonical page redirects, and existing feed behaviour.
 
-The capacity regression uses 119 sources and more than 57,000 events, including shared releases, episode batches, and cancellation history. It checks repeated HTTP downloads, HEAD and conditional requests, a paused download during refresh and persistence, interrupted clients, and a separate-process restart. Each phase uses the configured 192 MiB heap limit and checks that peak process memory stays below 512 MiB. This fixture covers the current production scale rather than guaranteeing capacity for every possible source collection.
+The capacity regression uses the configured source count and more than 58,000 events, including shared releases, episode batches, and cancellation history. It checks repeated HTTP downloads, HEAD and conditional requests, a paused download during refresh and persistence, interrupted clients, and a separate-process restart. Each phase uses the configured 192 MiB heap limit and checks that peak process memory stays below 512 MiB. This fixture covers the current production scale rather than guaranteeing capacity for every possible source collection.
 
 ### Reference documentation
 

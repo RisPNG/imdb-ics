@@ -800,5 +800,71 @@
       { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0082091/" },
       { "label": "Astro: Koleksi Tanah Kubur", "url": "https://www.astro.com.my/content/details/UEFDSzAwMDAwMDAwMDAxMzg4NTA%3D-Koleksi-Tanah-Kubur" }
     ]
+  },
+  "douglas-lim": {
+    "summary": "Douglas Lim is an actor, writer, and comedian who portrayed Steven in Kopitiam. His work also includes stand-up and theatre, with screen credits including Small Mission Enterprise (SME), Badang, and Polis Evo 3.",
+    "roles": ["Actor", "Writer", "Comedian"],
+    "knownFor": ["Kopitiam", "Small Mission Enterprise (SME)", "Badang", "Polis Evo 3"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0510525/" }]
+  },
+  "zizan-razak": {
+    "summary": "Zizan Razak is an actor, producer, and director from Terengganu, Malaysia. His films include Polis Evo, Cicak-Man 3, and Polis Evo 3.",
+    "roles": ["Actor", "Producer", "Director"],
+    "knownFor": ["Polis Evo", "Cicak-Man 3", "Polis Evo 3"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm3736757/" }]
+  },
+  "lisa-surihani": {
+    "summary": "Lisa Surihani is an actress whose films include I'm Not Single, Istanbul Aku Datang!, Suamiku Encik Perfect 10!, and Lagenda Budak Setan.",
+    "roles": ["Actress"],
+    "knownFor": ["I'm Not Single", "Lagenda Budak Setan", "Istanbul Aku Datang!", "Suamiku Encik Perfect 10!"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm3603153/" }]
+  },
+  "sofyank": {
+    "summary": "Sofyank is a director and visual effects artist whose work includes Sofyank X Polis Evo 3. He also directed the videos Astro Shaw Cinematic Universe: The Beginning and Astro Shaw Cinematic Universe: Kitab Kataha.",
+    "roles": ["Director", "Visual effects artist", "Actor"],
+    "knownFor": ["Sofyank X Polis Evo 3", "Astro Shaw Cinematic Universe: The Beginning", "Astro Shaw Cinematic Universe: Kitab Kataha", "Sofyank"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm14943881/" }]
+  },
+  "shaheizy-sam": {
+    "summary": "Shaheizy Sam is an actor and producer from Selangor, Malaysia. His film work includes Songlap, Interchange, Kongsi, and Polis Evo 3.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Songlap", "Interchange", "Kongsi", "Polis Evo 3"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm3603159/" }]
+  },
+  "afdlin-shauki": {
+    "summary": "Afdlin Shauki is an actor, writer, and director whose films include Buli and Sumolah. His acting work also includes Anna and the King, in which he played an interpreter, and Old Road Mistery.",
+    "roles": ["Actor", "Writer", "Director"],
+    "knownFor": ["Buli", "Sumolah", "Anna and the King", "Old Road Mistery"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0789495/" }]
+  },
+  "beto-kusyairy": {
+    "summary": "Beto Kusyairy is an actor and producer from Kuala Lumpur, Malaysia. His films include Mat Kilau, Imaginur, Reversi, and Syaitan.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Mat Kilau", "Imaginur", "Reversi", "Syaitan"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm3729894/" }]
+  },
+  "diana-danielle": {
+    "summary": "Diana Danielle is an actress whose films include Imaginur and Almayer's Folly. Her other screen credits include Sembunyi: Amukan Azazil and Gol & Gincu Vol. 2.",
+    "roles": ["Actress"],
+    "knownFor": ["Imaginur", "Almayer's Folly", "Sembunyi: Amukan Azazil", "Gol & Gincu Vol. 2"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm2468471/" }]
+  },
+  "harith-iskander": {
+    "summary": "Harith Iskander is an actor, writer, director, and stand-up comedian. His screen work includes Hanya kawan, Anna and the King, and Slit Eye, alongside the comedy special Harith Iskander: I Told You So.",
+    "roles": ["Actor", "Writer", "Director", "Comedian"],
+    "knownFor": ["Hanya kawan", "Anna and the King", "Slit Eye", "Harith Iskander: I Told You So"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0411226/" }]
+  },
+  "rahim-razali": {
+    "summary": "Rahim Razali is an actor, writer, and director whose films include Abang and Matinya Seorang Patriot. His other work includes Tsu-Feh Sofiah and Puteri.",
+    "roles": ["Actor", "Writer", "Director"],
+    "knownFor": ["Abang", "Matinya Seorang Patriot", "Tsu-Feh Sofiah", "Puteri"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0713604/" }]
+  },
+  "eizlan-yusof": {
+    "summary": "Eizlan Yusof is an actor and director whose films include Perempuan Melayu Terakhir and Pontianak Harum Sundal Malam. His other screen credits include Impak Maksima and Town Mall.",
+    "roles": ["Actor", "Director"],
+    "knownFor": ["Perempuan Melayu Terakhir", "Pontianak Harum Sundal Malam", "Impak Maksima", "Town Mall"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0951132/" }]
   }
 }
