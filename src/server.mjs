@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { setImmediate } from 'node:timers/promises';
+import { createGzip } from 'node:zlib';
 import { calendarChunks } from './calendar.mjs';
 import { loadConfig } from './config.mjs';
 import { renderPage } from './page.mjs';
@@ -70,6 +71,19 @@ export async function createApp(config, options = {}) {
     const feed = store.feed(match[1]);
     if (feed === undefined) return send(404, 'Unknown calendar.\n');
     if (!feed) return send(503, 'This calendar is waiting for its first complete refresh. Please retry shortly.\n', undefined, { 'Retry-After': '60' });
+    response.setHeader('Vary', 'Accept-Encoding');
+    const encodings = new Map();
+    for (const value of (request.headers['accept-encoding'] || '').split(',')) {
+      const [coding, parameter] = value.trim().toLowerCase().split(/\s*;\s*/);
+      if (!['gzip', 'identity', '*'].includes(coding)) continue;
+      const quality = parameter === undefined ? 1
+        : /^q=(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(parameter) ? Number(parameter.slice(2)) : 0;
+      encodings.set(coding, quality);
+    }
+    const gzipQuality = encodings.get('gzip') ?? encodings.get('*') ?? 0;
+    const identityQuality = encodings.get('identity') ?? (encodings.get('*') === 0 ? 0 : 1);
+    if (gzipQuality === 0 && identityQuality === 0) return send(406, 'No acceptable calendar encoding.\n');
+    const compressed = gzipQuality > 0 && gzipQuality >= identityQuality;
     const calendar = { name: feed.label, description: feed.description, events: feed.events, eventTimeMode: config.eventTimeMode };
     let cached = calendars.get(feed.events);
     if (!cached || cached.name !== feed.label || cached.description !== feed.description) {
@@ -90,19 +104,21 @@ export async function createApp(config, options = {}) {
     }
     const metadata = await cached.pending;
     const { etag, lastModified } = metadata;
-    const headers = { ETag: etag, 'Last-Modified': lastModified, 'Cache-Control': 'public, max-age=300',
+    const selectedTag = compressed ? `${etag.slice(0, -1)}-gzip"` : etag;
+    const headers = { ETag: compressed ? `W/${selectedTag}` : selectedTag, 'Last-Modified': lastModified, 'Cache-Control': 'public, max-age=300',
       'X-Calendar-Stale': String(feed.stale), 'Content-Disposition': `inline; filename="${match[1]}.ics"` };
     const condition = request.headers['if-none-match'];
-    const matchesTag = condition?.split(',').some((value) => value.trim().replace(/^W\//, '') === etag || value.trim() === '*');
+    const matchesTag = condition?.split(',').some((value) => value.trim().replace(/^W\//, '') === selectedTag || value.trim() === '*');
     const matchesTime = !condition && request.headers['if-modified-since'] &&
       Date.parse(request.headers['if-modified-since']) >= Date.parse(lastModified);
     if (matchesTag || matchesTime) {
       response.writeHead(304, headers);
       return response.end();
     }
-    response.writeHead(200, { 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Length': metadata.length, ...headers });
+    response.writeHead(200, { 'Content-Type': 'text/calendar; charset=utf-8',
+      ...(compressed ? { 'Content-Encoding': 'gzip' } : { 'Content-Length': metadata.length }), ...headers });
     if (request.method === 'HEAD') return response.end();
-    await pipeline(Readable.from(calendarChunks(calendar), { objectMode: false }), response);
+    await pipeline(Readable.from(calendarChunks(calendar), { objectMode: false }), ...(compressed ? [createGzip()] : []), response);
   };
   const server = createServer((request, response) => {
     void handleRequest(request, response).catch((error) => {

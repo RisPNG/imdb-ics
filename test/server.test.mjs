@@ -4,7 +4,9 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { get } from 'node:http';
-import { text } from 'node:stream/consumers';
+import { createHash } from 'node:crypto';
+import { buffer, text } from 'node:stream/consumers';
+import { gunzipSync } from 'node:zlib';
 import { createApp } from '../src/server.mjs';
 import { loadConfig, SOURCES } from '../src/config.mjs';
 import { CalendarStore } from '../src/store.mjs';
@@ -31,7 +33,7 @@ test('cold feeds return retryable 503, then cached all-day calendars support ETa
   assert.equal(pending.headers.get('retry-after'), '60');
   assert.equal((await fetch(`${origin}/readyz`)).status, 503);
   await store.refresh();
-  const response = await fetch(`${origin}/calendars/all.ics`);
+  const response = await fetch(`${origin}/calendars/all.ics`, { headers: { 'Accept-Encoding': 'identity' } });
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type'), /^text\/calendar/);
   assert.equal(response.headers.get('x-calendar-stale'), 'false');
@@ -43,15 +45,122 @@ test('cold feeds return retryable 503, then cached all-day calendars support ETa
   assert(!body.includes('DTSTART:20261119T000000Z'), 'release dates do not become midnight timestamps');
   assert.match(body, /SUMMARY:A title\\, with punctuation/);
   const etag = response.headers.get('etag');
-  const conditional = await fetch(`${origin}/calendars/all.ics`, { headers: { 'If-None-Match': `W/${etag}` } });
+  const conditional = await fetch(`${origin}/calendars/all.ics`, { headers: { 'Accept-Encoding': 'identity', 'If-None-Match': `W/${etag}` } });
   assert.equal(conditional.status, 304);
   assert.equal(await conditional.text(), '');
-  const head = await fetch(`${origin}/calendars/all.ics`, { method: 'HEAD' });
+  const head = await fetch(`${origin}/calendars/all.ics`, { method: 'HEAD', headers: { 'Accept-Encoding': 'identity' } });
   assert.equal(head.headers.get('etag'), etag);
   assert.equal(await head.text(), '');
   await store.refresh();
-  assert.equal((await fetch(`${origin}/calendars/all.ics`)).headers.get('etag'), etag, 'unchanged daily refresh is byte-identical');
+  assert.equal((await fetch(`${origin}/calendars/all.ics`, { headers: { 'Accept-Encoding': 'identity' } })).headers.get('etag'), etag, 'unchanged daily refresh is byte-identical');
   assert.equal((await fetch(`${origin}/readyz`)).status, 200);
+});
+
+test('calendar gzip transfers decode to the identity bytes and keep variant-aware HEAD and conditional responses', async (t) => {
+  const { store, origin } = await runningApp(t);
+  await store.refresh();
+  const url = `${origin}/calendars/all.ics`;
+  const identity = await new Promise((resolve, reject) => get(url, resolve).on('error', reject));
+  const original = await buffer(identity);
+  const etag = `"${createHash('sha256').update(original).digest('hex')}"`;
+  assert.equal(identity.statusCode, 200);
+  assert.equal(identity.headers.etag, etag);
+  assert.equal(identity.headers['content-encoding'], undefined);
+  assert.equal(identity.headers['content-length'], String(original.length));
+  assert.equal(identity.headers.vary, 'Accept-Encoding');
+
+  const gzip = await new Promise((resolve, reject) => get(url, {
+    headers: { 'Accept-Encoding': 'gzip, deflate, br', 'If-None-Match': etag },
+  }, resolve).on('error', reject));
+  const compressed = await buffer(gzip);
+  const gzipTag = `W/${etag.slice(0, -1)}-gzip"`;
+  assert.equal(gzip.statusCode, 200, 'An old identity validator does not skip the first compressed transfer.');
+  assert.equal(gzip.headers['content-encoding'], 'gzip');
+  assert.equal(gzip.headers['content-length'], undefined);
+  assert.equal(gzip.headers['transfer-encoding'], 'chunked');
+  assert.equal(gzip.headers.vary, 'Accept-Encoding');
+  assert.equal(gzip.headers.etag, gzipTag);
+  assert(compressed.length < original.length);
+  assert.deepEqual(gunzipSync(compressed), original);
+
+  const head = await fetch(url, { method: 'HEAD', headers: { 'Accept-Encoding': 'gzip' } });
+  assert.equal(head.status, 200);
+  assert.equal(head.headers.get('etag'), gzipTag);
+  assert.equal(head.headers.get('content-encoding'), 'gzip');
+  assert.equal(head.headers.get('content-length'), null);
+  assert.equal(head.headers.get('vary'), 'Accept-Encoding');
+  assert.equal(await head.text(), '');
+
+  for (const [method, condition] of [
+    ['GET', { 'If-None-Match': gzipTag }],
+    ['HEAD', { 'If-None-Match': `"old", ${gzipTag.slice(2)}` }],
+    ['GET', { 'If-None-Match': '*' }],
+    ['GET', { 'If-Modified-Since': gzip.headers['last-modified'] }],
+  ]) {
+    const response = await fetch(url, { method, headers: { 'Accept-Encoding': 'gzip', ...condition } });
+    assert.equal(response.status, 304);
+    assert.equal(response.headers.get('etag'), gzipTag);
+    assert.equal(response.headers.get('vary'), 'Accept-Encoding');
+    assert.equal(response.headers.get('content-encoding'), null);
+    assert.equal(response.headers.get('content-length'), null);
+    assert.equal(await response.text(), '');
+  }
+  const precedence = await fetch(url, { headers: {
+    'Accept-Encoding': 'gzip', 'If-None-Match': '"old"', 'If-Modified-Since': 'Fri, 01 Jan 2100 00:00:00 GMT',
+  } });
+  assert.equal(precedence.status, 200);
+  assert.equal(await precedence.text(), original.toString());
+  const switched = await fetch(url, { headers: { 'Accept-Encoding': 'identity', 'If-None-Match': gzipTag } });
+  assert.equal(switched.status, 200);
+  assert.equal(switched.headers.get('etag'), etag);
+  assert.equal(await switched.text(), original.toString());
+});
+
+test('calendar encoding negotiation respects explicit exclusions, quality values, and wildcard preferences', async (t) => {
+  const { store, origin } = await runningApp(t);
+  await store.refresh();
+  for (const [accept, encoding, status = 200] of [
+    ['', null], ['identity', null], ['br', null], ['gzip;q=0', null],
+    ['gzip', 'gzip'], ['GZIP;Q=1', 'gzip'], ['*', 'gzip'],
+    ['gzip;q=0, *;q=1', null], ['*;q=0, gzip;q=0.5', 'gzip'],
+    ['gzip;q=0.5, identity;q=0.2', 'gzip'], ['gzip;q=0.2, identity;q=0.5', null],
+    ['gzip;q=0, *;q=0, identity;q=1', null], ['*;q=1, identity;q=0', 'gzip'],
+    ['gzip;q=0, identity;q=0', null, 406], ['*;q=0', null, 406], ['br, identity;q=0', null, 406],
+  ]) {
+    const response = await fetch(`${origin}/calendars/all.ics`, { method: 'HEAD', headers: { 'Accept-Encoding': accept } });
+    assert.equal(response.status, status, accept);
+    assert.equal(response.headers.get('content-encoding'), encoding, accept);
+    assert.equal(response.headers.get('vary'), 'Accept-Encoding', accept);
+    assert.equal(await response.text(), '');
+  }
+});
+
+test('disconnecting during a gzip calendar stream leaves later requests healthy', async (t) => {
+  const warnings = [];
+  const titles = Array.from({ length: 2000 }, (_, index) => ({
+    id: `tt${1234567 + index}`, title: `A release ${createHash('sha256').update(String(index)).digest('hex')}`, date: '2026-11-19',
+  }));
+  const { store, origin } = await runningApp(t, {}, {
+    logger: { info() {}, warn(message) { warnings.push(message); } },
+    loader: async (source) => ({ titles: source === SOURCES[0] ? titles : [], total: source === SOURCES[0] ? titles.length : 0, omitted: 0, warnings: [] }),
+  });
+  await store.refresh();
+  const interrupted = await new Promise((resolve, reject) => get(`${origin}/calendars/all.ics`, {
+    headers: { 'Accept-Encoding': 'gzip' },
+  }, (response) => {
+    response.once('error', reject);
+    response.once('data', () => response.destroy());
+    response.once('close', () => resolve(response));
+  }).on('error', reject));
+  assert.equal(interrupted.headers['content-encoding'], 'gzip');
+  assert.equal(interrupted.complete, false);
+  assert.equal((await fetch(`${origin}/healthz`)).status, 200);
+  const recovered = await fetch(`${origin}/calendars/all.ics`, { headers: { 'Accept-Encoding': 'gzip' } });
+  assert.equal(recovered.status, 200);
+  const body = await recovered.text();
+  assert.equal(body.match(/BEGIN:VEVENT/g).length, titles.length);
+  assert(body.endsWith('END:VCALENDAR\r\n'));
+  assert.deepEqual(warnings, []);
 });
 
 test('saved combined feeds remain available while new sources warm up and readiness waits for them', async (t) => {

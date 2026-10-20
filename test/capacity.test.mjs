@@ -114,13 +114,18 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
         const headersMs = Math.round(performance.now() - requestedAt);
         const hash = createHash('sha256');
         let bytes = 0;
-        response.on('data', (chunk) => { bytes += chunk.length; hash.update(chunk); });
-        if (paused) response.once('data', () => { response.pause(); paused(() => response.resume()); });
-        response.on('end', () => resolve({ status: response.statusCode, bytes, hash: hash.digest('hex'), headers: response.headers, headersMs }));
+        let wireBytes = 0;
+        response.on('data', (chunk) => { wireBytes += chunk.length; });
+        const body = response.headers['content-encoding'] === 'gzip' ? response.pipe(createGunzip()) : response;
+        body.on('data', (chunk) => { bytes += chunk.length; hash.update(chunk); });
+        if (paused) body.once('data', () => { body.pause(); paused(() => body.resume()); });
+        body.on('end', () => resolve({ status: response.statusCode, bytes, wireBytes, hash: hash.digest('hex'), headers: response.headers, headersMs, elapsedMs: Math.round(performance.now() - requestedAt) }));
+        body.on('error', reject);
         response.on('error', reject);
       }).on('error', reject);
     });
     let resume;
+    let resumeGzip;
     try {
       const historicalIds = Object.keys(app.store.feed('all').events);
       const excludedId = 'tt${1000000 + sharedTitles + 3 * uniqueTitles + retainedUniqueTitles}';
@@ -144,6 +149,10 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       const receiving = new Promise((resolve) => { received = resolve; });
       const slow = request('/calendars/all.ics', {}, (continueReading) => { resume = continueReading; received(); });
       await receiving;
+      let receivedGzip;
+      const receivingGzip = new Promise((resolve) => { receivedGzip = resolve; });
+      const slowGzip = request('/calendars/all.ics', { headers: { 'Accept-Encoding': 'gzip' } }, (continueReading) => { resumeGzip = continueReading; receivedGzip(); });
+      await receivingGzip;
       const refreshing = app.store.refresh({ force: false });
       const head = await request('/calendars/all.ics', { method: 'HEAD' });
       assert.equal(head.bytes, 0);
@@ -155,8 +164,16 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       assert.equal((await request('/')).status, 200);
       await refreshing;
       resume();
+      resumeGzip();
       const old = await slow;
+      const oldGzip = await slowGzip;
       assert.equal(old.hash, first.hash);
+      assert.equal(oldGzip.headers['content-encoding'], 'gzip');
+      assert.equal(oldGzip.headers.etag, 'W/"' + first.hash + '-gzip"');
+      assert.equal(oldGzip.headers['content-length'], undefined);
+      assert.equal(oldGzip.hash, first.hash);
+      assert.equal(oldGzip.bytes, first.bytes);
+      assert(oldGzip.wireBytes < first.bytes / 4);
       assert.equal(app.store.persistenceError, null);
       assert.equal(warnings.length, 1);
       assert.match(warnings[0], /A temporary upstream failure/);
@@ -206,11 +223,20 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
         assert.equal(Number(final.headers['content-length']), final.bytes);
       }
       assert.notEqual(final.hash, first.hash);
+      const gzip = await request('/calendars/all.ics', { headers: { 'Accept-Encoding': 'gzip' } });
+      assert.equal(gzip.status, 200);
+      assert.equal(gzip.headers['content-encoding'], 'gzip');
+      assert.equal(gzip.headers.vary, 'Accept-Encoding');
+      assert.equal(gzip.headers.etag, 'W/"' + final.hash + '-gzip"');
+      assert.equal(gzip.hash, final.hash);
+      assert.equal(gzip.bytes, final.bytes);
+      assert(gzip.wireBytes < final.bytes / 4);
       const current = await request('/calendars/all.ics', { headers: { 'If-None-Match': first.headers.etag, 'If-Modified-Since': 'Wed, 01 Jan 2099 00:00:00 GMT' } });
       assert.equal(current.status, 200);
       assert.equal(current.hash, final.hash);
       await new Promise((resolve, reject) => {
-        get(origin + '/calendars/all.ics', (response) => {
+        get(origin + '/calendars/all.ics', { headers: { 'Accept-Encoding': 'gzip' } }, (response) => {
+          assert.equal(response.headers['content-encoding'], 'gzip');
           response.on('error', () => {});
           response.once('data', () => { response.destroy(); resolve(); });
         }).on('error', reject);
@@ -218,8 +244,8 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       assert.equal((await request('/healthz')).status, 200);
       assert.equal((await request('/readyz')).status, 200);
       assert.equal(warnings.length, 1);
-      console.log(JSON.stringify({ phase, hash: final.hash, bytes: final.bytes, rawBytes, compressedBytes, count: Object.keys(events).length, confirmed, cancelled, coldHeadersMs: first.headersMs, warmHeadMs: head.headersMs, healthMs: healthy.headersMs, rssMiB: Math.ceil(process.resourceUsage().maxRSS / 1024), elapsedMs: Math.round(performance.now() - started) }));
-    } finally { resume?.(); await app.close(); }
+      console.log(JSON.stringify({ phase, hash: final.hash, bytes: final.bytes, gzipBytes: gzip.wireBytes, identityMs: final.elapsedMs, gzipHeadersMs: gzip.headersMs, gzipMs: gzip.elapsedMs, rawBytes, compressedBytes, count: Object.keys(events).length, confirmed, cancelled, coldHeadersMs: first.headersMs, warmHeadMs: head.headersMs, healthMs: healthy.headersMs, rssMiB: Math.ceil(process.resourceUsage().maxRSS / 1024), elapsedMs: Math.round(performance.now() - started) }));
+    } finally { resume?.(); resumeGzip?.(); await app.close(); }
   `;
   const results = [];
   for (const phase of ['seed', 'http', 'restart']) {
@@ -229,5 +255,5 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
     results.push(result);
   }
   assert.equal(results[1].hash, results[2].hash, 'Restart must preserve all calendar bytes and revisions.');
-  t.diagnostic(`${SOURCES.length} sources, ${results[1].count} events (${results[1].confirmed} confirmed, ${results[1].cancelled} cancelled), ${results[0].rawBytes} raw seed bytes, ${results[1].rawBytes} raw refreshed bytes (${(results[1].rawBytes / 1024 / 1024).toFixed(1)} MiB), ${results[1].compressedBytes} gzip bytes, and ${(results[1].bytes / 1024 / 1024).toFixed(1)} MiB calendar: peak ${Math.max(...results.map((result) => result.rssMiB))} MiB RSS; cold headers ${results[1].coldHeadersMs} ms, warm HEAD ${results[1].warmHeadMs} ms, concurrent health ${results[1].healthMs} ms; ${results.reduce((sum, result) => sum + result.elapsedMs, 0)} ms across seed, HTTP refresh, and restart.`);
+  t.diagnostic(`${SOURCES.length} sources, ${results[1].count} events (${results[1].confirmed} confirmed, ${results[1].cancelled} cancelled), ${results[0].rawBytes} raw seed bytes, ${results[1].rawBytes} raw refreshed bytes (${(results[1].rawBytes / 1024 / 1024).toFixed(1)} MiB), ${results[1].compressedBytes} snapshot gzip bytes, and ${(results[1].bytes / 1024 / 1024).toFixed(1)} MiB calendar (${results[1].gzipBytes} wire gzip bytes): peak ${Math.max(...results.map((result) => result.rssMiB))} MiB RSS; cold headers ${results[1].coldHeadersMs} ms, warm HEAD ${results[1].warmHeadMs} ms, concurrent health ${results[1].healthMs} ms; full identity ${results[1].identityMs} ms, gzip headers ${results[1].gzipHeadersMs} ms, full gzip ${results[1].gzipMs} ms; ${results.reduce((sum, result) => sum + result.elapsedMs, 0)} ms across seed, HTTP refresh, and restart.`);
 });
