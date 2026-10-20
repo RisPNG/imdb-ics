@@ -11,13 +11,18 @@ const execFile = promisify(execFileCallback);
 
 test(`${SOURCES.length} sources preserve full history across streamed HTTP, overlapping refreshes, disconnects, and restart under the production memory limits`, async (t) => {
   const dataDir = await mkdtemp(join(tmpdir(), 'release-calendar-capacity-test-'));
-  const expectedEvents = 57_323 + (SOURCES.length - 111) * 50;
+  const historicalSources = 111;
+  const sharedTitles = 487;
+  const uniqueTitles = 550;
+  const historicalEvents = sharedTitles + historicalSources * uniqueTitles + 4;
+  const expectedEvents = historicalEvents + (SOURCES.length - historicalSources) * 50;
   t.after(() => rm(dataDir, { recursive: true, force: true }));
   const code = `
     import assert from 'node:assert/strict';
     import { createHash } from 'node:crypto';
     import { get } from 'node:http';
     import { createReadStream } from 'node:fs';
+    import { stat } from 'node:fs/promises';
     import { join } from 'node:path';
     import { createGunzip } from 'node:zlib';
     import { setImmediate } from 'node:timers/promises';
@@ -41,12 +46,12 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
     const started = performance.now();
     const phase = process.argv[1];
     if (phase === 'seed') {
-      const store = new CalendarStore({ ...config, sources: sources.slice(0, 111) }, { clock: () => clock, logger,
+      const store = new CalendarStore({ ...config, sources: sources.slice(0, ${historicalSources}) }, { clock: () => clock, logger,
         loader: async (source) => {
           const person = sources.indexOf(source);
-          const titles = Array.from({ length: 999 }, (_, index) => ({
-            id: 'tt' + (1000000 + (index < 487 ? index : 487 + person * 512 + index - 487)),
-            title: 'A credited release ' + index, date: index < 487 ? '2026-11-19' : '2020-11-19', type: 'movie' }));
+          const titles = Array.from({ length: ${sharedTitles + uniqueTitles} }, (_, index) => ({
+            id: 'tt' + (1000000 + (index < ${sharedTitles} ? index : ${sharedTitles} + person * ${uniqueTitles} + index - ${sharedTitles})),
+            title: 'A credited release ' + index + ': An unexpected journey through the city', date: index < ${sharedTitles} ? '2026-11-19' : '2020-11-19', type: 'movie' }));
           if (person < 3) titles.push({ ...parent, episodes });
           else if (person < 7) titles.push(episodes[person - 3]);
           return { titles, total: titles.length, warnings: [] };
@@ -58,10 +63,10 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
       assert.equal(store.persistenceError, null);
       let rawBytes = 0;
       for await (const chunk of createReadStream(join(dataDir, 'snapshot.json.gz')).pipe(createGunzip())) rawBytes += chunk.length;
-      assert(rawBytes > 48 * 1024 * 1024);
-      assert.equal(Object.keys(store.feed('all').events).length, 57_323);
+      assert(rawBytes > 64 * 1024 * 1024);
+      assert.equal(Object.keys(store.feed('all').events).length, ${historicalEvents});
       assert.deepEqual(warnings, []);
-      console.log(JSON.stringify({ phase, rawBytes, count: Object.keys(store.feed('all').events).length, rssMiB: Math.ceil(process.resourceUsage().maxRSS / 1024), elapsedMs: Math.round(performance.now() - started) }));
+      console.log(JSON.stringify({ phase, rawBytes, compressedBytes: (await stat(join(dataDir, 'snapshot.json.gz'))).size, count: Object.keys(store.feed('all').events).length, rssMiB: Math.ceil(process.resourceUsage().maxRSS / 1024), elapsedMs: Math.round(performance.now() - started) }));
       process.exit(0);
     }
     if (phase === 'restart') {
@@ -142,6 +147,11 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
       clock = new Date('2026-10-20T00:31:00.000Z');
       await app.store.refresh({ force: false });
       assert.equal(app.store.persistenceError, null);
+      let rawBytes = 0;
+      for await (const chunk of createReadStream(join(dataDir, 'snapshot.json.gz')).pipe(createGunzip())) rawBytes += chunk.length;
+      assert(rawBytes > 64 * 1024 * 1024);
+      const compressedBytes = (await stat(join(dataDir, 'snapshot.json.gz'))).size;
+      assert(compressedBytes < 16 * 1024 * 1024);
       let final;
       for (let index = 0; index < 3; index++) {
         final = await request('/calendars/all.ics');
@@ -161,7 +171,7 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
       assert.equal((await request('/healthz')).status, 200);
       assert.equal((await request('/readyz')).status, 200);
       assert.equal(warnings.length, 1);
-      console.log(JSON.stringify({ phase, hash: final.hash, bytes: final.bytes, count: Object.keys(app.store.feed('all').events).length, coldHeadersMs: first.headersMs, warmHeadMs: head.headersMs, healthMs: healthy.headersMs, rssMiB: Math.ceil(process.resourceUsage().maxRSS / 1024), elapsedMs: Math.round(performance.now() - started) }));
+      console.log(JSON.stringify({ phase, hash: final.hash, bytes: final.bytes, rawBytes, compressedBytes, count: Object.keys(app.store.feed('all').events).length, coldHeadersMs: first.headersMs, warmHeadMs: head.headersMs, healthMs: healthy.headersMs, rssMiB: Math.ceil(process.resourceUsage().maxRSS / 1024), elapsedMs: Math.round(performance.now() - started) }));
     } finally { resume?.(); await app.close(); }
   `;
   const results = [];
@@ -172,5 +182,5 @@ test(`${SOURCES.length} sources preserve full history across streamed HTTP, over
     results.push(result);
   }
   assert.equal(results[1].hash, results[2].hash, 'Restart must preserve all calendar bytes and revisions.');
-  t.diagnostic(`${SOURCES.length} sources, ${results[1].count} events, ${(results[0].rawBytes / 1024 / 1024).toFixed(1)} MiB snapshot and ${(results[1].bytes / 1024 / 1024).toFixed(1)} MiB calendar: peak ${Math.max(...results.map((result) => result.rssMiB))} MiB RSS; cold headers ${results[1].coldHeadersMs} ms, warm HEAD ${results[1].warmHeadMs} ms, concurrent health ${results[1].healthMs} ms; ${results.reduce((sum, result) => sum + result.elapsedMs, 0)} ms across seed, HTTP refresh, and restart.`);
+  t.diagnostic(`${SOURCES.length} sources, ${results[1].count} events, ${results[0].rawBytes} raw seed bytes, ${results[1].rawBytes} raw refreshed bytes (${(results[1].rawBytes / 1024 / 1024).toFixed(1)} MiB), ${results[1].compressedBytes} gzip bytes, and ${(results[1].bytes / 1024 / 1024).toFixed(1)} MiB calendar: peak ${Math.max(...results.map((result) => result.rssMiB))} MiB RSS; cold headers ${results[1].coldHeadersMs} ms, warm HEAD ${results[1].warmHeadMs} ms, concurrent health ${results[1].healthMs} ms; ${results.reduce((sum, result) => sum + result.elapsedMs, 0)} ms across seed, HTTP refresh, and restart.`);
 });

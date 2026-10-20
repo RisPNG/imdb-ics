@@ -12,7 +12,7 @@ import { stringer } from 'stream-json/stringer.js';
 import { attributeReleases, isValidEvent, reconcileEvents } from './calendar.mjs';
 import { fetchSource } from './imdb.mjs';
 
-const MAX_SNAPSHOT_BYTES = 64 * 1024 * 1024;
+const MAX_SNAPSHOT_BYTES = 96 * 1024 * 1024;
 const MAX_COMPRESSED_BYTES = 16 * 1024 * 1024;
 
 function emptySnapshot() {
@@ -102,7 +102,7 @@ export class CalendarStore {
         size = (await stat(path)).size;
       }
       const limit = compressed ? MAX_COMPRESSED_BYTES : MAX_SNAPSHOT_BYTES;
-      if (size > limit) throw new Error(`Saved snapshot exceeds the ${compressed ? '16 MiB compressed' : '64 MiB'} limit.`);
+      if (size > limit) throw new Error(`Saved snapshot exceeds the ${compressed ? '16 MiB compressed' : '96 MiB'} limit.`);
       let bytes = 0;
       let fileBytes = 0;
       // Materialize each title and event separately: streamed string slices and dynamic object shapes otherwise retain enough parser input to exhaust the configured heap.
@@ -112,12 +112,12 @@ export class CalendarStore {
       await pipeline(createReadStream(path), new Transform({
         transform(chunk, encoding, callback) {
           fileBytes += chunk.length;
-          callback(fileBytes > limit ? new Error(`Saved snapshot exceeds the ${compressed ? '16 MiB compressed' : '64 MiB'} limit.`) : null, chunk);
+          callback(fileBytes > limit ? new Error(`Saved snapshot exceeds the ${compressed ? '16 MiB compressed' : '96 MiB'} limit.`) : null, chunk);
         },
       }), ...(compressed ? [createGunzip()] : []), new Transform({
         transform(chunk, encoding, callback) {
           bytes += chunk.length;
-          callback(bytes > MAX_SNAPSHOT_BYTES ? new Error('Saved snapshot is larger than the 64 MiB limit.') : null, chunk);
+          callback(bytes > MAX_SNAPSHOT_BYTES ? new Error('Saved snapshot is larger than the 96 MiB limit.') : null, chunk);
         },
       }), parser.asStream({ streamValues: false }), new Writable({ objectMode: true,
         write(token, encoding, callback) { assembler.consume(token); callback(); },
@@ -265,7 +265,7 @@ export class CalendarStore {
         writableObjectMode: true,
         transform(chunk, encoding, callback) {
           rawBytes += Buffer.byteLength(chunk);
-          if (rawBytes > MAX_SNAPSHOT_BYTES) return callback(new Error('Calendar snapshot exceeds the 64 MiB limit.'));
+          if (rawBytes > MAX_SNAPSHOT_BYTES) return callback(new Error('Calendar snapshot exceeds the 96 MiB limit.'));
           pending += chunk;
           if (pending.length < 64 * 1024) return callback();
           const output = pending;
@@ -281,6 +281,7 @@ export class CalendarStore {
       }), createWriteStream(temporary, { mode: 0o600 }));
       await rename(temporary, join(this.config.dataDir, 'snapshot.json.gz'));
       this.persistenceError = null;
+      this.logger.info(`Calendar cache saved: ${rawBytes} bytes, ${compressedBytes} compressed bytes.`);
       await unlink(join(this.config.dataDir, 'snapshot.json')).catch((error) => {
         if (error.code !== 'ENOENT') this.logger.warn(`Legacy calendar cache could not be removed: ${errorMessage(error)}`);
       });

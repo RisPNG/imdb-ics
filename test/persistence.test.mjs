@@ -141,7 +141,7 @@ for (const [name, bytes] of [
   });
 }
 
-for (const [filename, limit] of [['snapshot.json.gz', 16 * 1024 * 1024], ['snapshot.json', 64 * 1024 * 1024]]) {
+for (const [filename, limit] of [['snapshot.json.gz', 16 * 1024 * 1024], ['snapshot.json', 96 * 1024 * 1024]]) {
   test(`rejects ${filename} above its file-size bound before reading its contents`, async (t) => {
     const { dataDir, config } = await setup(t);
     const warnings = [];
@@ -155,11 +155,11 @@ for (const [filename, limit] of [['snapshot.json.gz', 16 * 1024 * 1024], ['snaps
   });
 }
 
-test('bounds decompression of a small gzip file whose expanded contents exceed 64 MiB', async (t) => {
+test('bounds decompression of a small gzip file whose expanded contents exceed 96 MiB', async (t) => {
   const { dataDir, config } = await setup(t);
   const warnings = [];
   const block = Buffer.alloc(1024 * 1024, 32);
-  await pipeline(Readable.from([...Array(64).fill(block), Buffer.from(' ')]), createGzip(),
+  await pipeline(Readable.from([...Array(96).fill(block), Buffer.from(' ')]), createGzip(),
     createWriteStream(join(dataDir, 'snapshot.json.gz')));
   assert((await stat(join(dataDir, 'snapshot.json.gz'))).size < 1024 * 1024);
   const store = new CalendarStore(config, { logger: { ...quiet, warn(message) { warnings.push(message); } } });
@@ -174,10 +174,10 @@ test('an oversized raw snapshot preserves the last saved file and removes tempor
   store.snapshot = structuredClone(legacySnapshot);
   await store.persist();
   const original = await readFile(join(dataDir, 'snapshot.json.gz'));
-  store.snapshot.padding = 'x'.repeat(64 * 1024 * 1024);
+  store.snapshot.padding = Array(96 * 16).fill('x'.repeat(64 * 1024));
   await store.persist();
   delete store.snapshot.padding;
-  assert.match(store.persistenceError, /64 MiB/);
+  assert.match(store.persistenceError, /96 MiB/);
   assert.deepEqual(await readFile(join(dataDir, 'snapshot.json.gz')), original);
   assert.deepEqual(await readdir(dataDir), ['snapshot.json.gz']);
 });
