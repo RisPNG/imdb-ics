@@ -31,8 +31,39 @@ test('identical refreshes keep event timestamps, sequence and serialized bytes u
   assert.deepEqual(after, before);
   assert.equal(after.tt1234.sequence, 0);
   assert.equal(after.tt1234.createdAt, firstRefresh);
+  assert.equal(after.tt1234.description, 'https://www.imdb.com/title/tt1234/');
+  assert.equal(after.tt1234.episodeDescription, '');
   assert.equal(renderCalendar({ events: before }), renderCalendar({ events: after }));
   assert.match(renderCalendar({ events: after }), /DTSTAMP:20261016T040000Z\r\n/);
+});
+
+test('adding IMDb links revises active persisted descriptions once without changing release identity or cancellation history', () => {
+  const premiere = episode('tt9419264', 1, series.date, 'Kassa');
+  premiere.series.season = 1;
+  const chapter = episode('tt20258964', 1, '2025-04-22', 'One Year Later');
+  const titles = [title, { ...series, episodes: [premiere, chapter] }];
+  for (const sources of [undefined, [{ kind: 'interest', label: 'Star Wars', titles }]]) {
+    const current = reconcileEvents({}, titles, { now: firstRefresh, sources });
+    const previous = Object.fromEntries(Object.entries(current).map(([id, event]) => [id, {
+      ...event, description: event.description.replace(/^https:\/\/www\.imdb\.com\/title\/tt\d+\/(?:\n\n)?/, ''), sequence: 7,
+    }]));
+    const cancelled = { ...previous[title.id], id: 'tt9999', titleId: 'tt9999', description: 'Historical notes', status: 'CANCELLED', sequence: 11 };
+    previous[cancelled.id] = cancelled;
+    const updated = reconcileEvents(previous, titles, { now: secondRefresh, sources });
+    for (const id of [title.id, series.id, `${series.id}-${chapter.date}`]) {
+      assert.equal(updated[id].description, current[id].description);
+      assert.equal(updated[id].sequence, 8);
+      assert.equal(updated[id].modifiedAt, secondRefresh);
+      assert.equal(updated[id].createdAt, firstRefresh);
+      assert.equal(updated[id].date, previous[id].date);
+      assert.deepEqual(updated[id].episodeIds, previous[id].episodeIds);
+      assert.equal(updated[id].episodeDescription, previous[id].episodeDescription);
+    }
+    assert.strictEqual(updated[cancelled.id], cancelled);
+    assert.notEqual(renderCalendar({ events: updated }), renderCalendar({ events: previous }));
+    assert.deepEqual(reconcileEvents(updated, titles, { now: '2026-10-18T04:00:00Z', sources }), updated);
+    assert.equal(previous[title.id].sequence, 7, 'migration must not mutate the previous state');
+  }
 });
 
 test('reschedules, renames, cancellation and reappearance keep a stable UID and advance sequence', () => {
@@ -181,15 +212,19 @@ test('groups single and batch releases under the series title without duplicatin
   assert.ok(active.every((event) => event.title === 'Andor' && event.titleId === series.id));
   assert.equal(events[series.id].createdAt, firstRefresh);
   assert.equal(events[series.id].sequence, 1);
-  assert.equal(events[series.id].description, 'S01E01: Kassa');
-  assert.equal(events['tt9253284-2025-04-22'].description, 'S02E01: One Year Later\nS02E02: Sagrona Teema\nS02E03: Harvest');
+  assert.equal(events[series.id].description, 'https://www.imdb.com/title/tt9253284/\n\nS01E01: Kassa');
+  assert.equal(events['tt9253284-2025-04-22'].description, 'https://www.imdb.com/title/tt9253284/\n\nS02E01: One Year Later\nS02E02: Sagrona Teema\nS02E03: Harvest');
   assert.deepEqual(events['tt9253284-2025-04-22'].episodeIds, [first.id, second.id, third.id]);
-  assert.equal(events['tt9253284-2025-04-29'].description, 'S02E04: Ever Been to Ghorman?');
+  assert.equal(events['tt9253284-2025-04-29'].description, 'https://www.imdb.com/title/tt9253284/\n\nS02E04: Ever Been to Ghorman?');
   assert.ok(!active.some((event) => event.episodeIds.includes(undated.id)));
   const ics = unfold(renderCalendar({ events }));
   assert.equal(ics.match(/SUMMARY:Andor\r\n/g).length, 3);
-  assert.match(ics, /DESCRIPTION:S02E01: One Year Later\\nS02E02: Sagrona Teema\\nS02E03: Harvest\r\n/);
+  assert.match(ics, /DESCRIPTION:https:\/\/www.imdb.com\/title\/tt9253284\/\\n\\nS02E01: One Year Later\\nS02E02: Sagrona Teema\\nS02E03: Harvest\r\n/);
   assert.equal(ics.match(/URL:https:\/\/www.imdb.com\/title\/tt9253284\/\r\n/g).length, 3);
+  for (const block of ics.split('BEGIN:VEVENT\r\n').slice(1)) {
+    const url = block.match(/\r\nURL:([^\r\n]+)/)[1];
+    assert.ok(block.includes(`DESCRIPTION:${url}\\n\\n`));
+  }
   assert.doesNotMatch(ics, /RRULE:/);
   assert.deepEqual(reconcile(events, [{ ...series, episodes: [premiere, second, fourth, first, third, undated] }, first], '2026-10-18T00:00:00Z'), events);
 });
@@ -200,11 +235,11 @@ test('episode-only sources group dates without expanding the parent series or fa
   unknown.series.season = null;
   const events = reconcile({}, [unknown, numbered]);
   assert.deepEqual(Object.keys(events), ['tt9253284-2025-04-22']);
-  assert.equal(events['tt9253284-2025-04-22'].description, 'S02E01: One Year Later\nSagrona Teema');
+  assert.equal(events['tt9253284-2025-04-22'].description, 'https://www.imdb.com/title/tt9253284/\n\nS02E01: One Year Later\nSagrona Teema');
   const withoutSeason = { ...unknown, series: { ...unknown.series, episode: 2 } };
   const withoutEpisode = { ...unknown, series: { ...unknown.series, season: 2 } };
-  assert.match(Object.values(reconcile({}, [withoutSeason]))[0].description, /^Episode 2: /);
-  assert.match(Object.values(reconcile({}, [withoutEpisode]))[0].description, /^Season 2: /);
+  assert.match(Object.values(reconcile({}, [withoutSeason]))[0].episodeDescription, /^Episode 2: /);
+  assert.match(Object.values(reconcile({}, [withoutEpisode]))[0].episodeDescription, /^Season 2: /);
 });
 
 test('premiere episodes have the same UID in series, episode-only, and combined feeds', () => {
@@ -243,7 +278,7 @@ test('episode title, numbering, and membership changes revise descriptions and u
   assert.notEqual(renderCalendar({ events: initial }), renderCalendar({ events: renamed }));
   const renumbered = reconcile(renamed, [{ ...series, episodes: [{ ...first, title: 'Updated title', series: { ...first.series, episode: 3 } }] }], secondRefresh);
   assert.equal(renumbered[groupId].sequence, 2);
-  assert.equal(renumbered[groupId].description, 'S02E03: Updated title');
+  assert.equal(renumbered[groupId].description, 'https://www.imdb.com/title/tt9253284/\n\nS02E03: Updated title');
   const added = reconcile(renumbered, [{ ...series, episodes: [first, second] }], secondRefresh);
   assert.equal(added[groupId].sequence, 3);
   const replaced = reconcile(added, [{ ...series, episodes: [{ ...first, id: 'tt29999999' }, second] }], secondRefresh);
@@ -330,12 +365,12 @@ test('combined attribution merges interests and credited people without duplicat
   const events = reconcileEvents({}, sources.flatMap((source) => source.titles), { now: firstRefresh, sources });
   assert.equal(Object.keys(events).length, 4);
   assert.deepEqual(events[title.id].sourceLabels, { interests: ['Marvel', 'Star Wars'], people: ['Justin Roiland', 'Vince Gilligan'] });
-  assert.equal(events[title.id].description, 'Interests: Marvel, Star Wars\nPeople: Justin Roiland, Vince Gilligan');
+  assert.equal(events[title.id].description, 'https://www.imdb.com/title/tt1234/\n\nInterests: Marvel, Star Wars\nPeople: Justin Roiland, Vince Gilligan');
   assert.equal(events[title.id].episodeDescription, '');
-  assert.equal(events[series.id].description, 'Interests: Marvel, Star Wars\nPeople: Vince Gilligan');
+  assert.equal(events[series.id].description, 'https://www.imdb.com/title/tt9253284/\n\nInterests: Marvel, Star Wars\nPeople: Vince Gilligan');
   const batch = events[`${series.id}-${first.date}`];
   assert.deepEqual(batch.episodeIds, [first.id, second.id]);
-  assert.equal(batch.description, 'Interests: Marvel, Star Wars\nPeople: Justin Roiland, Vince Gilligan\n\nS02E01: One Year Later\nS02E02: Sagrona Teema');
+  assert.equal(batch.description, 'https://www.imdb.com/title/tt9253284/\n\nInterests: Marvel, Star Wars\nPeople: Justin Roiland, Vince Gilligan\n\nS02E01: One Year Later\nS02E02: Sagrona Teema');
   assert.equal(batch.episodeDescription, 'S02E01: One Year Later\nS02E02: Sagrona Teema');
   assert.deepEqual(events[`${series.id}-${next.date}`].sourceLabels.people, ['Justin Roiland']);
   const reversed = sources.toReversed().map((source) => ({ ...source, titles: source.titles.toReversed() }));
@@ -343,7 +378,11 @@ test('combined attribution merges interests and credited people without duplicat
   const ics = unfold(renderCalendar({ events }));
   assert.equal(ics.match(/BEGIN:VEVENT\r\n/g).length, 4);
   assert.equal(ics.match(/UID:tt9253284-2025-04-22@release-calendar\r\n/g).length, 1);
-  assert.match(ics, /DESCRIPTION:Interests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\, Vince Gilligan\\n\\nS02E01: One Year Later\\nS02E02: Sagrona Teema\r\n/);
+  assert.match(ics, /DESCRIPTION:https:\/\/www.imdb.com\/title\/tt9253284\/\\n\\nInterests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\, Vince Gilligan\\n\\nS02E01: One Year Later\\nS02E02: Sagrona Teema\r\n/);
+  for (const block of ics.split('BEGIN:VEVENT\r\n').slice(1)) {
+    const url = block.match(/\r\nURL:([^\r\n]+)/)[1];
+    assert.ok(block.includes(`DESCRIPTION:${url}\\n\\nInterests:`));
+  }
 });
 
 test('source attribution follows matched title and episode IDs after selecting their canonical dates', () => {

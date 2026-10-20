@@ -106,7 +106,7 @@ test('adding a source keeps the saved combined feed available until the new sour
   assert.equal(expanded.feed('three').stale, false);
   assert.equal(expanded.feed('all').events[title.id].sequence, refreshed[title.id].sequence + 1);
   assert.equal(expanded.feed('all').events[title.id].createdAt, refreshed[title.id].createdAt);
-  assert.equal(expanded.feed('all').events[title.id].description, 'Interests: one, two\nPeople: three');
+  assert.equal(expanded.feed('all').events[title.id].description, 'https://www.imdb.com/title/tt1234567/\n\nInterests: one, two\nPeople: three');
   assert.equal(expanded.feed('all').events[removedTitle.id], undefined);
   assert.deepEqual(expanded.snapshot.combined.events[removedTitle.id], previousArchive[removedTitle.id]);
   assert.equal(expanded.feed('all').events[newTitle.id].status, 'CONFIRMED');
@@ -185,7 +185,7 @@ test('combined publication limits dates and omits withdrawn releases while retai
   assert.equal(archive[withdrawn[1].id].sequence, 1);
   for (const [id, event] of Object.entries(publication.events)) assert.equal(event, archive[id], 'publication retains the archived event object and revisions');
   assert.deepEqual(publication.events[group].episodeIds, series.episodes.map((episode) => episode.id));
-  assert.equal(publication.events[group].description, 'Interests: one, two\n\nS01E01: Chapter 1\nS01E02: Chapter 2');
+  assert.equal(publication.events[group].description, 'https://www.imdb.com/title/tt4000000/\n\nInterests: one, two\n\nS01E01: Chapter 1\nS01E02: Chapter 2');
   for (const slug of ['one', 'two']) {
     assert.equal(Object.keys(store.feed(slug).events).length, 6);
     assert.equal(store.feed(slug).events[boundaries[0].id].status, 'CONFIRMED');
@@ -331,7 +331,7 @@ test('series and directly matched episodes share release groups, omission counts
   assert.deepEqual(Object.keys(events), [series.id, `${series.id}-2026-11-26`]);
   assert.deepEqual(events[series.id].episodeIds, ['tt4567890', 'tt5678901']);
   assert.equal(events[series.id].episodeDescription, 'S01E01: The beginning\nS01E02: Another beginning');
-  assert.equal(events[series.id].description, 'Interests: one, two\n\nS01E01: The beginning\nS01E02: Another beginning');
+  assert.equal(events[series.id].description, 'https://www.imdb.com/title/tt3456789/\n\nInterests: one, two\n\nS01E01: The beginning\nS01E02: Another beginning');
   const page = store.pageData();
   assert.deepEqual(page.upcoming.find((event) => event.id === series.id).sources, ['one', 'two']);
   assert.deepEqual(page.upcoming.find((event) => event.date === '2026-11-26').sources, ['one']);
@@ -366,19 +366,23 @@ test('version 1 snapshots retain movie revisions and cancellations while migrati
   t.after(() => migrated.stop());
   await migrated.initialize();
   assert.equal(migrated.snapshot.version, 2);
-  assert.equal(renderCalendar({ events: migrated.feed('one').events }), renderCalendar({ events: { [movie.id]: movie, [oldEpisode.id]: oldEpisode } }));
+  for (const original of [movie, oldEpisode]) {
+    assert.deepEqual(migrated.feed('one').events[original.id], { ...original,
+      episodeDescription: '', description: `https://www.imdb.com/title/${original.id}/`,
+      sequence: original.sequence + 1, modifiedAt: clock.toISOString() });
+  }
   assert.equal(migrated.feed('one').events[cancellation.id], undefined);
   assert.equal(migrated.snapshot.sources.one.events[cancellation.id].sequence, 7);
   assert.equal(migrated.feed('all').events[movie.id].sequence, 4);
   assert.equal(migrated.feed('all').events[episode.id].sequence, 3);
-  assert.equal(migrated.feed('all').events[movie.id].description, 'Interests: one, two');
+  assert.equal(migrated.feed('all').events[movie.id].description, 'https://www.imdb.com/title/tt1234567/\n\nInterests: one, two');
   await migrated.refresh();
   const combined = migrated.snapshot.combined.events;
   assert.equal(combined[episode.id].status, 'CANCELLED');
   assert.equal(combined[episode.id].sequence, 4);
   assert.equal(combined[episode.id].createdAt, createdAt);
   assert.equal(combined[series.id].titleId, series.id);
-  assert.equal(combined[series.id].description, 'Interests: one, two\n\nS01E01: The beginning');
+  assert.equal(combined[series.id].description, 'https://www.imdb.com/title/tt3456789/\n\nInterests: one, two\n\nS01E01: The beginning');
   assert.deepEqual(combined[series.id].episodeIds, [episode.id]);
   assert.equal(combined[movie.id].sequence, 4);
   assert.equal(combined[movie.id].modifiedAt, clock.toISOString());
@@ -527,7 +531,7 @@ test('combined source changes revise the same release once and date changes reta
   assert.equal(store.snapshot.combined.events[`${parent.id}-2026-12-03`].sequence, 1);
   assert.equal(moved[`${parent.id}-2026-12-10`].status, 'CONFIRMED');
   assert.deepEqual(moved[`${parent.id}-2026-12-10`].episodeIds, [next.id]);
-  assert.equal(moved[`${parent.id}-2026-12-10`].description, 'Interests: Marvel, Star Wars\nPeople: Justin Roiland\n\nS01E04: Next week');
+  assert.equal(moved[`${parent.id}-2026-12-10`].description, 'https://www.imdb.com/title/tt3456789/\n\nInterests: Marvel, Star Wars\nPeople: Justin Roiland\n\nS01E04: Next week');
   const restored = new CalendarStore(config, { logger: quiet, clock: () => clock });
   await restored.initialize();
   assert.equal(renderCalendar({ events: restored.feed('all').events }), renderCalendar({ events: moved }));
@@ -614,7 +618,7 @@ test('people exclusions migrate fresh saved memberships, retry failures, and pre
     assert.deepEqual(combined[id].sourceLabels, { interests: ['Marvel'], people: [] });
   }
   assert.deepEqual(combined[groupId].episodeIds, [first.id, second.id]);
-  assert.equal(combined[groupId].description, 'Interests: Marvel\n\nS01E01: The first conversation\nS01E02: The second conversation');
+  assert.equal(combined[groupId].description, 'https://www.imdb.com/title/tt3456789/\n\nInterests: Marvel\n\nS01E01: The first conversation\nS01E02: The second conversation');
   assert.deepEqual(combined[title.id], previousCombined[title.id], 'unaffected releases retain every revision field');
   assert.deepEqual(migrated.pageData().upcoming.find((event) => event.id === groupId).sources, ['Marvel']);
   assert.deepEqual(migrated.pageData(undefined, 'marvel').upcoming.find((event) => event.id === groupId).sources, ['Marvel']);

@@ -9,7 +9,7 @@ import { parser } from 'stream-json';
 import Assembler from 'stream-json/assembler.js';
 import { disassembler } from 'stream-json/disassembler.js';
 import { stringer } from 'stream-json/stringer.js';
-import { attributeReleases, isValidEvent, reconcileEvents } from './calendar.mjs';
+import { attributeReleases, isValidEvent, reconcileEvents, releaseDescription } from './calendar.mjs';
 import { fetchSource, PEOPLE_EXCLUDED_INTEREST_IDS } from './imdb.mjs';
 
 const MAX_SNAPSHOT_BYTES = 96 * 1024 * 1024;
@@ -130,12 +130,26 @@ export class CalendarStore {
     } catch (error) {
       if (error.code !== 'ENOENT') this.logger.warn(`Calendar cache could not be loaded: ${errorMessage(error)}`);
     }
+    let changed = !!this.snapshot.eventTimeMode && this.snapshot.eventTimeMode !== this.config.eventTimeMode;
     this.applyTimeMode();
+    const now = this.clock().toISOString();
+    for (const saved of Object.values(this.snapshot.sources)) {
+      for (const [id, event] of Object.entries(saved.events)) {
+        if (event.status !== 'CONFIRMED') continue;
+        const episodeDescription = event.episodeDescription ?? event.description ?? '';
+        const description = releaseDescription({ ...event, episodeDescription });
+        if (description === event.description) continue;
+        saved.events[id] = { ...event, episodeDescription, description,
+          sequence: event.sequence + 1, modifiedAt: now };
+        changed = true;
+      }
+    }
     if (this.snapshot.combined) {
       const previous = this.snapshot.combined;
-      this.reconcileCombined(this.clock().toISOString(), previous.updatedAt);
-      if (Object.values(this.snapshot.combined.events).some((event) => event.sequence !== previous.events[event.id]?.sequence)) await this.persist();
+      this.reconcileCombined(now, previous.updatedAt);
+      if (Object.values(this.snapshot.combined.events).some((event) => event.sequence !== previous.events[event.id]?.sequence)) changed = true;
     }
+    if (changed) await this.persist();
   }
 
   applyTimeMode() {

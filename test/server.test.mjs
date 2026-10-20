@@ -44,6 +44,7 @@ test('cold feeds return retryable 503, then cached all-day calendars support ETa
   assert.match(body, /DTEND;VALUE=DATE:20261120\r\n/);
   assert(!body.includes('DTSTART:20261119T000000Z'), 'release dates do not become midnight timestamps');
   assert.match(body, /SUMMARY:A title\\, with punctuation/);
+  assert.match(body.replace(/\r\n /g, ''), /DESCRIPTION:https:\/\/www.imdb.com\/title\/tt1234567\/\\n\\nInterests: /);
   const etag = response.headers.get('etag');
   const conditional = await fetch(`${origin}/calendars/all.ics`, { headers: { 'Accept-Encoding': 'identity', 'If-None-Match': `W/${etag}` } });
   assert.equal(conditional.status, 304);
@@ -223,6 +224,9 @@ test('published calendars remove withdrawn events and restore their original UID
     assert.equal(body.match(/BEGIN:VEVENT/g).length, 1);
     assert(body.includes(`UID:${title.id}@release-calendar\r\n`));
     assert.match(body, /SEQUENCE:0\r\nSTATUS:CONFIRMED\r\n/);
+    const description = body.replace(/\r\n /g, '').match(/^DESCRIPTION:(.*)\r$/m)[1];
+    assert.equal(description.split('\\n')[0], `https://www.imdb.com/title/${title.id}/`);
+    if (slug === person.slug) assert.equal(description, `https://www.imdb.com/title/${title.id}/`);
     original.set(slug, { etag: response.headers.get('etag'), modified: response.headers.get('last-modified') });
   }
   const createdAt = store.snapshot.combined.events[title.id].createdAt;
@@ -363,12 +367,12 @@ test('episode descriptions retain series titles and links and invalidate cached 
   assert.equal(body.match(/SUMMARY:A series\r\n/g).length, 2);
   assert.match(body, /UID:tt3456789@release-calendar\r\n/);
   assert.match(body, /UID:tt3456789-2026-11-26@release-calendar\r\n/);
-  assert.match(body, /DESCRIPTION:Interests: DC\\, Marvel\\, Star Wars\\nPeople: /);
+  assert.match(body, /DESCRIPTION:https:\/\/www.imdb.com\/title\/tt3456789\/\\n\\nInterests: DC\\, Marvel\\, Star Wars\\nPeople: /);
   assert.match(body, /\\n\\nS01E01: The beginning\\nS01E02: A second\\, unexpected\\; chapter\r\n/);
   assert.match(body, /\\n\\nS01E03: Next week\r\n/);
   assert.equal(body.match(/URL:https:\/\/www.imdb.com\/title\/tt3456789\/\r\n/g).length, 2);
   const sourceFeed = await fetch(`${origin}/calendars/marvel.ics`);
-  assert.match((await sourceFeed.text()).replace(/\r\n /g, ''), /DESCRIPTION:S01E03: Next week\r\n/);
+  assert.match((await sourceFeed.text()).replace(/\r\n /g, ''), /DESCRIPTION:https:\/\/www.imdb.com\/title\/tt3456789\/\\n\\nS01E03: Next week\r\n/);
 
   clock = new Date('2026-10-18T00:00:00Z');
   await store.refresh();
@@ -386,6 +390,8 @@ test('episode descriptions retain series titles and links and invalidate cached 
   assert.match(updated, /\\n\\nS01E01: The beginning\\nS01E02: A revised chapter\r\n/);
   assert.equal(store.feed('all').events[series.id].sequence, 1);
   assert.equal(store.feed('all').events[`${series.id}-2026-11-26`].sequence, 0);
+  assert.equal(store.feed('marvel').events[series.id].sequence, 1);
+  assert.equal(store.feed('marvel').events[`${series.id}-2026-11-26`].sequence, 0);
 });
 
 test('subscribe-all lists matching interests and people once while retaining single, batch, and premiere episode details', async (t) => {
@@ -412,15 +418,17 @@ test('subscribe-all lists matching interests and people once while retaining sin
   const events = calendar.split('BEGIN:VEVENT\r\n').slice(1);
   assert.equal(events.length, 4);
   const movieEvent = events.find((event) => event.startsWith(`UID:${movie.id}@`));
-  assert.match(movieEvent, /DESCRIPTION:Interests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\, Vince Gilligan\r\n/);
+  assert.match(movieEvent, /DESCRIPTION:https:\/\/www.imdb.com\/title\/tt1234567\/\\n\\nInterests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\, Vince Gilligan\r\n/);
   const premiereEvent = events.find((event) => event.startsWith(`UID:${parent.id}@`));
-  assert.match(premiereEvent, /DESCRIPTION:Interests: Marvel\\, Star Wars\\nPeople: Vince Gilligan\\n\\nS01E01: The beginning\r\n/);
+  assert.match(premiereEvent, /DESCRIPTION:https:\/\/www.imdb.com\/title\/tt3456789\/\\n\\nInterests: Marvel\\, Star Wars\\nPeople: Vince Gilligan\\n\\nS01E01: The beginning\r\n/);
   const batchEvent = events.find((event) => event.startsWith(`UID:${parent.id}-${first.date}@`));
-  assert.match(batchEvent, /DESCRIPTION:Interests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\, Vince Gilligan\\n\\nS01E02: A second chapter\\nS01E03: A third chapter\r\n/);
+  assert.match(batchEvent, /DESCRIPTION:https:\/\/www.imdb.com\/title\/tt3456789\/\\n\\nInterests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\, Vince Gilligan\\n\\nS01E02: A second chapter\\nS01E03: A third chapter\r\n/);
   const singleEvent = events.find((event) => event.startsWith(`UID:${parent.id}-${single.date}@`));
-  assert.match(singleEvent, /DESCRIPTION:Interests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\n\\nS01E04: Next week\r\n/);
+  assert.match(singleEvent, /DESCRIPTION:https:\/\/www.imdb.com\/title\/tt3456789\/\\n\\nInterests: Marvel\\, Star Wars\\nPeople: Justin Roiland\\n\\nS01E04: Next week\r\n/);
   for (const event of events) {
     const description = event.match(/^DESCRIPTION:(.*)$/m)?.[1];
+    const url = event.match(/^URL:(.*)\r$/m)[1];
+    assert(description.startsWith(`${url}\\n\\n`), 'The description starts with the same IMDb title URL as the event link.');
     for (const label of ['Marvel', 'Star Wars', 'Justin Roiland', 'Vince Gilligan']) {
       assert((description.match(new RegExp(label, 'g')) ?? []).length <= 1);
     }

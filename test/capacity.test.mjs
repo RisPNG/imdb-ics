@@ -68,6 +68,14 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       await store.initialize();
       await store.refresh();
       for (const saved of Object.values(store.snapshot.sources)) delete saved.excludedInterestIds;
+      for (const events of [store.snapshot.combined.events, ...Object.values(store.snapshot.sources).map((saved) => saved.events)]) {
+        for (const event of Object.values(events)) {
+          if (event.status !== 'CONFIRMED') continue;
+          const url = 'https://www.imdb.com/title/' + event.titleId + '/';
+          assert(event.description === url || event.description.startsWith(url + '\\n\\n'));
+          event.description = event.description === url ? '' : event.description.slice(url.length + 2);
+        }
+      }
       store.snapshot.combined.events[withdrawn.id] = withdrawn;
       await store.persist();
       assert.equal(store.persistenceError, null);
@@ -94,12 +102,12 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
         assert.equal(store.feed('all').events[title.id], undefined);
         assert.equal(store.snapshot.combined.events[title.id].status, 'CONFIRMED');
         assert.equal(store.snapshot.combined.events[title.id].date, title.date);
-        assert.equal(store.snapshot.combined.events[title.id].sequence, 0);
+        assert.equal(store.snapshot.combined.events[title.id].sequence, 1);
         assert.equal(store.feed(sources[0].slug).events[title.id].status, 'CONFIRMED');
       }
       assert.equal(store.feed('all').events[withdrawn.id], undefined);
       assert.deepEqual(store.snapshot.combined.events[withdrawn.id], withdrawn);
-      assert.equal(store.feed('all').events.tt1000000.sequence, 2);
+      assert.equal(store.feed('all').events.tt1000000.sequence, 3);
       assert.equal(Object.values(store.feed('all').events).filter((event) => event.status === 'CONFIRMED').length, ${expectedConfirmed});
       assert.equal(Object.values(store.feed('all').events).filter((event) => event.status === 'CANCELLED').length, 0);
       assert.equal(Object.values(store.snapshot.combined.events).filter((event) => event.status === 'CANCELLED').length, ${expectedCancelled});
@@ -107,6 +115,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
         if (source.kind === 'name') assert.deepEqual(store.snapshot.sources[source.slug].excludedInterestIds, PEOPLE_EXCLUDED_INTEREST_IDS);
         assert.equal(store.sourceState(source).status, 'ready');
         assert(Object.values(store.feed(source.slug).events).every((event) => event.status === 'CONFIRMED'));
+        assert(Object.values(store.feed(source.slug).events).every((event) => event.description.split('\\n')[0] === 'https://www.imdb.com/title/' + event.titleId + '/'));
       }
       const hash = createHash('sha256');
       for (const chunk of calendarChunks({ name: store.feed('all').label, description: store.feed('all').description, events: store.feed('all').events })) hash.update(chunk);
@@ -211,6 +220,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       assert.deepEqual(app.store.snapshot.combined.events[withdrawn.id], withdrawn);
       assert.equal(Object.keys(app.store.feed('all').events).length, ${expectedConfirmed + uniqueTitles - retainedUniqueTitles});
       const batch = app.store.feed('all').events['tt9000000000-2026-11-27'];
+      assert(batch.description.startsWith('https://www.imdb.com/title/tt9000000000/\\n\\n'));
       assert.match(batch.description, /Interests: Interest 0, Interest 1, Interest 2/);
       assert.match(batch.description, /People: Person 4, Person 5/);
       assert.match(batch.description, /S01E02: Chapter 2\\nS01E03: Chapter 3/);
@@ -229,7 +239,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
         assert.equal(events[title.id], undefined);
         assert.equal(archive[title.id].status, 'CONFIRMED');
         assert.equal(archive[title.id].date, title.date);
-        assert.equal(archive[title.id].sequence, 0);
+        assert.equal(archive[title.id].sequence, 1);
         assert.equal(app.store.feed(sources[0].slug).events[title.id].status, 'CONFIRMED');
       }
       assert.equal(events[excludedId], undefined);
@@ -240,7 +250,8 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       assert.equal(app.store.snapshot.sources[sources[3].slug].events[excludedId].status, 'CANCELLED');
       assert.equal(events.tt1000000.status, 'CONFIRMED');
       assert.deepEqual(events.tt1000000.sourceLabels, { interests: ['Interest 0', 'Interest 1', 'Interest 2'], people: [] });
-      assert.equal(events.tt1000000.description, 'Interests: Interest 0, Interest 1, Interest 2');
+      assert.equal(events.tt1000000.description, 'https://www.imdb.com/title/tt1000000/\\n\\nInterests: Interest 0, Interest 1, Interest 2');
+      assert(Object.values(events).every((event) => event.description.startsWith('https://www.imdb.com/title/' + event.titleId + '/\\n\\n')));
       assert.equal(app.store.feed('all').stale, false);
       for (const source of sources) {
         if (source.kind === 'name') assert.deepEqual(app.store.snapshot.sources[source.slug].excludedInterestIds, PEOPLE_EXCLUDED_INTEREST_IDS);

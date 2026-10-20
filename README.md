@@ -220,7 +220,7 @@ https://imdb-ics.onrender.com/calendars/all.ics
 
 ## Dates and timezones
 
-By default, each release is an **all-day event** on IMDb's returned release date. The event contains the title and a link to its IMDb page. It uses an iCalendar date rather than a timestamp, so timezone conversion cannot move the release onto another day.
+By default, each release is an **all-day event** on IMDb's returned release date. The event contains the title and a link to its IMDb page. The same link appears at the top of its description, above any matching interests, people, and episode details. Grouped episodes link to the series page. It uses an iCalendar date rather than a timestamp, so timezone conversion cannot move the release onto another day.
 
 For example, a release dated 19 November appears as an all-day event on 19 November in Kuala Lumpur, Los Angeles, and elsewhere. The feed uses `DTSTART;VALUE=DATE:20261119` and an exclusive end of `DTEND;VALUE=DATE:20261120`. It does not invent a release time.
 
@@ -233,6 +233,8 @@ The combined calendar also lists the matching interests and people in each event
 For example, two episodes released on the same day appear under the series name with a description such as:
 
 ```text
+https://www.imdb.com/title/tt1234567/
+
 Interests: Marvel
 People: Actor A, Actor B
 

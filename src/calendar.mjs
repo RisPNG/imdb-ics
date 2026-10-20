@@ -45,6 +45,18 @@ function savedEvents(previousEvents) {
   return events;
 }
 
+export function releaseDescription(event) {
+  const attribution = [
+    event.sourceLabels?.interests.length ? `Interests: ${event.sourceLabels.interests.join(', ')}` : '',
+    event.sourceLabels?.people.length ? `People: ${event.sourceLabels.people.join(', ')}` : '',
+  ].filter(Boolean).join('\n');
+  return [
+    `https://www.imdb.com/title/${event.titleId ?? event.id}/`,
+    attribution,
+    event.episodeDescription ?? event.description ?? '',
+  ].filter(Boolean).join('\n\n');
+}
+
 export function attributeReleases(events, sources) {
   const releases = [...events];
   if (!releases.length) return releases;
@@ -76,12 +88,10 @@ export function attributeReleases(events, sources) {
       for (const label of labels?.people ?? []) people.add(label);
     }
     const sourceLabels = { interests: [...interests].sort(compareText), people: [...people].sort(compareText) };
-    const attribution = [
-      sourceLabels.interests.length ? `Interests: ${sourceLabels.interests.join(', ')}` : '',
-      sourceLabels.people.length ? `People: ${sourceLabels.people.join(', ')}` : '',
-    ].filter(Boolean).join('\n');
     const episodeDescription = event.episodeDescription ?? event.description ?? '';
-    return { ...event, sourceLabels, episodeDescription, description: [attribution, episodeDescription].filter(Boolean).join('\n\n') };
+    const attributed = { ...event, sourceLabels, episodeDescription };
+    attributed.description = releaseDescription(attributed);
+    return attributed;
   });
 }
 
@@ -155,6 +165,7 @@ export function reconcileEvents(previousEvents, titles, { now = new Date(), sour
     current.set(group.id, { ...group, description, episodeDescription: description, episodeIds: episodes.map((episode) => episode.id) });
   }
   if (sources) for (const event of attributeReleases(current.values(), sources)) current.set(event.id, event);
+  else for (const event of current.values()) event.description = releaseDescription(event);
 
   const events = {};
   const ids = [...new Set([...Object.keys(previous), ...current.keys()])].sort(compareText);
