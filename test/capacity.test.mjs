@@ -74,7 +74,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       let rawBytes = 0;
       for await (const chunk of createReadStream(join(dataDir, 'snapshot.json.gz')).pipe(createGunzip())) rawBytes += chunk.length;
       assert(rawBytes > 64 * 1024 * 1024);
-      assert.equal(Object.keys(store.feed('all').events).length, ${historicalEvents});
+      assert.equal(Object.keys(store.feed('all').events).length, ${historicalEvents - 1});
       assert.equal(Object.keys(store.snapshot.combined.events).length, ${historicalEvents + 2});
       for (const title of outsideWindow) {
         assert.equal(store.feed('all').events[title.id], undefined);
@@ -88,7 +88,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       clock = new Date('2026-10-20T01:00:00.000Z');
       const store = new CalendarStore(config, { clock: () => clock, logger });
       await store.initialize();
-      assert.equal(Object.keys(store.feed('all').events).length, ${expectedEvents});
+      assert.equal(Object.keys(store.feed('all').events).length, ${expectedConfirmed});
       assert.equal(Object.keys(store.snapshot.combined.events).length, ${expectedEvents + 2});
       for (const title of outsideWindow) {
         assert.equal(store.feed('all').events[title.id], undefined);
@@ -97,13 +97,16 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
         assert.equal(store.snapshot.combined.events[title.id].sequence, 0);
         assert.equal(store.feed(sources[0].slug).events[title.id].status, 'CONFIRMED');
       }
-      assert.deepEqual(store.feed('all').events[withdrawn.id], withdrawn);
+      assert.equal(store.feed('all').events[withdrawn.id], undefined);
+      assert.deepEqual(store.snapshot.combined.events[withdrawn.id], withdrawn);
       assert.equal(store.feed('all').events.tt1000000.sequence, 2);
       assert.equal(Object.values(store.feed('all').events).filter((event) => event.status === 'CONFIRMED').length, ${expectedConfirmed});
-      assert.equal(Object.values(store.feed('all').events).filter((event) => event.status === 'CANCELLED').length, ${expectedCancelled});
+      assert.equal(Object.values(store.feed('all').events).filter((event) => event.status === 'CANCELLED').length, 0);
+      assert.equal(Object.values(store.snapshot.combined.events).filter((event) => event.status === 'CANCELLED').length, ${expectedCancelled});
       for (const source of sources) {
         if (source.kind === 'name') assert.deepEqual(store.snapshot.sources[source.slug].excludedInterestIds, PEOPLE_EXCLUDED_INTEREST_IDS);
         assert.equal(store.sourceState(source).status, 'ready');
+        assert(Object.values(store.feed(source.slug).events).every((event) => event.status === 'CONFIRMED'));
       }
       const hash = createHash('sha256');
       for (const chunk of calendarChunks({ name: store.feed('all').label, description: store.feed('all').description, events: store.feed('all').events })) hash.update(chunk);
@@ -202,9 +205,11 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       assert.equal(app.store.feed('all').events[excludedId].status, 'CONFIRMED');
       assert.equal(app.store.snapshot.sources[sources[3].slug].excludedInterestIds, undefined);
       assert.deepEqual(app.store.feed('all').events.tt1000000.sourceLabels.people, ['Person 3']);
-      assert.equal(Object.values(app.store.feed('all').events).filter((event) => event.status === 'CANCELLED').length, ${expectedCancelled - (uniqueTitles - retainedUniqueTitles)});
-      assert.deepEqual(app.store.feed('all').events[withdrawn.id], withdrawn);
-      assert.equal(Object.keys(app.store.feed('all').events).length, ${expectedEvents});
+      assert.equal(Object.values(app.store.feed('all').events).filter((event) => event.status === 'CANCELLED').length, 0);
+      assert.equal(Object.values(app.store.snapshot.combined.events).filter((event) => event.status === 'CANCELLED').length, ${expectedCancelled - (uniqueTitles - retainedUniqueTitles)});
+      assert.equal(app.store.feed('all').events[withdrawn.id], undefined);
+      assert.deepEqual(app.store.snapshot.combined.events[withdrawn.id], withdrawn);
+      assert.equal(Object.keys(app.store.feed('all').events).length, ${expectedConfirmed + uniqueTitles - retainedUniqueTitles});
       const batch = app.store.feed('all').events['tt9000000000-2026-11-27'];
       assert.match(batch.description, /Interests: Interest 0, Interest 1, Interest 2/);
       assert.match(batch.description, /People: Person 4, Person 5/);
@@ -227,9 +232,12 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
         assert.equal(archive[title.id].sequence, 0);
         assert.equal(app.store.feed(sources[0].slug).events[title.id].status, 'CONFIRMED');
       }
-      assert.equal(events[excludedId].status, 'CANCELLED');
-      assert.equal(events[excludedId].createdAt, formerlyCredited.createdAt);
-      assert.equal(events[excludedId].sequence, formerlyCredited.sequence + 1);
+      assert.equal(events[excludedId], undefined);
+      assert.equal(app.store.feed(sources[3].slug).events[excludedId], undefined);
+      assert.equal(archive[excludedId].status, 'CANCELLED');
+      assert.equal(archive[excludedId].createdAt, formerlyCredited.createdAt);
+      assert.equal(archive[excludedId].sequence, formerlyCredited.sequence + 1);
+      assert.equal(app.store.snapshot.sources[sources[3].slug].events[excludedId].status, 'CANCELLED');
       assert.equal(events.tt1000000.status, 'CONFIRMED');
       assert.deepEqual(events.tt1000000.sourceLabels, { interests: ['Interest 0', 'Interest 1', 'Interest 2'], people: [] });
       assert.equal(events.tt1000000.description, 'Interests: Interest 0, Interest 1, Interest 2');
@@ -240,8 +248,10 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       }
       const confirmed = Object.values(events).filter((event) => event.status === 'CONFIRMED').length;
       const cancelled = Object.values(events).filter((event) => event.status === 'CANCELLED').length;
+      const archivedCancelled = Object.values(archive).filter((event) => event.status === 'CANCELLED').length;
       assert.equal(confirmed, ${expectedConfirmed});
-      assert.equal(cancelled, ${expectedCancelled});
+      assert.equal(cancelled, 0);
+      assert.equal(archivedCancelled, ${expectedCancelled});
       let rawBytes = 0;
       for await (const chunk of createReadStream(join(dataDir, 'snapshot.json.gz')).pipe(createGunzip())) rawBytes += chunk.length;
       const compressedBytes = (await stat(join(dataDir, 'snapshot.json.gz'))).size;
@@ -285,7 +295,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       assert.equal((await request('/healthz')).status, 200);
       assert.equal((await request('/readyz')).status, 200);
       assert.equal(warnings.length, 1);
-      console.log(JSON.stringify({ phase, hash: final.hash, archiveHash: archiveHash.digest('hex'), bytes: final.bytes, gzipBytes: gzip.wireBytes, identityMs: final.elapsedMs, gzipHeadersMs: gzip.headersMs, gzipMs: gzip.elapsedMs, rawBytes, compressedBytes, count: Object.keys(events).length, archivedCount: Object.keys(archive).length, confirmed, cancelled, coldHeadersMs: first.headersMs, warmHeadMs: head.headersMs, healthMs: healthy.headersMs, rssMiB: Math.ceil(process.resourceUsage().maxRSS / 1024), elapsedMs: Math.round(performance.now() - started) }));
+      console.log(JSON.stringify({ phase, hash: final.hash, archiveHash: archiveHash.digest('hex'), bytes: final.bytes, gzipBytes: gzip.wireBytes, identityMs: final.elapsedMs, gzipHeadersMs: gzip.headersMs, gzipMs: gzip.elapsedMs, rawBytes, compressedBytes, count: Object.keys(events).length, archivedCount: Object.keys(archive).length, archivedCancelled, confirmed, cancelled, coldHeadersMs: first.headersMs, warmHeadMs: head.headersMs, healthMs: healthy.headersMs, rssMiB: Math.ceil(process.resourceUsage().maxRSS / 1024), elapsedMs: Math.round(performance.now() - started) }));
     } finally { resume?.(); resumeGzip?.(); await app.close(); }
   `;
   const results = [];
@@ -297,5 +307,5 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
   }
   assert.equal(results[1].hash, results[2].hash, 'Restart must preserve all calendar bytes and revisions.');
   assert.equal(results[1].archiveHash, results[2].archiveHash, 'Restart must preserve every archived event, including releases outside the published range.');
-  t.diagnostic(`${SOURCES.length} sources, ${results[1].archivedCount} archived events, ${results[1].count} published events (${results[1].confirmed} confirmed, ${results[1].cancelled} cancelled), ${results[0].rawBytes} raw seed bytes, ${results[1].rawBytes} raw refreshed bytes (${(results[1].rawBytes / 1024 / 1024).toFixed(1)} MiB), ${results[1].compressedBytes} snapshot gzip bytes, and ${(results[1].bytes / 1024 / 1024).toFixed(1)} MiB calendar (${results[1].gzipBytes} wire gzip bytes): peak ${Math.max(...results.map((result) => result.rssMiB))} MiB RSS; cold headers ${results[1].coldHeadersMs} ms, warm HEAD ${results[1].warmHeadMs} ms, concurrent health ${results[1].healthMs} ms; full identity ${results[1].identityMs} ms, gzip headers ${results[1].gzipHeadersMs} ms, full gzip ${results[1].gzipMs} ms; ${results.reduce((sum, result) => sum + result.elapsedMs, 0)} ms across seed, HTTP refresh, and restart.`);
+  t.diagnostic(`${SOURCES.length} sources, ${results[1].archivedCount} archived events (${results[1].archivedCancelled} cancelled), ${results[1].count} published events (${results[1].confirmed} confirmed, ${results[1].cancelled} cancelled), ${results[0].rawBytes} raw seed bytes, ${results[1].rawBytes} raw refreshed bytes (${(results[1].rawBytes / 1024 / 1024).toFixed(1)} MiB), ${results[1].compressedBytes} snapshot gzip bytes, and ${(results[1].bytes / 1024 / 1024).toFixed(1)} MiB calendar (${results[1].gzipBytes} wire gzip bytes): peak ${Math.max(...results.map((result) => result.rssMiB))} MiB RSS; cold headers ${results[1].coldHeadersMs} ms, warm HEAD ${results[1].warmHeadMs} ms, concurrent health ${results[1].healthMs} ms; full identity ${results[1].identityMs} ms, gzip headers ${results[1].gzipHeadersMs} ms, full gzip ${results[1].gzipMs} ms; ${results.reduce((sum, result) => sum + result.elapsedMs, 0)} ms across seed, HTTP refresh, and restart.`);
 });

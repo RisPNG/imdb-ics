@@ -53,9 +53,11 @@ test('adding a source keeps the saved combined feed available until the new sour
   titles = [{ ...title, date: '2026-11-20' }];
   await store.refresh();
   const previous = structuredClone(store.feed('all'));
+  const previousArchive = structuredClone(store.snapshot.combined.events);
   const bytes = renderCalendar({ name: previous.label, description: previous.description, events: previous.events });
   assert.equal(previous.events[title.id].sequence, 1);
-  assert.equal(previous.events[removedTitle.id].status, 'CANCELLED');
+  assert.equal(previous.events[removedTitle.id], undefined);
+  assert.equal(previousArchive[removedTitle.id].status, 'CANCELLED');
 
   const newTitle = { id: 'tt3456789', title: 'A newly included release', date: '2026-11-22' };
   let broken = true;
@@ -105,7 +107,8 @@ test('adding a source keeps the saved combined feed available until the new sour
   assert.equal(expanded.feed('all').events[title.id].sequence, refreshed[title.id].sequence + 1);
   assert.equal(expanded.feed('all').events[title.id].createdAt, refreshed[title.id].createdAt);
   assert.equal(expanded.feed('all').events[title.id].description, 'Interests: one, two\nPeople: three');
-  assert.deepEqual(expanded.feed('all').events[removedTitle.id], previous.events[removedTitle.id]);
+  assert.equal(expanded.feed('all').events[removedTitle.id], undefined);
+  assert.deepEqual(expanded.snapshot.combined.events[removedTitle.id], previousArchive[removedTitle.id]);
   assert.equal(expanded.feed('all').events[newTitle.id].status, 'CONFIRMED');
   assert.equal(expanded.feed('all').events[newTitle.id].sequence, 0);
   assert.equal(expanded.pageData().feeds.find((feed) => feed.slug === 'three').count, 2);
@@ -117,23 +120,40 @@ test('snapshot restart preserves event bytes and revisions; removal cancels only
   const { store, config } = await setup(t, async (item) => result(data[item.slug]), { clock: () => clock });
   await store.refresh();
   const original = renderCalendar({ events: store.feed('all').events, eventTimeMode: 'utc' });
+  const createdAt = store.snapshot.combined.events[title.id].createdAt;
   const restored = new CalendarStore(config, { logger: quiet, clock: () => clock });
   await restored.initialize();
   assert.equal(renderCalendar({ events: restored.feed('all').events, eventTimeMode: 'utc' }), original);
   clock = new Date('2026-10-17T00:00:00Z');
   data = { one: [], two: [{ ...title, date: '2026-11-20' }] };
   await store.refresh();
-  assert.equal(store.feed('one').events[title.id].status, 'CANCELLED');
+  assert.equal(store.feed('one').events[title.id], undefined);
+  assert.equal(store.snapshot.sources.one.events[title.id].status, 'CANCELLED');
   assert.equal(store.feed('all').events[title.id].status, 'CONFIRMED');
   assert.equal(store.feed('all').events[title.id].sequence, 1);
   assert.equal(store.feed('all').events[title.id].date, '2026-11-20');
   data.two = [];
   await store.refresh();
-  assert.equal(store.feed('all').events[title.id].status, 'CANCELLED');
-  assert.equal(store.feed('all').events[title.id].sequence, 2);
+  assert.equal(store.feed('all').events[title.id], undefined);
+  assert.equal(store.feed('two').events[title.id], undefined);
+  assert.equal(store.snapshot.combined.events[title.id].status, 'CANCELLED');
+  assert.equal(store.snapshot.combined.events[title.id].sequence, 2);
+  const removed = store.feed('all');
+  assert.equal(store.feed('all').events, removed.events, 'an empty publication is cached too');
+  assert.equal(store.feed('all').modifiedAt, removed.modifiedAt);
+  data.two = [{ ...title, date: '2026-11-20' }];
+  clock = new Date('2026-10-18T00:00:00Z');
+  await store.refresh();
+  const restoredEvent = store.feed('all').events[title.id];
+  assert.equal(restoredEvent.id, title.id);
+  assert.equal(restoredEvent.status, 'CONFIRMED');
+  assert.equal(restoredEvent.sequence, 3);
+  assert.equal(restoredEvent.createdAt, createdAt);
+  assert(store.feed('all').modifiedAt > removed.modifiedAt);
+  assert.equal(store.feed('two').events[title.id], store.snapshot.sources.two.events[title.id]);
 });
 
-test('combined publication limits dates while retaining full source history, cancellations, and grouped episode attribution', async (t) => {
+test('combined publication limits dates and omits withdrawn releases while retaining archived history and grouped episode attribution', async (t) => {
   let clock = new Date('2026-10-20T00:00:00Z');
   const boundaries = ['2023-12-31', '2024-01-01', '2029-12-31', '2030-01-01'].map((date, index) => ({
     id: `tt${2000000 + index}`, title: `A boundary release ${date}`, date,
@@ -159,19 +179,23 @@ test('combined publication limits dates while retaining full source history, can
   assert.equal(publication.modifiedAt, clock.toISOString());
   assert.equal(publication.updatedAt, clock.toISOString());
   assert(publication.description.includes('2024-01-01 through 2029-12-31'));
-  assert.deepEqual(Object.keys(publication.events).sort(), [boundaries[1].id, boundaries[2].id, withdrawn[1].id, group].sort());
-  assert.equal(publication.events[withdrawn[1].id].status, 'CANCELLED');
-  assert.equal(publication.events[withdrawn[1].id].sequence, 1);
+  assert.deepEqual(Object.keys(publication.events).sort(), [boundaries[1].id, boundaries[2].id, group].sort());
+  assert.equal(publication.events[withdrawn[1].id], undefined);
+  assert.equal(archive[withdrawn[1].id].status, 'CANCELLED');
+  assert.equal(archive[withdrawn[1].id].sequence, 1);
   for (const [id, event] of Object.entries(publication.events)) assert.equal(event, archive[id], 'publication retains the archived event object and revisions');
   assert.deepEqual(publication.events[group].episodeIds, series.episodes.map((episode) => episode.id));
   assert.equal(publication.events[group].description, 'Interests: one, two\n\nS01E01: Chapter 1\nS01E02: Chapter 2');
   for (const slug of ['one', 'two']) {
-    assert.equal(Object.keys(store.feed(slug).events).length, 9);
+    assert.equal(Object.keys(store.feed(slug).events).length, 6);
     assert.equal(store.feed(slug).events[boundaries[0].id].status, 'CONFIRMED');
     assert.equal(store.feed(slug).events[boundaries[3].id].status, 'CONFIRMED');
-    assert.equal(store.feed(slug).events[withdrawn[0].id].status, 'CANCELLED');
-    assert.equal(store.feed(slug).events[withdrawn[2].id].status, 'CANCELLED');
+    for (const removed of withdrawn) {
+      assert.equal(store.feed(slug).events[removed.id], undefined);
+      assert.equal(store.snapshot.sources[slug].events[removed.id].status, 'CANCELLED');
+    }
     assert.equal(store.feed(slug).dateRange, undefined);
+    for (const [id, event] of Object.entries(store.feed(slug).events)) assert.equal(event, store.snapshot.sources[slug].events[id]);
   }
   const page = store.pageData();
   assert.equal(page.feeds[0].count, 3);
@@ -342,12 +366,14 @@ test('version 1 snapshots retain movie revisions and cancellations while migrati
   t.after(() => migrated.stop());
   await migrated.initialize();
   assert.equal(migrated.snapshot.version, 2);
-  assert.equal(renderCalendar({ events: migrated.feed('one').events }), renderCalendar({ events }));
+  assert.equal(renderCalendar({ events: migrated.feed('one').events }), renderCalendar({ events: { [movie.id]: movie, [oldEpisode.id]: oldEpisode } }));
+  assert.equal(migrated.feed('one').events[cancellation.id], undefined);
+  assert.equal(migrated.snapshot.sources.one.events[cancellation.id].sequence, 7);
   assert.equal(migrated.feed('all').events[movie.id].sequence, 4);
   assert.equal(migrated.feed('all').events[episode.id].sequence, 3);
   assert.equal(migrated.feed('all').events[movie.id].description, 'Interests: one, two');
   await migrated.refresh();
-  const combined = migrated.feed('all').events;
+  const combined = migrated.snapshot.combined.events;
   assert.equal(combined[episode.id].status, 'CANCELLED');
   assert.equal(combined[episode.id].sequence, 4);
   assert.equal(combined[episode.id].createdAt, createdAt);
@@ -358,7 +384,9 @@ test('version 1 snapshots retain movie revisions and cancellations while migrati
   assert.equal(combined[movie.id].modifiedAt, clock.toISOString());
   assert.equal(combined[cancellation.id].sequence, 7);
   assert.equal(combined[cancellation.id].status, 'CANCELLED');
-  const bytes = renderCalendar({ events: combined });
+  assert.equal(migrated.feed('all').events[episode.id], undefined);
+  assert.equal(migrated.feed('all').events[cancellation.id], undefined);
+  const bytes = renderCalendar({ events: migrated.feed('all').events });
   const restored = new CalendarStore(config, {
     logger: quiet, clock: () => clock, loader: async () => result([title, series]),
   });
@@ -392,8 +420,9 @@ test('failed episode expansion keeps saved source events while the combined feed
   assert.deepEqual(store.feed('one').events, originalSource);
   assert.equal(store.feed('one').stale, true);
   const combined = store.feed('all').events;
-  assert.equal(combined[oldEpisode.id].status, 'CANCELLED');
-  assert.equal(combined[oldEpisode.id].sequence, 1);
+  assert.equal(combined[oldEpisode.id], undefined);
+  assert.equal(store.snapshot.combined.events[oldEpisode.id].status, 'CANCELLED');
+  assert.equal(store.snapshot.combined.events[oldEpisode.id].sequence, 1);
   assert.equal(combined[series.id].status, 'CONFIRMED');
   assert.deepEqual(combined[series.id].episodeIds, [oldEpisode.id]);
   assert.deepEqual(store.pageData().upcoming.find((event) => event.id === series.id).sources, ['one', 'two']);
@@ -493,8 +522,9 @@ test('combined source changes revise the same release once and date changes reta
   clock = new Date('2026-10-22T00:00:00Z');
   await store.refresh();
   const moved = store.feed('all').events;
-  assert.equal(moved[`${parent.id}-2026-12-03`].status, 'CANCELLED');
-  assert.equal(moved[`${parent.id}-2026-12-03`].sequence, 1);
+  assert.equal(moved[`${parent.id}-2026-12-03`], undefined);
+  assert.equal(store.snapshot.combined.events[`${parent.id}-2026-12-03`].status, 'CANCELLED');
+  assert.equal(store.snapshot.combined.events[`${parent.id}-2026-12-03`].sequence, 1);
   assert.equal(moved[`${parent.id}-2026-12-10`].status, 'CONFIRMED');
   assert.deepEqual(moved[`${parent.id}-2026-12-10`].episodeIds, [next.id]);
   assert.equal(moved[`${parent.id}-2026-12-10`].description, 'Interests: Marvel, Star Wars\nPeople: Justin Roiland\n\nS01E04: Next week');
@@ -563,8 +593,10 @@ test('people exclusions migrate fresh saved memberships, retry failures, and pre
   assert.deepEqual(migrated.snapshot.sources.person.titles, [title]);
   assert.deepEqual(migrated.feed('marvel').events, previousInterest);
   const combined = migrated.feed('all').events;
-  for (const [before, after] of [[previousPerson[excluded.id], migrated.feed('person').events[excluded.id]],
-    [previousCombined[excluded.id], combined[excluded.id]]]) {
+  assert.equal(migrated.feed('person').events[excluded.id], undefined);
+  assert.equal(combined[excluded.id], undefined);
+  for (const [before, after] of [[previousPerson[excluded.id], migrated.snapshot.sources.person.events[excluded.id]],
+    [previousCombined[excluded.id], migrated.snapshot.combined.events[excluded.id]]]) {
     assert.equal(after.id, before.id);
     assert.equal(after.createdAt, before.createdAt);
     assert.equal(after.status, 'CANCELLED');
@@ -573,8 +605,9 @@ test('people exclusions migrate fresh saved memberships, retry failures, and pre
   }
   const groupId = `${parent.id}-${first.date}`;
   for (const id of [parent.id, groupId]) {
-    assert.equal(migrated.feed('person').events[id].status, 'CANCELLED');
-    assert.equal(migrated.feed('person').events[id].sequence, previousPerson[id].sequence + 1);
+    assert.equal(migrated.feed('person').events[id], undefined);
+    assert.equal(migrated.snapshot.sources.person.events[id].status, 'CANCELLED');
+    assert.equal(migrated.snapshot.sources.person.events[id].sequence, previousPerson[id].sequence + 1);
     assert.equal(combined[id].status, 'CONFIRMED');
     assert.equal(combined[id].sequence, previousCombined[id].sequence + 1);
     assert.equal(combined[id].createdAt, previousCombined[id].createdAt);

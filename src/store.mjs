@@ -81,7 +81,7 @@ export class CalendarStore {
     this.clock = clock;
     this.logger = logger;
     this.snapshot = emptySnapshot();
-    this.combinedPublication = null;
+    this.publications = new WeakMap();
     this.refreshing = null;
     this.timer = null;
     this.controller = null;
@@ -156,30 +156,33 @@ export class CalendarStore {
   }
 
   feed(slug) {
+    const now = this.clock();
+    let feed;
+    let year = null;
     if (slug === 'all') {
       if (!this.snapshot.combined) return null;
-      const now = this.clock();
-      const year = now.getUTCFullYear();
-      let publication = this.combinedPublication;
-      if (publication?.archive !== this.snapshot.combined.events || publication.year !== year) {
-        const dateRange = { start: `${year - 2}-01-01`, end: `${year + 3}-12-31` };
-        publication = { archive: this.snapshot.combined.events, year, dateRange,
-          events: Object.fromEntries(Object.entries(this.snapshot.combined.events)
-            .filter(([, event]) => event.date >= dateRange.start && event.date <= dateRange.end)),
-          modifiedAt: now.toISOString() };
-        this.combinedPublication = publication;
-      }
+      year = now.getUTCFullYear();
+      const dateRange = { start: `${year - 2}-01-01`, end: `${year + 3}-12-31` };
       const stale = this.config.sources.some((source) => this.sourceState(source).status !== 'ready');
-      return { label: 'All releases', description: `Release dates from ${publication.dateRange.start} through ${publication.dateRange.end} for all configured IMDb sources, with series episodes grouped by release date.`,
-        events: publication.events, dateRange: publication.dateRange, modifiedAt: publication.modifiedAt,
+      feed = { label: 'All releases', description: `Release dates from ${dateRange.start} through ${dateRange.end} for all configured IMDb sources, with series episodes grouped by release date.`,
+        events: this.snapshot.combined.events, dateRange,
         updatedAt: this.snapshot.combined.updatedAt, stale };
+    } else {
+      const source = this.config.sources.find((candidate) => candidate.slug === slug);
+      if (!source) return undefined;
+      const state = this.sourceState(source);
+      if (!state.saved?.lastSuccessAt) return null;
+      feed = { label: source.label, description: `Release dates for titles matched by ${source.label} on IMDb.`,
+        events: state.saved.events, updatedAt: state.saved.lastSuccessAt, stale: state.status === 'stale' };
     }
-    const source = this.config.sources.find((candidate) => candidate.slug === slug);
-    if (!source) return undefined;
-    const state = this.sourceState(source);
-    if (!state.saved?.lastSuccessAt) return null;
-    return { label: source.label, description: `Release dates for titles matched by ${source.label} on IMDb.`,
-      events: state.saved.events, updatedAt: state.saved.lastSuccessAt, stale: state.status === 'stale' };
+    let publication = this.publications.get(feed.events);
+    if (!publication || publication.year !== year) {
+      publication = { year, modifiedAt: now.toISOString(),
+        events: Object.fromEntries(Object.entries(feed.events).filter(([, event]) => event.status === 'CONFIRMED'
+          && (!feed.dateRange || (event.date >= feed.dateRange.start && event.date <= feed.dateRange.end)))) };
+      this.publications.set(feed.events, publication);
+    }
+    return { ...feed, events: publication.events, modifiedAt: publication.modifiedAt };
   }
 
   pageData(baseUrl = this.config.baseUrl, sourceSlug = 'all') {

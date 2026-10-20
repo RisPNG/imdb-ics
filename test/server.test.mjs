@@ -204,6 +204,96 @@ test('the combined date window rolls over without a refresh or a stale condition
   assert.equal(await compressed.text(), after);
 });
 
+test('published calendars remove withdrawn events and restore their original UIDs with higher revisions', async (t) => {
+  let clock = new Date('2026-10-20T00:00:00Z');
+  const person = SOURCES.find((source) => source.kind === 'name');
+  const title = { id: 'tt1999100', title: 'A directly credited release', date: '2026-11-19' };
+  let titles = [title];
+  const { store, origin } = await runningApp(t, {}, {
+    clock: () => clock,
+    loader: async (source) => ({ titles: source === person ? titles : [], total: source === person ? titles.length : 0, warnings: [] }),
+  });
+  await store.refresh();
+  const original = new Map();
+  const slugs = ['all', person.slug];
+  for (const slug of slugs) {
+    const response = await fetch(`${origin}/calendars/${slug}.ics`, { headers: { 'Accept-Encoding': 'identity' } });
+    const body = await response.text();
+    assert.equal(response.status, 200);
+    assert.equal(body.match(/BEGIN:VEVENT/g).length, 1);
+    assert(body.includes(`UID:${title.id}@release-calendar\r\n`));
+    assert.match(body, /SEQUENCE:0\r\nSTATUS:CONFIRMED\r\n/);
+    original.set(slug, { etag: response.headers.get('etag'), modified: response.headers.get('last-modified') });
+  }
+  const createdAt = store.snapshot.combined.events[title.id].createdAt;
+
+  titles = [];
+  clock = new Date('2026-10-21T00:00:00Z');
+  await store.refresh();
+  for (const archived of [store.snapshot.combined.events[title.id], store.snapshot.sources[person.slug].events[title.id]]) {
+    assert.equal(archived.status, 'CANCELLED');
+    assert.equal(archived.sequence, 1);
+    assert.equal(archived.createdAt, createdAt);
+  }
+  const removed = new Map();
+  for (const slug of slugs) {
+    assert.equal(store.feed(slug).events[title.id], undefined);
+    const response = await fetch(`${origin}/calendars/${slug}.ics`, { headers: {
+      'Accept-Encoding': 'identity', 'If-Modified-Since': original.get(slug).modified,
+    } });
+    assert.equal(response.status, 200, 'Removing the final active event invalidates the saved calendar.');
+    assert.notEqual(response.headers.get('etag'), original.get(slug).etag);
+    assert.equal(response.headers.get('last-modified'), clock.toUTCString());
+    const body = await response.text();
+    assert(body.startsWith('BEGIN:VCALENDAR\r\n'));
+    assert(body.endsWith('END:VCALENDAR\r\n'));
+    assert.doesNotMatch(body, /BEGIN:VEVENT|STATUS:CANCELLED/);
+    const etag = response.headers.get('etag');
+    const head = await fetch(`${origin}/calendars/${slug}.ics`, { method: 'HEAD', headers: {
+      'Accept-Encoding': 'identity', 'If-None-Match': original.get(slug).etag,
+    } });
+    assert.equal(head.status, 200);
+    assert.equal(head.headers.get('etag'), etag);
+    assert.equal(await head.text(), '');
+    const gzip = await fetch(`${origin}/calendars/${slug}.ics`, { headers: {
+      'Accept-Encoding': 'gzip', 'If-None-Match': original.get(slug).etag,
+    } });
+    assert.equal(gzip.status, 200);
+    assert.equal(gzip.headers.get('content-encoding'), 'gzip');
+    assert.equal(await gzip.text(), body);
+    const unchanged = await fetch(`${origin}/calendars/${slug}.ics`, { headers: {
+      'Accept-Encoding': 'identity', 'If-None-Match': etag,
+    } });
+    assert.equal(unchanged.status, 304);
+    assert.equal(await unchanged.text(), '');
+    removed.set(slug, etag);
+  }
+
+  titles = [title];
+  clock = new Date('2026-10-22T00:00:00Z');
+  await store.refresh();
+  for (const archived of [store.snapshot.combined.events[title.id], store.snapshot.sources[person.slug].events[title.id]]) {
+    assert.equal(archived.status, 'CONFIRMED');
+    assert.equal(archived.sequence, 2);
+    assert.equal(archived.createdAt, createdAt);
+  }
+  for (const slug of slugs) {
+    const response = await fetch(`${origin}/calendars/${slug}.ics`, { headers: {
+      'Accept-Encoding': 'identity', 'If-None-Match': removed.get(slug), 'If-Modified-Since': 'Fri, 01 Jan 2100 00:00:00 GMT',
+    } });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('last-modified'), clock.toUTCString());
+    const body = await response.text();
+    assert.equal(body.match(/BEGIN:VEVENT/g).length, 1);
+    assert(body.includes(`UID:${title.id}@release-calendar\r\n`));
+    assert.match(body, /SEQUENCE:2\r\nSTATUS:CONFIRMED\r\n/);
+    assert.doesNotMatch(body, /STATUS:CANCELLED/);
+    const gzip = await fetch(`${origin}/calendars/${slug}.ics`, { headers: { 'Accept-Encoding': 'gzip' } });
+    assert.equal(gzip.headers.get('content-encoding'), 'gzip');
+    assert.equal(await gzip.text(), body);
+  }
+});
+
 test('saved combined feeds remain available while new sources warm up and readiness waits for them', async (t) => {
   let failing = true;
   const missing = SOURCES.at(-1);

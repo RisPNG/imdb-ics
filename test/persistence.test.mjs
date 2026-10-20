@@ -88,11 +88,14 @@ test('existing compressed episode snapshots gain attribution before any refresh 
   assert.equal(migrated[event.id].modifiedAt, changedAt);
   assert.equal(migrated[`${parent.id}-${episode.date}`].description, 'People: One\n\nS01E01: A chapter');
   assert.equal(migrated[`${parent.id}-${episode.date}`].episodeDescription, 'S01E01: A chapter');
-  assert.equal(migrated[removed.id].sequence, 7);
-  assert.equal(migrated[removed.id].status, 'CANCELLED');
-  assert.deepEqual(store.feed('one').events, events);
+  assert.equal(migrated[removed.id], undefined);
+  assert.equal(store.feed('one').events[removed.id], undefined);
+  assert.equal(store.snapshot.combined.events[removed.id].sequence, 7);
+  assert.equal(store.snapshot.combined.events[removed.id].status, 'CANCELLED');
+  assert.deepEqual(store.snapshot.sources.one.events, events);
+  assert.deepEqual(store.feed('one').events, Object.fromEntries(Object.entries(events).filter(([, event]) => event.status === 'CONFIRMED')));
   const persisted = JSON.parse(gunzipSync(await readFile(join(dataDir, 'snapshot.json.gz'))));
-  assert.deepEqual(persisted.combined.events, migrated);
+  assert.deepEqual(persisted.combined.events, store.snapshot.combined.events);
   const bytes = renderCalendar({ events: migrated });
   const restored = new CalendarStore(config, { logger: quiet, clock: () => new Date('2026-10-19T01:00:00Z') });
   await restored.initialize();
@@ -116,6 +119,7 @@ test('streamed snapshots preserve Unicode, quoted text, backslashes, newlines, a
   assert.equal(store.persistenceError, null);
   const expected = structuredClone(store.snapshot);
   const calendar = renderCalendar({ events: store.feed('all').events });
+  assert.equal(store.feed('all').events[cancelled.id], undefined);
   assert.equal(store.feed('all').events[parent.id].description, `People: Renée O'Connor\n\nS01E01: ${chapter.title}`);
   assert.deepEqual(JSON.parse(gunzipSync(await readFile(join(dataDir, 'snapshot.json.gz')))), expected);
   const restored = new CalendarStore(config, { clock: () => new Date(createdAt), logger: quiet });
