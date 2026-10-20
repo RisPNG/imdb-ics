@@ -255,6 +255,12 @@ h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.15; letter-s
 .about-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem; }
 .about-grid h3 { margin: 0 0 .7rem; font-size: 1rem; }
 .about-grid p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.75; }
+.calendar-help { max-width: 70ch; margin-top: 2rem; padding: 1.5rem; border-left: 4px solid var(--accent); background: var(--surface); scroll-margin-top: 1rem; }
+.calendar-help h3 { margin: 0 0 .7rem; font-size: 1.1rem; }
+.calendar-help p, .calendar-help ol { margin: .7rem 0 0; font-size: .9rem; line-height: 1.75; }
+.calendar-help ol { padding-left: 1.5rem; }
+.calendar-help li + li { margin-top: .7rem; }
+.calendar-help code { overflow-wrap: anywhere; }
 .site-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
 .site-footer p { margin: 0; }
 .site-footer > a { display: inline-flex; align-items: center; min-height: 44px; }

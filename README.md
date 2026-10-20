@@ -210,6 +210,8 @@ Use a feed URL as a **subscription**, rather than downloading and importing a fi
 
 The service checks sources every 24 hours by default. Your calendar provider chooses its own polling interval; its displayed events can lag behind the service's updates. Refresh hints in the feed are advisory.
 
+If the website shows newer information than Google Calendar, try adding a fresh subscription. Copy the feed address, append a new query value such as `?v=1`, and add that address through Other calendars > + > From URL in Google Calendar on a computer. Use a different value for each attempt. For an address that already contains `?`, append `&v=2` instead. Wait for the new calendar to load and check its dates and descriptions before unchecking the old copy to avoid duplicate events. Reapply its colour and reminders as needed. This workaround creates a separate subscription to the same feed rather than refreshing the existing one, and Google still controls future update timing. The website keeps its usual subscription addresses unchanged and includes these instructions in its About section.
+
 Keep the hostname stable for a permanent address. For example, the combined feed is:
 
 ```text
