@@ -17,21 +17,11 @@ export class ImdbError extends Error {
 
 function queryFor(source, cursor) {
   const after = cursor === null ? '' : `, after: ${JSON.stringify(cursor)}`;
-  if (source.kind === 'series') {
-    return `query CalendarEpisodes {
-      title(id: "${source.id}") {
-        episodes { episodes(first: ${PAGE_SIZE}${after}) {
-          total
-          pageInfo { hasNextPage endCursor }
-          edges { node { id titleText { text } releaseDate { year month day } series { episodeNumber { seasonNumber episodeNumber } } } }
-        } }
-      }
-    }`;
-  }
   const filter = source.kind === 'interest'
     ? `interestConstraint: {allInterestIds: ["${source.id}"]}`
-    : `titleCreditsConstraint: {anyCredits: [{nameId: "${source.id}"}]}`;
-  return `query CalendarSource {
+    : source.kind === 'name' ? `titleCreditsConstraint: {anyCredits: [{nameId: "${source.id}"}]}`
+      : `episodicConstraint: {anySeriesIds: ["${source.id}"]}`;
+  return `query ${source.kind === 'series' ? 'CalendarEpisodes' : 'CalendarSource'} {
     advancedTitleSearch(first: ${PAGE_SIZE}${after}, constraints: {${filter}}) {
       total
       pageInfo { hasNextPage endCursor }
@@ -148,35 +138,37 @@ async function readTitles(source, { fetchImpl, signal }) {
       throw new ImdbError(`IMDb GraphQL error: ${message}`, { code: 'GRAPHQL_ERROR' });
     }
     recordWarnings(payload.extensions, warnings);
-    const page = source.kind === 'series' ? payload.data?.title?.episodes?.episodes : payload.data?.advancedTitleSearch;
+    const page = payload.data?.advancedTitleSearch;
     if (!page || !Number.isSafeInteger(page.total) || page.total < 0
         || !Array.isArray(page.edges) || typeof page.pageInfo?.hasNextPage !== 'boolean') {
-      invalid(source.kind === 'series' ? 'missing episode-list fields.' : 'missing title-search fields.');
+      invalid(source.kind === 'series' ? `missing episode-search fields for series ${source.id} (${source.title}).` : 'missing title-search fields.');
     }
     if (page.total > MAX_TITLES) invalid(`more than the ${MAX_TITLES} title safety limit.`);
     if (total === undefined) total = page.total;
     if (total !== page.total) invalid('the total changed during pagination; retry the refresh.');
 
     for (const edge of page.edges) {
-      const title = source.kind === 'series' ? edge?.node : edge?.node?.title;
+      const title = edge?.node?.title;
       if (!title || !/^tt\d{7,10}$/.test(title.id)
           || typeof title.titleText?.text !== 'string' || !title.titleText.text.trim()) {
         invalid('a title is missing its ID or text.');
       }
-      const type = source.kind === 'series' ? 'tvEpisode' : title.titleType?.id;
+      const type = title.titleType?.id;
       if (typeof type !== 'string' || !type) invalid(`title ${title.id} is missing its type.`);
+      if (source.kind === 'series' && type !== 'tvEpisode') invalid(`episode search for series ${source.id} returned non-episode ${title.id}.`);
       const item = { id: title.id, title: title.titleText.text.trim(), date: completeDate(title.releaseDate), type };
       if (type === 'tvEpisode') {
-        const parent = source.kind === 'series' ? { id: source.id, titleText: { text: source.title } } : title.series?.series;
+        const parent = title.series?.series;
         const numbering = title.series?.episodeNumber;
         if (!parent || !/^tt\d{7,10}$/.test(parent.id)
             || typeof parent.titleText?.text !== 'string' || !parent.titleText.text.trim()) {
           invalid(`episode ${title.id} is missing its series.`);
         }
+        if (source.kind === 'series' && parent.id !== source.id) invalid(`episode ${title.id} belongs to series ${parent.id} rather than ${source.id}.`);
         if ([numbering?.seasonNumber, numbering?.episodeNumber].some((value) => value != null && (!Number.isSafeInteger(value) || value < 0))) {
           invalid(`episode ${title.id} has invalid numbering.`);
         }
-        item.series = { id: parent.id, title: parent.titleText.text.trim(), date: source.kind === 'series' ? source.date : completeDate(parent.releaseDate), season: numbering?.seasonNumber ?? null, episode: numbering?.episodeNumber ?? null };
+        item.series = { id: parent.id, title: source.kind === 'series' ? source.title : parent.titleText.text.trim(), date: source.kind === 'series' ? source.date : completeDate(parent.releaseDate), season: numbering?.seasonNumber ?? null, episode: numbering?.episodeNumber ?? null };
       }
       const previous = titles.get(item.id);
       if (previous && JSON.stringify(previous) !== JSON.stringify(item)) {

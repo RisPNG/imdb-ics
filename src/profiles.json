@@ -746,5 +746,59 @@
     "roles": ["Actor", "Producer", "Director"],
     "knownFor": ["Tinker Tailor Soldier Spy", "Darkest Hour", "Sid and Nancy", "Dracula"],
     "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0000198/" }]
+  },
+  "dai-fuad": {
+    "summary": "Dai Fuad is an actor and singer who portrayed Nahar in Good Boys Go to Heaven and Pa in Kudrat 1968: High Council. He studied law before pursuing music and screen acting, with other credits including Honey Trap and Nar'sata: Sekutu Setan.",
+    "roles": ["Actor", "Singer"],
+    "knownFor": ["Good Boys Go to Heaven", "Kudrat 1968: High Council", "Honey Trap", "Nar'sata: Sekutu Setan"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm16080958/" },
+      { "label": "Gempak interview", "url": "https://gempak.com/hiburan/dai-fuad-rupanya-graduan-undang-undang-terjun-ke-dunia-seni-selepas-pandemik-saya-rasa-semua" }
+    ]
+  },
+  "mierul-aiman": {
+    "summary": "Mierul Aiman is an actor from Putrajaya, Malaysia, whose screen work includes Keluang Man and Kahar: Kapla High Council. His other credits include the action film Tarung: Unforgiven and the television series W: Two Worlds (Malaysia).",
+    "roles": ["Actor"],
+    "knownFor": ["Keluang Man", "Kahar: Kapla High Council", "Tarung: Unforgiven", "W: Two Worlds (Malaysia)"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm13961256/" }]
+  },
+  "amir-ahnaf": {
+    "summary": "Amir Ahnaf is an actor from Terengganu, Malaysia, who portrayed Kahar in Project: High Council and Kahar: Kapla High Council. His film and television work also includes Warrior Awang and Master Tok Gajah and Gamers Mangkuk.",
+    "roles": ["Actor"],
+    "knownFor": ["Project: High Council", "Kahar: Kapla High Council", "Warrior Awang and Master Tok Gajah", "Gamers Mangkuk"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm14465059/" }]
+  },
+  "zul-ariffin": {
+    "summary": "Zul Ariffin is an actor from Perak, Malaysia, whose films include Sheriff and Sangkar. His screen credits also include the horror film Penanggal: The Curse of the Malayan Vampire and the television series Malam Terlarang.",
+    "roles": ["Actor"],
+    "knownFor": ["Sheriff", "Sangkar", "Penanggal: The Curse of the Malayan Vampire", "Malam Terlarang"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm5795985/" }]
+  },
+  "aaron-aziz": {
+    "summary": "Aaron Aziz is an actor and director born in Singapore. His film and television work includes Suamiku Encik Perfect 10!, Sayu Yang Syukur, and Romeo Kota, in which he portrayed Koperal Romi. His other films include Kerat 14.",
+    "roles": ["Actor", "Director"],
+    "knownFor": ["Suamiku Encik Perfect 10!", "Sayu Yang Syukur", "Romeo Kota", "Kerat 14"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm2096347/" }]
+  },
+  "syafiq-kyle": {
+    "summary": "Syafiq Kyle is an actor and producer from Kuala Lumpur, Malaysia. His films include Blood Brothers: Fury of the Dragon, Sheriff, and Pusaka, with television work including Seribu Nina.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Blood Brothers: Fury of the Dragon", "Sheriff", "Pusaka", "Seribu Nina"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm10224401/" }]
+  },
+  "sharnaaz-ahmad": {
+    "summary": "Sharnaaz Ahmad is an actor whose films include Juvana, Polis Evo 3, and Blood Brothers: Fury of the Dragon. His other screen work includes the horror film Sembunyi: Amukan Azazil.",
+    "roles": ["Actor"],
+    "knownFor": ["Juvana", "Polis Evo 3", "Blood Brothers: Fury of the Dragon", "Sembunyi: Amukan Azazil"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm4459961/" }]
+  },
+  "nasir-bilal-khan": {
+    "summary": "Nasir Bilal Khan is an actor whose films include Amok and Laga, alongside Perempuan, Isteri, dan Jalang. His work also extends to television, including the drama series Tanah Kubur, which follows a gravedigger and the incidents surrounding his work.",
+    "roles": ["Actor"],
+    "knownFor": ["Amok", "Perempuan, Isteri, dan Jalang", "Laga", "Tanah Kubur"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0082091/" },
+      { "label": "Astro: Koleksi Tanah Kubur", "url": "https://www.astro.com.my/content/details/UEFDSzAwMDAwMDAwMDAxMzg4NTA%3D-Koleksi-Tanah-Kubur" }
+    ]
   }
 }

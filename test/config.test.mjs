@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadConfig, SOURCES } from '../src/config.mjs';
 
-test('111 unique sources and all-day default preserve the requested IDs and existing subscription paths', () => {
+test('119 unique sources and all-day default preserve the requested IDs and existing subscription paths', () => {
   assert.deepEqual(SOURCES.map((source) => source.id), [
     'in0000248', 'in0000243', 'in0000244', 'nm0319213', 'nm1551598',
     'nm0252230', 'nm10735410', 'nm2255973', 'nm0671567', 'nm0350453', 'nm0151419',
@@ -24,9 +24,11 @@ test('111 unique sources and all-day default preserve the requested IDs and exis
     'nm0348181', 'nm0290556', 'nm0000502', 'nm0001618', 'nm0000150', 'nm0342029',
     'nm0269463', 'nm0159789', 'nm0740264', 'nm0195439', 'nm0117709', 'nm0219292',
     'nm1030244', 'nm0012948', 'nm0000198',
+    'nm16080958', 'nm13961256', 'nm14465059', 'nm5795985', 'nm2096347', 'nm10224401',
+    'nm4459961', 'nm0082091',
   ]);
-  assert.equal(new Set(SOURCES.map((source) => source.id)).size, 111);
-  assert.equal(new Set(SOURCES.map((source) => source.slug)).size, 111);
+  assert.equal(new Set(SOURCES.map((source) => source.id)).size, 119);
+  assert.equal(new Set(SOURCES.map((source) => source.slug)).size, 119);
   assert.deepEqual(SOURCES.slice(0, 5).map((source) => source.slug), ['marvel', 'star-wars', 'dc', 'vince-gilligan', 'justin-roiland']);
   assert(SOURCES.slice(5).every((source) => source.kind === 'name'));
   assert.equal(loadConfig({}).eventTimeMode, 'date');

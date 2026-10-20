@@ -2,7 +2,10 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { renderCalendar } from './calendar.mjs';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { setImmediate } from 'node:timers/promises';
+import { calendarChunks } from './calendar.mjs';
 import { loadConfig } from './config.mjs';
 import { renderPage } from './page.mjs';
 import { CalendarStore } from './store.mjs';
@@ -11,7 +14,7 @@ import images from './profile-images.json' with { type: 'json' };
 const assetPaths = new Map([
   ['/style.css', ['../public/style.css', 'text/css; charset=utf-8']],
   ['/enhance.js', ['../public/enhance.js', 'text/javascript; charset=utf-8']],
-  ...Object.values(images).map((image) => [image.path, [`../public${image.path}`, image.path.endsWith('.svg') ? 'image/svg+xml' : 'image/jpeg']]),
+  ...Object.values(images).map((image) => [image.path, [`../public${image.path}`, image.path.endsWith('.svg') ? 'image/svg+xml' : image.path.endsWith('.png') ? 'image/png' : 'image/jpeg']]),
 ]);
 
 export async function createApp(config, options = {}) {
@@ -19,8 +22,9 @@ export async function createApp(config, options = {}) {
   await store.initialize();
   const assets = new Map(await Promise.all([...assetPaths].map(async ([path, [file, type]]) =>
     [path, { body: await readFile(new URL(file, import.meta.url)), type }])));
+  const calendars = new WeakMap();
 
-  const handleRequest = (request, response) => {
+  const handleRequest = async (request, response) => {
     response.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'");
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'no-referrer');
@@ -66,10 +70,26 @@ export async function createApp(config, options = {}) {
     const feed = store.feed(match[1]);
     if (feed === undefined) return send(404, 'Unknown calendar.\n');
     if (!feed) return send(503, 'This calendar is waiting for its first complete refresh. Please retry shortly.\n', undefined, { 'Retry-After': '60' });
-    const body = renderCalendar({ name: feed.label, description: feed.description, events: feed.events, eventTimeMode: config.eventTimeMode });
-    const etag = `"${createHash('sha256').update(body).digest('hex')}"`;
-    const timestamps = Object.values(feed.events).map((event) => event.modifiedAt).filter(Boolean).sort();
-    const lastModified = new Date(timestamps.at(-1) || feed.updatedAt).toUTCString();
+    const calendar = { name: feed.label, description: feed.description, events: feed.events, eventTimeMode: config.eventTimeMode };
+    let cached = calendars.get(feed.events);
+    if (!cached || cached.name !== feed.label || cached.description !== feed.description) {
+      cached = { name: feed.label, description: feed.description, pending: (async () => {
+        const hash = createHash('sha256');
+        let length = 0;
+        let count = 0;
+        for (const chunk of calendarChunks(calendar)) {
+          hash.update(chunk);
+          length += Buffer.byteLength(chunk);
+          if (++count % 256 === 0) await setImmediate();
+        }
+        let modifiedAt = '';
+        for (const event of Object.values(feed.events)) if (event.modifiedAt > modifiedAt) modifiedAt = event.modifiedAt;
+        return { etag: `"${hash.digest('hex')}"`, length, lastModified: new Date(modifiedAt || feed.updatedAt).toUTCString() };
+      })() };
+      calendars.set(feed.events, cached);
+    }
+    const metadata = await cached.pending;
+    const { etag, lastModified } = metadata;
     const headers = { ETag: etag, 'Last-Modified': lastModified, 'Cache-Control': 'public, max-age=300',
       'X-Calendar-Stale': String(feed.stale), 'Content-Disposition': `inline; filename="${match[1]}.ics"` };
     const condition = request.headers['if-none-match'];
@@ -80,17 +100,18 @@ export async function createApp(config, options = {}) {
       response.writeHead(304, headers);
       return response.end();
     }
-    return send(200, body, 'text/calendar; charset=utf-8', headers);
+    response.writeHead(200, { 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Length': metadata.length, ...headers });
+    if (request.method === 'HEAD') return response.end();
+    await pipeline(Readable.from(calendarChunks(calendar), { objectMode: false }), response);
   };
   const server = createServer((request, response) => {
-    try {
-      handleRequest(request, response);
-    } catch (error) {
+    void handleRequest(request, response).catch((error) => {
+      if (error.code === 'ERR_STREAM_PREMATURE_CLOSE' && request.destroyed) return;
       (options.logger || console).warn(`Calendar request failed: ${error.message}`);
       if (response.headersSent) return response.destroy();
       response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
       response.end(request.method === 'HEAD' ? undefined : 'The calendar is temporarily unavailable.\n');
-    }
+    });
   });
   server.requestTimeout = 15_000;
   server.headersTimeout = 10_000;

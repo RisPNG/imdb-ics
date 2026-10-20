@@ -35,11 +35,14 @@ export function isValidEvent(event) {
 }
 
 function savedEvents(previousEvents) {
-  return Object.fromEntries(Object.values(previousEvents ?? {})
-    .filter(isValidEvent)
-    .map(({ id, titleId = id, title, date, description = '', episodeDescription = description, sourceLabels, episodeIds = [], createdAt, modifiedAt, sequence, status }) => [id, {
-      id, titleId, title, date, description, episodeDescription, ...(sourceLabels ? { sourceLabels } : {}), episodeIds, createdAt, modifiedAt, sequence, status,
-    }]));
+  const events = {};
+  for (const event of Object.values(previousEvents ?? {})) {
+    if (!isValidEvent(event)) continue;
+    const { id, titleId = id, title, date, description = '', episodeDescription = description, sourceLabels, episodeIds = [], createdAt, modifiedAt, sequence, status } = event;
+    events[id] = event.titleId !== undefined && event.description !== undefined && event.episodeDescription !== undefined && event.episodeIds !== undefined
+      ? event : { id, titleId, title, date, description, episodeDescription, ...(sourceLabels ? { sourceLabels } : {}), episodeIds, createdAt, modifiedAt, sequence, status };
+  }
+  return events;
 }
 
 export function attributeReleases(events, sources) {
@@ -221,8 +224,8 @@ function nextDay(date) {
   return next.toISOString().slice(0, 10).replaceAll('-', '');
 }
 
-/** Render deterministic UTF-8 iCalendar; refresh time does not alter event state. */
-export function renderCalendar({ name = "Ris' IMDb ICalendar", description, events = {}, eventTimeMode = 'date' } = {}) {
+/** Serialize deterministic UTF-8 iCalendar one event at a time. */
+export function* calendarChunks({ name = "Ris' IMDb ICalendar", description, events = {}, eventTimeMode = 'date' } = {}) {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -233,6 +236,7 @@ export function renderCalendar({ name = "Ris' IMDb ICalendar", description, even
     'X-PUBLISHED-TTL:P1D',
   ];
   if (description) lines.push(`X-WR-CALDESC:${escapeText(description)}`);
+  yield `${lines.map(foldLine).join('\r\n')}\r\n`;
 
   const ordered = Object.values(events ?? {}).filter(isValidEvent).sort((left, right) =>
     compareText(left.date, right.date) || compareText(left.id, right.id));
@@ -243,7 +247,7 @@ export function renderCalendar({ name = "Ris' IMDb ICalendar", description, even
     const dates = eventTimeMode === 'utc'
       ? [`DTSTART:${start}T000000Z`]
       : [`DTSTART;VALUE=DATE:${start}`, `DTEND;VALUE=DATE:${nextDay(event.date)}`];
-    lines.push(
+    const eventLines = [
       'BEGIN:VEVENT',
       `UID:${event.id}@release-calendar`,
       `DTSTAMP:${calendarTimestamp(event.modifiedAt)}`,
@@ -257,8 +261,13 @@ export function renderCalendar({ name = "Ris' IMDb ICalendar", description, even
       `URL:https://www.imdb.com/title/${event.titleId ?? event.id}/`,
       'TRANSP:TRANSPARENT',
       'END:VEVENT',
-    );
+    ];
+    yield `${eventLines.map(foldLine).join('\r\n')}\r\n`;
   }
-  lines.push('END:VCALENDAR');
-  return `${lines.map(foldLine).join('\r\n')}\r\n`;
+  yield 'END:VCALENDAR\r\n';
+}
+
+/** Render deterministic UTF-8 iCalendar; refresh time does not alter event state. */
+export function renderCalendar(options) {
+  return [...calendarChunks(options)].join('');
 }

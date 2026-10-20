@@ -2,7 +2,7 @@
 
 A small, self-hosted website that turns IMDb interests and filmographies into public calendar subscriptions. There is one feed per source and one combined feed that removes duplicate releases.
 
-The website uses semantic HTML, a shared stylesheet, system fonts, and a small optional script for copying calendar links. Addresses remain visible and subscriptions work without JavaScript. The Node service has no runtime package dependencies. Development uses `html-validate` to check the generated HTML.
+The website uses semantic HTML, a shared stylesheet, system fonts, and a small optional script for copying calendar links. Addresses remain visible and subscriptions work without JavaScript. The Node service uses `stream-json` to read and write large saved snapshots incrementally. Development uses `html-validate` to check the generated HTML.
 
 ## Calendars
 
@@ -120,8 +120,16 @@ The website uses semantic HTML, a shared stylesheet, system fonts, and a small o
 | Chukwudi Iwuji | [nm1030244](https://www.imdb.com/name/nm1030244/) | `chukwudi-iwuji.ics` |
 | Steve Agee | [nm0012948](https://www.imdb.com/name/nm0012948/) | `steve-agee.ics` |
 | Gary Oldman | [nm0000198](https://www.imdb.com/name/nm0000198/) | `gary-oldman.ics` |
+| Dai Fuad | [nm16080958](https://www.imdb.com/name/nm16080958/) | `dai-fuad.ics` |
+| Mierul Aiman | [nm13961256](https://www.imdb.com/name/nm13961256/) | `mierul-aiman.ics` |
+| Amir Ahnaf | [nm14465059](https://www.imdb.com/name/nm14465059/) | `amir-ahnaf.ics` |
+| Zul Ariffin | [nm5795985](https://www.imdb.com/name/nm5795985/) | `zul-ariffin.ics` |
+| Aaron Aziz | [nm2096347](https://www.imdb.com/name/nm2096347/) | `aaron-aziz.ics` |
+| Syafiq Kyle | [nm10224401](https://www.imdb.com/name/nm10224401/) | `syafiq-kyle.ics` |
+| Sharnaaz Ahmad | [nm4459961](https://www.imdb.com/name/nm4459961/) | `sharnaaz-ahmad.ics` |
+| Nasir Bilal Khan | [nm0082091](https://www.imdb.com/name/nm0082091/) | `nasir-bilal-khan.ics` |
 
-The configured set contains three interests and 108 people, giving 111 source calendars and one combined calendar, or 112 feeds in total. Edit `SOURCES` in `src/config.mjs` to add or change sources. This is a fixed source list and does not automatically synchronise with an IMDb favourites page.
+The configured set contains three interests and 116 people, giving 119 source calendars and one combined calendar, or 120 feeds in total. Edit `SOURCES` in `src/config.mjs` to add or change sources. This is a fixed source list and does not automatically synchronise with an IMDb favourites page.
 
 Each source includes all titles directly returned by its IMDb interest or credit search. This can include movies, television series, individual credited episodes, shorts, and other title types. The Marvel, Star Wars, and DC interest calendars expand matched series into complete episode lists. People calendars keep their directly credited titles, including series premiere events, and include only episodes directly credited to that person. A series credit alone does not add its other episodes. A person's credits can include more than writing or directing, so source selection remains broad without a role or title-type filter.
 
@@ -222,13 +230,15 @@ The feed follows IMDb's confirmed dates rather than generating a recurring weekl
 
 ## Refresh and persistence
 
-The service fetches one source at a time and follows every pagination cursor. Interest sources also fetch each matched series' complete episode list, while people sources fetch only directly credited titles and episodes. The number of HTTP calls depends on each source's size and the episode counts of series expanded by the interests. Requests have response-size and time bounds; there is no attempt to bypass an access challenge or blocked response.
+The service fetches one source at a time and follows every pagination cursor. Interest sources also fetch each matched series' complete episode list through a search constrained to that series, while people sources fetch only directly credited titles and episodes. A complete search with zero results establishes that a series has no listed episodes. A missing or incomplete result fails the refresh rather than being treated as an empty list. The number of HTTP calls depends on each source's size and the episode counts of series expanded by the interests. Requests have response-size and time bounds. There is no attempt to bypass an access challenge or blocked response.
 
 Only a successful, complete source refresh replaces that source's saved titles. If a page fails, the last good snapshot remains available and the dashboard labels it as saved data. Failed sources retry after 30 minutes by default. A new installation creates its first combined snapshot only after every configured source has a complete snapshot. When sources are added to an existing installation, its saved combined feed remains available and is marked as stale while their first snapshots are pending or failing. Successful source updates can join that feed while the remaining sources warm up, and temporarily unavailable sources retain their last saved data.
 
 Events use stable IMDb-based UIDs, persistent creation/modification times, and revision numbers. Title-level date changes update the same event. A series' original premiere UID stays the same when episodes are added to its description. Additional episode groups use the series ID and release date as their identity. Episode title, numbering, or membership changes advance the affected event's revision. Moving an episode to another date updates the relevant groups and cancels any additional group left empty. Removed titles or dates withdrawn by the source produce cancellation records, which are retained so slow subscribers can remove old events. Unchanged refreshes produce the same feed bytes and ETag.
 
-Snapshots are stored as gzip-compressed JSON in `DATA_DIR/snapshot.json.gz`, with limits of 64 MiB uncompressed and 16 MiB compressed. Each save writes a temporary file and renames it atomically. A legacy `DATA_DIR/snapshot.json` is loaded only when the gzip file is absent and is removed after a successful gzip save.
+Snapshots are stored as gzip-compressed JSON in `DATA_DIR/snapshot.json.gz`, with limits of 64 MiB uncompressed and 16 MiB compressed. Reading, JSON parsing, serialisation, and compression use bounded streams so a large snapshot does not require additional full-size strings or buffers. Each save writes a temporary file and renames it atomically. A legacy `DATA_DIR/snapshot.json` is loaded only when the gzip file is absent and is removed after a successful gzip save.
+
+Calendar responses stream one event at a time and respect the client's download speed. The server caches each event snapshot's ETag, content length, and modification time so repeated HEAD and conditional requests do not render the feed again. A changed snapshot gets new metadata. Streaming preserves the existing feed bytes, event history, and revision rules.
 
 Back up `DATA_DIR/snapshot.json.gz` along with the deployment environment. The snapshot contains source data and event history. Avoid deleting it to force a refresh: doing so resets revision history.
 
@@ -255,10 +265,10 @@ The upstream boundary is confined to `src/imdb.mjs`, so a supported provider can
 | `src/page.mjs` | One small shared HTML layout with escaped source data |
 | `src/profiles.json` | Authored biographies, background information, known works, and reference links |
 | `src/profile-images.json` | Local image paths, dimensions, and source credits |
-| `src/server.mjs` | Public HTTP routes, cached feeds, ETags, response headers |
+| `src/server.mjs` | Public HTTP routes, streamed feeds, cached validators, response headers |
 | `public/style.css` | Shared layout, central colour palette, responsive, dark, and print styles |
 | `public/enhance.js` | Optional one-click address copying with accessible feedback |
-| `public/images/` | Saved IMDb portraits and interest images |
+| `public/images/` | Saved portraits and interest images |
 | `scripts/check.mjs` | HTML validation, JavaScript syntax, source uniqueness, byte budgets |
 | `test/` | Calendar, pagination, cache recovery, public routes, and HTTP behaviour |
 
@@ -268,9 +278,11 @@ The homepage has the combined subscription, three interest calendars, and an alp
 
 The central palette uses IMDb-inspired yellow accents, a dark header, and system light/dark preferences. Keyboard focus, skip navigation, and print and narrow-screen styles remain available. The copy script uses the browser Clipboard API. If it is unavailable, the visible address can be copied manually. A refused clipboard write selects the address and announces the fallback. CSP permits only the required same-origin stylesheet, script, and images, restricts framing and other unneeded resources, and responses include `X-Content-Type-Options: nosniff`.
 
-The 111 images are saved in `public/images/`, with their source URLs and dimensions recorded in `src/profile-images.json`. People use single-person headshots or portraits framed around the head and shoulders. Keep suitable portraits when updating the collection, and replace missing pictures or wider shots selectively. Use an existing source portrait rendition where available. IMDb, official profiles, agency pages, and Wikimedia Commons provide the saved photos. Commons images retain their photographer and licence credits in the manifest and on the profile page. Pages never request image metadata or remote images at runtime. To replace an image, save the new local asset and update its manifest entry with the source URL, accurate dimensions, and any required credit. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
+The 119 images are saved in `public/images/`, with their source URLs and dimensions recorded in `src/profile-images.json`. People use single-person headshots or portraits framed around the head and shoulders. Keep suitable portraits when updating the collection, and replace missing pictures or wider shots selectively. Use an existing source portrait rendition where available. IMDb, official profiles, agency pages, and Wikimedia Commons provide the saved photos. Commons images retain their photographer and licence credits in the manifest and on the profile page. Pages never request image metadata or remote images at runtime. To replace an image, save the new local asset and update its manifest entry with the source URL, accurate dimensions, and any required credit. `src/profiles.json` contains brief original summaries based on established work, with direct references and no automatic biography updates.
 
-The project check validates all 111 source pages as well as homepage loading, ready, saved-data, and error states in both time modes. It checks local navigation and assets, source coverage, image dimensions, accessible address labels, copy targets, and byte budgets. Tests also cover copying success and failure, source-specific release lists, canonical page redirects, and existing feed behaviour.
+The project check validates all 119 source pages as well as homepage loading, ready, saved-data, and error states in both time modes. It checks local navigation and assets, source coverage, image dimensions, accessible address labels, copy targets, and byte budgets. Tests also cover copying success and failure, source-specific release lists, canonical page redirects, and existing feed behaviour.
+
+The capacity regression uses 119 sources and more than 57,000 events, including shared releases, episode batches, and cancellation history. It checks repeated HTTP downloads, HEAD and conditional requests, a paused download during refresh and persistence, interrupted clients, and a separate-process restart. Each phase uses the configured 192 MiB heap limit and checks that peak process memory stays below 512 MiB. This fixture covers the current production scale rather than guaranteeing capacity for every possible source collection.
 
 ### Reference documentation
 

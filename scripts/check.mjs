@@ -32,7 +32,7 @@ for (const source of SOURCES) {
     assert.equal(new URL(reference.url).protocol, 'https:', `Profile references must use HTTPS: ${source.slug}.`);
   }
   const image = images[source.slug];
-  assert.match(image.path, /^\/images\/[a-z-]+\.(?:jpg|svg)$/);
+  assert.match(image.path, /^\/images\/[a-z-]+\.(?:jpg|png|svg)$/);
   assert(Number.isInteger(image.width) && image.width > 0, `Missing image width: ${source.slug}.`);
   assert(Number.isInteger(image.height) && image.height > 0, `Missing image height: ${source.slug}.`);
   assert(typeof image.alt === 'string' && image.alt.trim(), `Missing image text alternative: ${source.slug}.`);
@@ -65,6 +65,10 @@ for (const source of SOURCES) {
       offset += length;
     }
     assert.deepEqual(dimensions, { width: image.width, height: image.height }, `Incorrect image dimensions: ${image.path}.`);
+  } else if (image.path.endsWith('.png')) {
+    assert(bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])), `Invalid PNG: ${image.path}.`);
+    assert.equal(bytes.toString('ascii', 12, 16), 'IHDR', `Missing PNG dimensions: ${image.path}.`);
+    assert.deepEqual({ width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) }, { width: image.width, height: image.height }, `Incorrect image dimensions: ${image.path}.`);
   }
 }
 assert(imageBytes <= 12 * 1024 * 1024, 'Local profile images exceed their 12 MiB total budget.');
@@ -116,7 +120,7 @@ async function validatePage(html, label, feeds) {
   }
   for (const match of html.matchAll(/<(?:img|script|link)\b[^>]*(?:src|href)="([^"]+)"/g)) {
     if (/^<link\b/.test(match[0]) && !/\brel="stylesheet"/.test(match[0])) continue;
-    assert(/^\/(?:style\.css|enhance\.js|images\/[a-z-]+\.(?:jpg|svg))$/.test(match[1]), `${label}: Unexpected external or missing asset: ${match[1]}.`);
+    assert(/^\/(?:style\.css|enhance\.js|images\/[a-z-]+\.(?:jpg|png|svg))$/.test(match[1]), `${label}: Unexpected external or missing asset: ${match[1]}.`);
     await readFile(new URL(`../public${match[1]}`, import.meta.url));
   }
   const report = await validator.validateString(html);

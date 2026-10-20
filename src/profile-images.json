@@ -1013,5 +1013,83 @@
     "imageUrl": "https://m.media-amazon.com/images/M/MV5BMTc3NTM4MzQ5MV5BMl5BanBnXkFtZTcwOTE4MDczNw@@._V1_QL85_UX480_.jpg",
     "alt": "Gary Oldman",
     "caption": "Gary Oldman"
+  },
+  "dai-fuad": {
+    "path": "/images/dai-fuad.jpg",
+    "width": 479,
+    "height": 624,
+    "sourceUrl": "https://metrowealth.com.my/",
+    "imageUrl": "https://i0.wp.com/metrowealth.com.my/wp-content/uploads/2020/12/FUAD.jpg?crop=25%2C0%2C50%2C65&w=480&ssl=1",
+    "originalImageUrl": "https://metrowealth.com.my/wp-content/uploads/2020/12/FUAD.jpg",
+    "alt": "Dai Fuad",
+    "caption": "Dai Fuad"
+  },
+  "mierul-aiman": {
+    "path": "/images/mierul-aiman.jpg",
+    "width": 500,
+    "height": 750,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mierul_AimanTU.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Mierul_AimanTU.jpg/500px-Mierul_AimanTU.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "alt": "Mierul Aiman",
+    "caption": "Mierul Aiman",
+    "credit": "Suffiyahrosli (CC BY 4.0)"
+  },
+  "amir-ahnaf": {
+    "path": "/images/amir-ahnaf.jpg",
+    "width": 500,
+    "height": 750,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amir_Ahnaf.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e7/Amir_Ahnaf.jpg/500px-Amir_Ahnaf.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "alt": "Amir Ahnaf",
+    "caption": "Amir Ahnaf",
+    "credit": "Suffiyahrosli (CC BY 4.0)"
+  },
+  "zul-ariffin": {
+    "path": "/images/zul-ariffin.jpg",
+    "width": 485,
+    "height": 708,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zul_Ariffin_on_MeleTOP.jpg",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/84/Zul_Ariffin_on_MeleTOP.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+    "alt": "Zul Ariffin",
+    "caption": "Zul Ariffin",
+    "credit": "MeleTOP (CC BY 3.0)"
+  },
+  "aaron-aziz": {
+    "path": "/images/aaron-aziz.png",
+    "width": 800,
+    "height": 511,
+    "sourceUrl": "https://www.thewayang.com/celebrities/dato-aaron-aziz",
+    "imageUrl": "https://www.thewayang.com/assets/img/assets/profile/actor/convert/522da352b2202b698c5d713933e15f8a.png",
+    "alt": "Aaron Aziz",
+    "caption": "Aaron Aziz"
+  },
+  "syafiq-kyle": {
+    "path": "/images/syafiq-kyle.jpg",
+    "width": 500,
+    "height": 688,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Syafiq_Kyle_for_ReChannel,_stretched_(cropped).jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/Syafiq_Kyle_for_ReChannel%2C_stretched_%28cropped%29.jpg/500px-Syafiq_Kyle_for_ReChannel%2C_stretched_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "alt": "Syafiq Kyle",
+    "caption": "Syafiq Kyle",
+    "credit": "Re Channel (CC BY 3.0)"
+  },
+  "sharnaaz-ahmad": {
+    "path": "/images/sharnaaz-ahmad.jpg",
+    "width": 500,
+    "height": 707,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sharnaaz_Ahmad_on_MeleTOP.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Sharnaaz_Ahmad_on_MeleTOP.jpg/500px-Sharnaaz_Ahmad_on_MeleTOP.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "alt": "Sharnaaz Ahmad",
+    "caption": "Sharnaaz Ahmad",
+    "credit": "MeleTOP (CC BY 3.0)"
+  },
+  "nasir-bilal-khan": {
+    "path": "/images/nasir-bilal-khan.png",
+    "width": 800,
+    "height": 465,
+    "sourceUrl": "https://www.thewayang.com/celebrities/nasir-bilal-khan",
+    "imageUrl": "https://www.thewayang.com/assets/img/assets/profile/actor/convert/fba1baa0f1dcaac2c2e09da1fbde4fc0.png",
+    "alt": "Nasir Bilal Khan",
+    "caption": "Nasir Bilal Khan"
   }
 }

@@ -14,5 +14,8 @@
   },
   "devDependencies": {
     "html-validate": "11.16.2"
+  },
+  "dependencies": {
+    "stream-json": "3.7.0"
   }
 }

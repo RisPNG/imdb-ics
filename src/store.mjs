@@ -1,13 +1,17 @@
-import { mkdir, readFile, writeFile, rename, unlink, stat } from 'node:fs/promises';
+import { mkdir, rename, unlink, stat } from 'node:fs/promises';
+import { createReadStream, createWriteStream } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { gzip as gzipCallback, gunzip as gunzipCallback } from 'node:zlib';
-import { promisify } from 'node:util';
+import { createGzip, createGunzip } from 'node:zlib';
+import { Readable, Transform, Writable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { parser } from 'stream-json';
+import Assembler from 'stream-json/assembler.js';
+import { disassembler } from 'stream-json/disassembler.js';
+import { stringer } from 'stream-json/stringer.js';
 import { attributeReleases, isValidEvent, reconcileEvents } from './calendar.mjs';
 import { fetchSource } from './imdb.mjs';
 
-const gzip = promisify(gzipCallback);
-const gunzip = promisify(gunzipCallback);
 const MAX_SNAPSHOT_BYTES = 64 * 1024 * 1024;
 const MAX_COMPRESSED_BYTES = 16 * 1024 * 1024;
 
@@ -99,10 +103,26 @@ export class CalendarStore {
       }
       const limit = compressed ? MAX_COMPRESSED_BYTES : MAX_SNAPSHOT_BYTES;
       if (size > limit) throw new Error(`Saved snapshot exceeds the ${compressed ? '16 MiB compressed' : '64 MiB'} limit.`);
-      let bytes = await readFile(path);
-      if (bytes.length > limit) throw new Error(`Saved snapshot exceeds the ${compressed ? '16 MiB compressed' : '64 MiB'} limit.`);
-      if (compressed) bytes = await gunzip(bytes, { maxOutputLength: MAX_SNAPSHOT_BYTES });
-      const saved = JSON.parse(bytes.toString('utf8'));
+      let bytes = 0;
+      let fileBytes = 0;
+      // Materialize each title and event separately: streamed string slices and dynamic object shapes otherwise retain enough parser input to exhaust the configured heap.
+      const assembler = new Assembler({ reviver(key, value) {
+        return value?.id && typeof value.title === 'string' ? JSON.parse(JSON.stringify(value)) : value;
+      } });
+      await pipeline(createReadStream(path), new Transform({
+        transform(chunk, encoding, callback) {
+          fileBytes += chunk.length;
+          callback(fileBytes > limit ? new Error(`Saved snapshot exceeds the ${compressed ? '16 MiB compressed' : '64 MiB'} limit.`) : null, chunk);
+        },
+      }), ...(compressed ? [createGunzip()] : []), new Transform({
+        transform(chunk, encoding, callback) {
+          bytes += chunk.length;
+          callback(bytes > MAX_SNAPSHOT_BYTES ? new Error('Saved snapshot is larger than the 64 MiB limit.') : null, chunk);
+        },
+      }), parser.asStream({ streamValues: false }), new Writable({ objectMode: true,
+        write(token, encoding, callback) { assembler.consume(token); callback(); },
+      }));
+      const saved = assembler.current;
       if (!validateSnapshot(saved, this.config.sources)) throw new Error('Saved snapshot has an invalid format.');
       saved.version = 2;
       this.snapshot = saved;
@@ -237,11 +257,28 @@ export class CalendarStore {
   async persist() {
     const temporary = join(this.config.dataDir, `.snapshot-${randomUUID()}.tmp`);
     try {
-      const text = JSON.stringify(this.snapshot);
-      if (Buffer.byteLength(text) > MAX_SNAPSHOT_BYTES) throw new Error('Calendar snapshot exceeds the 64 MiB limit.');
-      const bytes = await gzip(text, { maxOutputLength: MAX_COMPRESSED_BYTES });
       await mkdir(this.config.dataDir, { recursive: true, mode: 0o700 });
-      await writeFile(temporary, bytes, { mode: 0o600 });
+      let rawBytes = 0;
+      let compressedBytes = 0;
+      let pending = '';
+      await pipeline(Readable.from([this.snapshot]), disassembler.asStream({ streamValues: false }), stringer.asStream({ useValues: true }), new Transform({
+        writableObjectMode: true,
+        transform(chunk, encoding, callback) {
+          rawBytes += Buffer.byteLength(chunk);
+          if (rawBytes > MAX_SNAPSHOT_BYTES) return callback(new Error('Calendar snapshot exceeds the 64 MiB limit.'));
+          pending += chunk;
+          if (pending.length < 64 * 1024) return callback();
+          const output = pending;
+          pending = '';
+          callback(null, output);
+        },
+        flush(callback) { callback(null, pending); },
+      }), createGzip(), new Transform({
+        transform(chunk, encoding, callback) {
+          compressedBytes += chunk.length;
+          callback(compressedBytes > MAX_COMPRESSED_BYTES ? new Error('Calendar snapshot exceeds the 16 MiB compressed limit.') : null, chunk);
+        },
+      }), createWriteStream(temporary, { mode: 0o600 }));
       await rename(temporary, join(this.config.dataDir, 'snapshot.json.gz'));
       this.persistenceError = null;
       await unlink(join(this.config.dataDir, 'snapshot.json')).catch((error) => {

@@ -12,13 +12,8 @@ const page = (edges, total = edges.length, hasNextPage = false, endCursor = null
   ...(extensions ? { extensions } : {}),
 });
 const json = (payload) => new Response(JSON.stringify(payload), { headers: { 'content-type': 'application/json' } });
-const episode = (id, text, season, number, date = { year: 2025, month: 4, day: 22 }) => ({
-  node: { id, titleText: { text }, releaseDate: date, series: { episodeNumber: { seasonNumber: season, episodeNumber: number } } },
-});
-const episodesPage = (edges, total = edges.length, hasNextPage = false, endCursor = null, extensions) => ({
-  data: { title: { episodes: { episodes: { total, edges, pageInfo: { hasNextPage, endCursor } } } } },
-  ...(extensions ? { extensions } : {}),
-});
+const episode = (id, text, season, number, date = { year: 2025, month: 4, day: 22 }, seriesId = 'tt9253284') =>
+  title(id, text, date, 'tvEpisode', { series: { id: seriesId, titleText: { text: 'Parent series' }, releaseDate: null }, episodeNumber: { seasonNumber: season, episodeNumber: number } });
 
 test('collects every page, follows opaque cursors, and deduplicates overlapping titles', async () => {
   const requests = [];
@@ -62,7 +57,7 @@ test('uses directly credited titles for a person', async () => {
 test('expands a series with single and batch episode release dates without changing its source counts', async () => {
   const responses = [
     page([title('tt9253284', 'Andor', { year: 2022, month: 9, day: 21 }, 'tvSeries')]),
-    episodesPage([
+    page([
       episode('tt20258964', 'One Year Later', 2, 1),
       episode('tt20603288', 'Sagrona Teema', 2, 2),
       episode('tt20603292', 'Harvest', 2, 3),
@@ -78,8 +73,8 @@ test('expands a series with single and batch episode release dates without chang
     },
   });
   assert.match(queries[0], /titleType \{ id \}/);
-  assert.match(queries[1], /title\(id: "tt9253284"\)/);
-  assert.match(queries[1], /episodes\(first: 100\)/);
+  assert.match(queries[1], /episodicConstraint: \{anySeriesIds: \["tt9253284"\]\}/);
+  assert.match(queries[1], /advancedTitleSearch\(first: 100/);
   assert.equal(result.total, 1);
   assert.equal(result.omitted, 0);
   assert.deepEqual(result.titles[0], {
@@ -95,11 +90,11 @@ test('expands a series with single and batch episode release dates without chang
 });
 
 test('paginates miniseries episodes, deduplicates overlaps, and retains nullable numbering', async () => {
-  const first = episode('tt10161316', 'Filmed Before a Live Studio Audience', 1, 1, { year: 2021, month: 1, day: 15 });
+  const first = episode('tt10161316', 'Filmed Before a Live Studio Audience', 1, 1, { year: 2021, month: 1, day: 15 }, 'tt9140560');
   const responses = [
     page([title('tt9140560', 'WandaVision', null, 'tvMiniSeries')]),
-    episodesPage([first], 3, true, 'opaque episode "cursor"'),
-    episodesPage([first, episode('tt10161318', 'Do Not Touch That Dial', 1, 2, { year: 2021, month: 1, day: 15 }), episode('tt10161320', 'Upcoming', null, null, null)], 3),
+    page([first], 3, true, 'opaque episode "cursor"'),
+    page([first, episode('tt10161318', 'Do Not Touch That Dial', 1, 2, { year: 2021, month: 1, day: 15 }, 'tt9140560'), episode('tt10161320', 'Upcoming', null, null, null, 'tt9140560')], 3),
   ];
   const queries = [];
   const result = await fetchSource(marvel, {
@@ -174,10 +169,57 @@ test('keeps partial and absent parent series dates null without losing dated epi
 });
 
 test('accepts a series with no known episodes without inventing a schedule', async () => {
-  const responses = [page([title('tt9253284', 'Upcoming', null, 'tvSeries')]), episodesPage([])];
+  const responses = [page([title('tt9253284', 'Upcoming', null, 'tvSeries')]), page([])];
   const result = await fetchSource(marvel, { fetchImpl: async () => json(responses.shift()) });
   assert.deepEqual(result.titles[0].episodes, []);
 });
+
+test('expands DC series through complete episode membership, including Starfire with no listed episodes', async () => {
+  const responses = [
+    page([title('tt36057368', 'Starfire!', null, 'tvSeries'), title('tt26545992', 'Lanterns', { year: 2026, month: 8, day: 16 }, 'tvSeries')]),
+    page([]),
+    page([
+      episode('tt26546824', 'Pilot', 1, 1, { year: 2026, month: 8, day: 16 }, 'tt26545992'),
+      episode('tt32752609', 'Bad Optics', 1, 6, { year: 2026, month: 9, day: 20 }, 'tt26545992'),
+      episode('tt32752610', 'The Weenie', 1, 4, { year: 2026, month: 9, day: 6 }, 'tt26545992'),
+      episode('tt32752611', 'Lights Out', 1, 5, { year: 2026, month: 9, day: 13 }, 'tt26545992'),
+      episode('tt32752612', 'OutKast', 1, 3, { year: 2026, month: 8, day: 30 }, 'tt26545992'),
+      episode('tt32752613', 'Trust Fall', 1, 2, { year: 2026, month: 8, day: 23 }, 'tt26545992'),
+      episode('tt32752614', "The Jordan Boys' Legacy", 1, 7, { year: 2026, month: 9, day: 27 }, 'tt26545992'),
+      episode('tt32752615', 'Dirt and Stars', 1, 8, { year: 2026, month: 10, day: 4 }, 'tt26545992'),
+    ]),
+  ];
+  const queries = [];
+  const result = await fetchSource({ id: 'in0000244', kind: 'interest', label: 'DC' }, {
+    fetchImpl: async (_url, options) => {
+      queries.push(JSON.parse(options.body).query);
+      return json(responses.shift());
+    },
+  });
+  assert.match(queries[1], /episodicConstraint: \{anySeriesIds: \["tt36057368"\]\}/);
+  assert.match(queries[2], /episodicConstraint: \{anySeriesIds: \["tt26545992"\]\}/);
+  assert.equal(result.total, 2);
+  assert.equal(result.omitted, 1);
+  assert.deepEqual(result.titles[0].episodes, []);
+  assert.equal(result.titles[1].episodes.length, 8);
+  assert.deepEqual(result.titles[1].episodes[0].series, { id: 'tt26545992', title: 'Lanterns', date: '2026-08-16', season: 1, episode: 1 });
+  assert.equal(result.titles[1].episodes.at(-1).date, '2026-10-04');
+  assert.equal(responses.length, 0);
+});
+
+for (const [name, payload, message] of [
+  ['an unavailable episode search', { data: { advancedTitleSearch: null }, extensions: { entitlements: { fields: { 'Query.advancedTitleSearch': 'DENY' } } } }, /missing episode-search fields for series tt36057368 \(Starfire!\)/],
+  ['an episode from another series', page([episode('tt26546824', 'Pilot', 1, 1, null, 'tt26545992')]), /episode tt26546824 belongs to series tt26545992 rather than tt36057368/],
+  ['a non-episode result', page([title('tt26546824', 'Pilot')]), /episode search for series tt36057368 returned non-episode tt26546824/],
+  ['an episode without its parent', page([title('tt26546824', 'Pilot', null, 'tvEpisode')]), /episode tt26546824 is missing its series/],
+]) {
+  test(`rejects ${name} instead of publishing an empty or unrelated series`, async () => {
+    const seriesCache = new Map();
+    const responses = [page([title('tt36057368', 'Starfire!', null, 'tvSeries')]), payload];
+    await assert.rejects(fetchSource(marvel, { seriesCache, fetchImpl: async () => json(responses.shift()) }), (error) => error.code === 'INCOMPLETE_RESULT' && message.test(error.message));
+    assert.equal(seriesCache.size, 0);
+  });
+}
 
 test('reuses complete series reads across sources and exposes cached IMDb notices', async () => {
   const seriesCache = new Map();
@@ -186,7 +228,7 @@ test('reuses complete series reads across sources and exposes cached IMDb notice
     const query = JSON.parse(options.body).query;
     queries.push(query);
     return json(query.includes('CalendarEpisodes')
-      ? episodesPage([episode('tt20258964', 'One Year Later', 2, 1)], 1, false, null, { disclaimer: 'Episode usage notice' })
+      ? page([episode('tt20258964', 'One Year Later', 2, 1)], 1, false, null, { disclaimer: 'Episode usage notice' })
       : page([title('tt9253284', 'Andor', null, 'tvSeries')]));
   };
   const first = await fetchSource(marvel, { fetchImpl, seriesCache });
@@ -214,12 +256,12 @@ test('reads series sequentially with separate operation timeouts after the sourc
       }
       operations[queries.length - 2].abort(new Error('Previous operation timed out'));
       assert.equal(options.signal.aborted, false);
-      return json(episodesPage([]));
+      return json(page([]));
     },
   });
   assert.equal(operations.length, 3);
-  assert.match(queries[1], /title\(id: "tt9253284"\)/);
-  assert.match(queries[2], /title\(id: "tt9140560"\)/);
+  assert.match(queries[1], /episodicConstraint: \{anySeriesIds: \["tt9253284"\]\}/);
+  assert.match(queries[2], /episodicConstraint: \{anySeriesIds: \["tt9140560"\]\}/);
   assert.equal(result.titles.length, 2);
 });
 
@@ -227,10 +269,10 @@ test('rejects a source when an episode page fails and retries rather than cachin
   const seriesCache = new Map();
   const responses = [
     page([title('tt9253284', 'Andor', null, 'tvSeries')]),
-    episodesPage([episode('tt20258964', 'One Year Later', 2, 1)], 2, true, 'next'),
+    page([episode('tt20258964', 'One Year Later', 2, 1)], 2, true, 'next'),
     new Response('Unavailable', { status: 503 }),
     page([title('tt9253284', 'Andor', null, 'tvSeries')]),
-    episodesPage([episode('tt20258964', 'One Year Later', 2, 1)]),
+    page([episode('tt20258964', 'One Year Later', 2, 1)]),
   ];
   const fetchImpl = async () => {
     const payload = responses.shift();
@@ -271,9 +313,9 @@ test('cancels episode expansion and leaves cancelled reads out of the shared cac
 });
 
 for (const [name, responses] of [
-  ['a repeated episode cursor', [episodesPage([episode('tt20258964', 'One Year Later', 2, 1)], 3, true, 'same'), episodesPage([episode('tt20603288', 'Sagrona Teema', 2, 2)], 3, true, 'same')]],
-  ['an incomplete episode list', [episodesPage([episode('tt20258964', 'One Year Later', 2, 1)], 2)]],
-  ['a changing episode number', [episodesPage([episode('tt20258964', 'One Year Later', 2, 1)], 2, true, 'next'), episodesPage([episode('tt20258964', 'One Year Later', 2, 2), episode('tt20603288', 'Sagrona Teema', 2, 2)], 2)]],
+  ['a repeated episode cursor', [page([episode('tt20258964', 'One Year Later', 2, 1)], 3, true, 'same'), page([episode('tt20603288', 'Sagrona Teema', 2, 2)], 3, true, 'same')]],
+  ['an incomplete episode list', [page([episode('tt20258964', 'One Year Later', 2, 1)], 2)]],
+  ['a changing episode number', [page([episode('tt20258964', 'One Year Later', 2, 1)], 2, true, 'next'), page([episode('tt20258964', 'One Year Later', 2, 2), episode('tt20603288', 'Sagrona Teema', 2, 2)], 2)]],
 ]) {
   test(`refuses to publish ${name}`, async () => {
     const seriesCache = new Map();

@@ -254,7 +254,7 @@ test('all source pages have canonical routes, local images, and one source subsc
     assert(imagePath, `Missing local image on ${path}.`);
     const image = await fetch(`${origin}${imagePath}`);
     assert.equal(image.status, 200, imagePath);
-    assert.match(image.headers.get('content-type'), /^image\/(?:jpeg|svg\+xml)(?:;|$)/);
+    assert.equal(image.headers.get('content-type')?.split(';')[0], imagePath.endsWith('.png') ? 'image/png' : imagePath.endsWith('.svg') ? 'image/svg+xml' : 'image/jpeg');
     assert.equal(image.headers.get('x-content-type-options'), 'nosniff');
     assert(Number(image.headers.get('content-length')) > 0);
     const redirect = await fetch(`${origin}${path.slice(0, -1)}`, { redirect: 'manual' });

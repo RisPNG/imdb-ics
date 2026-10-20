@@ -83,7 +83,7 @@ test('source pages use their own title, canonical URL, local image, and single v
     assert.match(html, new RegExp(`<h1\\b[^>]*>${source.label}<\\/h1>`));
     assert.equal((html.match(/<input\b/g) || []).length, 1);
     assert.equal(html.split(`value="${baseUrl}/calendars/${source.slug}.ics"`).length - 1, 1);
-    assert.match(html, /<img\b[^>]*src="\/images\/[^".]+\.(?:jpg|svg)"[^>]*>/);
+    assert.match(html, /<img\b[^>]*src="\/images\/[^".]+\.(?:jpg|png|svg)"[^>]*>/);
     assert.doesNotMatch(html, /<img\b[^>]*src="https?:/);
     assert(html.includes(`href="${source.url}"`));
     assert(html.includes('role="status"'));
