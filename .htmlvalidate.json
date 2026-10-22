@@ -1,3 +1,9 @@
 {
-  "extends": ["html-validate:recommended"]
+  "extends": ["html-validate:standard", "html-validate:a11y", "html-validate:document"],
+  "rules": {
+    "no-redundant-aria-label": "off",
+    "no-redundant-for": "off",
+    "no-redundant-role": "off",
+    "prefer-native-element": "off"
+  }
 }
