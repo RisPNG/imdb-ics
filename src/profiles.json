@@ -894,5 +894,11 @@
       { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1981893/" },
       { "label": "Harry Walker Agency biography", "url": "https://www.harrywalker.com/speakers/riz-ahmed/" }
     ]
+  },
+  "felix-kjellberg": {
+    "summary": "Felix Kjellberg is a video creator who publishes as PewDiePie, beginning with video-game commentary and playthroughs. His credited projects include PewDiePie, Scare PewDiePie, Pew News, and Minecraft Epic, bringing together gaming videos, commentary, and online entertainment.",
+    "roles": ["Video creator", "Writer", "Producer"],
+    "knownFor": ["PewDiePie", "Scare PewDiePie", "Pew News", "Minecraft Epic"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm5579304/" }]
   }
 }

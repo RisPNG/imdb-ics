@@ -1222,5 +1222,15 @@
     "imageUrl": "https://m.media-amazon.com/images/M/MV5BMTcxMTQ4MzY2Nl5BMl5BanBnXkFtZTgwMzAxOTY3MjI@._V1_QL85_UX320_.jpg",
     "alt": "Riz Ahmed",
     "caption": "Riz Ahmed"
+  },
+  "felix-kjellberg": {
+    "path": "/images/felix-kjellberg.jpg",
+    "width": 500,
+    "height": 536,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pewdiepie_head_shot.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/Pewdiepie_head_shot.jpg/500px-Pewdiepie_head_shot.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "alt": "Felix Kjellberg",
+    "caption": "Felix Kjellberg",
+    "credit": "Cold Ones Clips (CC BY 3.0)"
   }
 }
