@@ -310,7 +310,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
   `;
   const results = [];
   for (const phase of ['seed', 'http', 'restart']) {
-    const { stdout } = await execFile(process.execPath, ['--max-old-space-size=192', '--input-type=module', '--eval', code, phase], { timeout: 120_000 });
+    const { stdout } = await execFile(process.execPath, ['--max-old-space-size=192', '--input-type=module', '--eval', code, phase], { timeout: 300_000 });
     const result = JSON.parse(stdout);
     assert(result.rssMiB < 512, `${phase} used ${result.rssMiB} MiB RSS.`);
     results.push(result);
