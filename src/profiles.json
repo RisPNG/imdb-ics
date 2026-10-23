@@ -486,12 +486,6 @@
       { "label": "IMDb credits", "url": "https://www.imdb.com/name/nm15884712/" }
     ]
   },
-  "felix-kjellberg": {
-    "summary": "Felix Kjellberg is a video creator who publishes as PewDiePie, beginning with video-game commentary and playthroughs. His credited projects include PewDiePie, Scare PewDiePie, Pew News, and Minecraft Epic, bringing together gaming videos, commentary, and online entertainment.",
-    "roles": ["Video creator", "Writer", "Producer"],
-    "knownFor": ["PewDiePie", "Scare PewDiePie", "Pew News", "Minecraft Epic"],
-    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm5579304/" }]
-  },
   "max-verstappen": {
     "summary": "Max Verstappen is a racing driver and Formula 1 world champion whose career began in karting. He won his first Grand Prix in Spain in 2016 and his first Formula 1 drivers' championship in 2021, racing under a Dutch licence.",
     "roles": ["Racing driver", "Sports personality"],
@@ -872,5 +866,33 @@
     "roles": ["Actor"],
     "knownFor": ["Di ambang misteri", "Framed", "Kerat 14", "Blood Brothers: Fury of the Dragon"],
     "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1935071/" }]
+  },
+  "aedy-ashraf": {
+    "summary": "Aedy Ashraf is an actor and producer from Kelantan, Malaysia. He portrayed Beja in Kahar: Kapla High Council and Mawi in Tentang Bulan. His other films include War on Terror: KL Anarchy and Tarung: Unforgiven, which he also produced.",
+    "roles": ["Actor", "Producer"],
+    "knownFor": ["Kahar: Kapla High Council", "Tentang Bulan", "Tarung: Unforgiven", "War on Terror: KL Anarchy"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm2834062/" },
+      { "label": "Astro: Tarung: Unforgiven", "url": "https://corporate.astro.com.my/mediaroom-releases/tarung-unforgiven-tawar-pengalaman-sinematik-memukau-angkat-tema-gelanggang-sebenar-adalah-kehidupan-itu-sendiri" }
+    ]
+  },
+  "shaquille-o-neal": {
+    "summary": "Shaquille O'Neal is an actor, producer, and former basketball player known as Shaq. His films include Steel and Kazaam, and his television work includes Inside the NBA. He won four NBA championships during a 19-season playing career.",
+    "roles": ["Actor", "Producer", "Writer"],
+    "knownFor": ["Steel", "Kazaam", "Inside the NBA"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0641944/" },
+      { "label": "Official biography", "url": "https://shaq.com/pages/about" },
+      { "label": "DC: Steel", "url": "https://www.dc.com/movies/steel-1997" }
+    ]
+  },
+  "riz-ahmed": {
+    "summary": "Riz Ahmed is an actor, writer, producer, and musician whose films include Sound of Metal, Nightcrawler, and Rogue One: A Star Wars Story. His television work includes The Night Of, and he co-created the short film The Long Goodbye with director Aneil Karia.",
+    "roles": ["Actor", "Producer", "Writer", "Musician"],
+    "knownFor": ["Sound of Metal", "Nightcrawler", "Rogue One: A Star Wars Story", "The Night Of"],
+    "references": [
+      { "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm1981893/" },
+      { "label": "Harry Walker Agency biography", "url": "https://www.harrywalker.com/speakers/riz-ahmed/" }
+    ]
   }
 }

@@ -636,16 +636,6 @@
     "alt": "Isack Hadjar",
     "caption": "Isack Hadjar. Photo from Oracle Red Bull Racing."
   },
-  "felix-kjellberg": {
-    "path": "/images/felix-kjellberg.jpg",
-    "width": 500,
-    "height": 536,
-    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pewdiepie_head_shot.jpg",
-    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/Pewdiepie_head_shot.jpg/500px-Pewdiepie_head_shot.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-    "alt": "Felix Kjellberg",
-    "caption": "Felix Kjellberg",
-    "credit": "Cold Ones Clips (CC BY 3.0)"
-  },
   "max-verstappen": {
     "path": "/images/max-verstappen.jpg",
     "width": 480,
@@ -1204,5 +1194,33 @@
     "imageUrl": "https://images.mubicdn.net/images/cast_member/775680/cache-547428-1590100380/image-w856.jpg?size=500x",
     "alt": "Zamarul Hisham",
     "caption": "Zamarul Hisham"
+  },
+  "aedy-ashraf": {
+    "path": "/images/aedy-ashraf.jpg",
+    "width": 500,
+    "height": 500,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aedy_Ashraf.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/be/Aedy_Ashraf.jpg/500px-Aedy_Ashraf.jpg",
+    "alt": "Aedy Ashraf",
+    "caption": "Aedy Ashraf for Tarung: Unforgiven",
+    "credit": "Suffiyahrosli (CC BY 4.0)"
+  },
+  "shaquille-o-neal": {
+    "path": "/images/shaquille-o-neal.jpg",
+    "width": 320,
+    "height": 456,
+    "sourceUrl": "https://www.imdb.com/name/nm0641944/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMTUzMjA0MzQxMF5BMl5BanBnXkFtZTcwODA3ODY3Mg@@._V1_QL85_UX320_.jpg",
+    "alt": "Shaquille O'Neal",
+    "caption": "Shaquille O'Neal"
+  },
+  "riz-ahmed": {
+    "path": "/images/riz-ahmed.jpg",
+    "width": 320,
+    "height": 421,
+    "sourceUrl": "https://www.imdb.com/name/nm1981893/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BMTcxMTQ4MzY2Nl5BMl5BanBnXkFtZTgwMzAxOTY3MjI@._V1_QL85_UX320_.jpg",
+    "alt": "Riz Ahmed",
+    "caption": "Riz Ahmed"
   }
 }

@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchSource, ImdbError, PEOPLE_EXCLUDED_INTEREST_IDS } from '../src/imdb.mjs';
+import { fetchSource, ImdbError, TITLE_EXCLUSIONS } from '../src/imdb.mjs';
 
 const marvel = { id: 'in0000248', kind: 'interest', label: 'Marvel' };
 const person = { id: 'nm0319213', kind: 'name', label: 'Vince Gilligan' };
+const connection = (nodes = []) => ({ total: nodes.length, pageInfo: { hasNextPage: false }, edges: nodes.map((node) => ({ node })) });
 const title = (id, text, date = { year: 2026, month: 12, day: 18 }, type = 'movie', series) => ({
-  node: { title: { id, titleText: { text }, releaseDate: date, titleType: { id: type }, ...(series ? { series } : {}) } },
+  node: { title: { id, titleText: { text }, releaseDate: date, titleType: { id: type }, interests: connection(), externalLinks: connection(),
+    ...(series ? { series: { ...series, ...(series.series ? { series: { interests: connection(), externalLinks: connection(), ...series.series } } : {}) } } : {}) } },
 });
 const page = (edges, total = edges.length, hasNextPage = false, endCursor = null, extensions) => ({
   data: { advancedTitleSearch: { total, edges, pageInfo: { hasNextPage, endCursor } } },
@@ -32,7 +34,7 @@ test('collects every page, follows opaque cursors, and deduplicates overlapping 
   assert.equal(requests[0].url, 'https://api.graphql.imdb.com/');
   assert.equal(requests[0].headers['x-imdb-client-name'], 'imdb-web-next');
   assert.match(JSON.parse(requests[0].body).query, /allInterestIds: \["in0000248"\]/);
-  for (const request of requests) assert.doesNotMatch(JSON.parse(request.body).query, /excludeInterestIds/);
+  for (const request of requests) assert(JSON.parse(request.body).query.includes(`excludeInterestIds: ${JSON.stringify(TITLE_EXCLUSIONS.interestIds)}`));
   assert.ok(JSON.parse(requests[1].body).query.includes(`after: ${JSON.stringify('opaque "cursor" \\ value')}`));
   assert.equal(result.total, 3);
   assert.equal(result.omitted, 1);
@@ -43,7 +45,7 @@ test('collects every page, follows opaque cursors, and deduplicates overlapping 
   ]);
 });
 
-test('excludes News and Talk Show interests from every page of directly credited person titles', async () => {
+test('applies all title exclusions to every page of directly credited person titles', async () => {
   const queries = [];
   const responses = [
     page([title('tt0903747', 'Breaking Bad', { year: 2008, month: 1, day: 20 }, 'tvSeries')], 3, true, 'filtered next page'),
@@ -55,12 +57,13 @@ test('excludes News and Talk Show interests from every page of directly credited
       return json(responses.shift());
     },
   });
-  assert.deepEqual(PEOPLE_EXCLUDED_INTEREST_IDS, ['in0000211', 'in0000127']);
-  assert.equal(Object.isFrozen(PEOPLE_EXCLUDED_INTEREST_IDS), true);
+  assert.deepEqual(TITLE_EXCLUSIONS, { interestIds: ['in0000105', 'in0000104', 'in0000211', 'in0000127', 'in0000060'], officialSite: 'youtube' });
+  assert.equal(Object.isFrozen(TITLE_EXCLUSIONS), true);
+  assert.equal(Object.isFrozen(TITLE_EXCLUSIONS.interestIds), true);
   assert.equal(queries.length, 2);
   for (const query of queries) {
     assert.match(query, /titleCreditsConstraint: \{anyCredits: \[\{nameId: "nm0319213"\}\]\}/);
-    assert.match(query, /interestConstraint: \{excludeInterestIds: \["in0000211","in0000127"\]\}/);
+    assert(query.includes(`interestConstraint: {excludeInterestIds: ${JSON.stringify(TITLE_EXCLUSIONS.interestIds)}}`));
     assert.doesNotMatch(query, /episodicConstraint/);
   }
   assert.match(queries[1], /after: "filtered next page"/);
@@ -76,6 +79,110 @@ test('accepts a completely excluded person and rejects an incomplete filtered fi
   await assert.rejects(fetchSource(person, {
     fetchImpl: async () => json(page([title('tt0903747', 'Breaking Bad')], 2)),
   }), (error) => error.code === 'INCOMPLETE_RESULT');
+});
+
+for (const source of [marvel, person]) {
+  test(`excludes every disallowed category and parent series from ${source.kind} releases`, async () => {
+    const blocked = TITLE_EXCLUSIONS.interestIds.flatMap((id, index) => {
+      const direct = title(`tt${1000000 + index}`, `Excluded title ${index}`);
+      direct.node.title.interests = connection([{ id }]);
+      const child = episode(`tt${2000000 + index}`, `Excluded episode ${index}`, 1, 1);
+      child.node.title.series.series.interests = connection([{ id }]);
+      return [direct, child];
+    });
+    const result = await fetchSource(source, {
+      fetchImpl: async (_url, options) => {
+        const query = JSON.parse(options.body).query;
+        assert(query.includes(`excludeInterestIds: ${JSON.stringify(TITLE_EXCLUSIONS.interestIds)}`));
+        return json(page([...blocked, title('tt3000000', 'An eligible movie')]));
+      },
+    });
+    assert.equal(result.total, 1);
+    assert.equal(result.omitted, 0);
+    assert.deepEqual(result.titles.map((entry) => entry.id), ['tt3000000']);
+  });
+}
+
+for (const [name, links, excluded] of [
+  ['YouTube-only production', [{ url: 'https://m.youtube.com/watch?v=first', label: 'Official first episode.' }], true],
+  ['short YouTube official address', [{ url: 'https://youtu.be/first' }], true],
+  ['explicit YouTube official site with supplemental social accounts', [{ url: 'https://www.youtube.com/@series', label: 'Official Web Site' }, { url: 'https://www.instagram.com/series', label: 'Official Instagram' }], true],
+  ['separate official website and YouTube channel', [{ url: 'https://www.youtube.com/@series', label: 'Official YouTube channel' }, { url: 'http://series.example', label: 'Official site' }], false],
+  ['two explicitly listed official websites', [{ url: 'https://youtube.com/@series', label: 'Official Website' }, { url: 'https://series.example', label: 'Company site' }], false],
+  ['company-named official website', [{ url: 'https://youtube.com/@series', label: 'Official Site' }, { url: 'http://studio.example', label: 'Nickelodeon' }], false],
+  ['ambiguous mixed social accounts', [{ url: 'https://youtube.com/@breakingbad', label: 'Official Youtube' }, { url: 'https://www.facebook.com/BreakingBad/', label: 'Official Facebook' }], false],
+  ['unrelated host containing YouTube', [{ url: 'https://youtube.com.example.org/watch?v=first', label: 'Official Site' }], false],
+  ['no official links', [], false],
+]) {
+  test(`${excluded ? 'excludes' : 'retains'} ${name}`, async () => {
+    const entry = title('tt4000000', name, null);
+    entry.node.title.externalLinks = connection(links);
+    const result = await fetchSource(person, { fetchImpl: async () => json(page([entry])) });
+    assert.equal(result.total, excluded ? 0 : 1);
+    assert.equal(result.omitted, excluded ? 0 : 1);
+    assert.deepEqual(result.titles.map((item) => item.id), excluded ? [] : [entry.node.title.id]);
+  });
+}
+
+test('filters a complete paginated membership after counting overlapping YouTube titles', async () => {
+  const blocked = title('tt4000000', 'A YouTube production');
+  blocked.node.title.externalLinks = connection([{ url: 'https://youtube.com/@series', label: 'Official Website' }]);
+  const responses = [page([blocked], 2, true, 'next'), page([blocked, title('tt5000000', 'An eligible movie')], 2)];
+  const result = await fetchSource(person, { fetchImpl: async () => json(responses.shift()) });
+  assert.equal(result.total, 1);
+  assert.deepEqual(result.titles.map((entry) => entry.id), ['tt5000000']);
+  assert.equal(responses.length, 0);
+  await assert.rejects(fetchSource(person, { fetchImpl: async () => json(page([blocked], 2)) }), (error) => error.code === 'INCOMPLETE_RESULT');
+});
+
+test('inherits a main YouTube site from a directly credited episode\'s parent series', async () => {
+  const entry = episode('tt5000000', 'A YouTube episode', 1, 1);
+  entry.node.title.series.series.externalLinks = connection([{ url: 'https://youtube.com/@series' }]);
+  const result = await fetchSource(person, { fetchImpl: async () => json(page([entry])) });
+  assert.deepEqual(result, { titles: [], total: 0, omitted: 0, warnings: [] });
+});
+
+test('filters expanded interest episodes before sharing their complete series cache', async () => {
+  const blocked = episode('tt5000000', 'A documentary episode', 1, 1);
+  blocked.node.title.interests = connection([{ id: 'in0000060' }]);
+  const youtube = episode('tt5000001', 'A YouTube episode', 1, 2);
+  youtube.node.title.externalLinks = connection([{ url: 'https://youtube.com/watch?v=first' }]);
+  const seriesCache = new Map();
+  const responses = [page([title('tt9253284', 'An eligible series', null, 'tvSeries')]),
+    page([blocked, youtube, episode('tt5000002', 'A retained episode', 1, 3)])];
+  const result = await fetchSource(marvel, { seriesCache, fetchImpl: async (_url, options) => {
+    const query = JSON.parse(options.body).query;
+    assert(query.includes(`excludeInterestIds: ${JSON.stringify(TITLE_EXCLUSIONS.interestIds)}`));
+    return json(responses.shift());
+  } });
+  assert.deepEqual(result.titles[0].episodes.map((entry) => entry.id), ['tt5000002']);
+  assert.deepEqual(seriesCache.get('tt9253284').episodes, result.titles[0].episodes);
+});
+
+for (const [name, change] of [
+  ['missing official links', (entry) => { delete entry.externalLinks; }],
+  ['partial official links', (entry) => { entry.externalLinks.pageInfo.hasNextPage = true; }],
+  ['incomplete official-link count', (entry) => { entry.externalLinks.total = 1; }],
+  ['missing interests', (entry) => { delete entry.interests; }],
+  ['partial interests', (entry) => { entry.interests.pageInfo.hasNextPage = true; }],
+  ['invalid official URL', (entry) => { entry.externalLinks = connection([{ url: 'not a URL' }]); }],
+  ['non-HTTP official URL', (entry) => { entry.externalLinks = connection([{ url: 'javascript:alert(1)' }]); }],
+]) {
+  test(`rejects ${name} on a title and its parent without publishing a partial source`, async () => {
+    for (const parent of [false, true]) {
+      const entry = parent ? episode('tt5000000', 'An episode', 1, 1) : title('tt5000000', 'A movie');
+      change(parent ? entry.node.title.series.series : entry.node.title);
+      await assert.rejects(fetchSource(person, { fetchImpl: async () => json(page([entry])) }), (error) => error.code === 'INCOMPLETE_RESULT');
+    }
+  });
+}
+
+test('rejects an overlapping title whose exclusion status changes during pagination', async () => {
+  const first = title('tt5000000', 'A changing official site');
+  const second = structuredClone(first);
+  second.node.title.externalLinks = connection([{ url: 'https://youtube.com/@series' }]);
+  const responses = [page([first], 2, true, 'next'), page([second, title('tt5000001', 'Another movie')], 2)];
+  await assert.rejects(fetchSource(person, { fetchImpl: async () => json(responses.shift()) }), (error) => error.code === 'INCOMPLETE_RESULT');
 });
 
 test('expands a series with single and batch episode release dates without changing its source counts', async () => {
@@ -99,7 +206,7 @@ test('expands a series with single and batch episode release dates without chang
   assert.match(queries[0], /titleType \{ id \}/);
   assert.match(queries[1], /episodicConstraint: \{anySeriesIds: \["tt9253284"\]\}/);
   assert.match(queries[1], /advancedTitleSearch\(first: 100/);
-  for (const query of queries) assert.doesNotMatch(query, /excludeInterestIds/);
+  for (const query of queries) assert(query.includes(`excludeInterestIds: ${JSON.stringify(TITLE_EXCLUSIONS.interestIds)}`));
   assert.equal(result.total, 1);
   assert.equal(result.omitted, 0);
   assert.deepEqual(result.titles[0], {
@@ -141,7 +248,8 @@ test('retains parent series metadata on directly matched episodes without expand
   const result = await fetchSource(person, {
     fetchImpl: async (_url, options) => {
       calls += 1;
-      assert.match(JSON.parse(options.body).query, /series \{ series \{ id titleText \{ text \} releaseDate \{ year month day \} \} episodeNumber/);
+      assert.match(JSON.parse(options.body).query, /series \{ series \{ \.\.\.CalendarTitle \} episodeNumber/);
+      assert.match(JSON.parse(options.body).query, /fragment CalendarTitle on Title/);
       return json(page([
         title('tt0959621', 'Pilot', { year: 2008, month: 1, day: 20 }, 'tvEpisode', { series: { id: 'tt0903747', titleText: { text: 'Breaking Bad' }, releaseDate: { year: 2008, month: 1, day: 20 } }, episodeNumber: { seasonNumber: 1, episodeNumber: 1 } }),
         title('tt1054724', 'Unknown episode', null, 'tvEpisode', { series: { id: 'tt0903747', titleText: { text: 'Breaking Bad' }, releaseDate: { year: 2008, month: 1, day: 20 } }, episodeNumber: null }),

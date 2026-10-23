@@ -7,6 +7,7 @@ import { gzipSync, gunzipSync } from 'node:zlib';
 import { CalendarStore } from '../src/store.mjs';
 import { loadConfig } from '../src/config.mjs';
 import { renderCalendar } from '../src/calendar.mjs';
+import { TITLE_EXCLUSIONS } from '../src/imdb.mjs';
 
 const quiet = { info() {}, warn() {} };
 const source = (slug) => ({ slug, kind: 'interest', id: slug === 'one' ? 'in0000248' : 'in0000243', label: slug, url: 'https://www.imdb.com/' });
@@ -537,11 +538,12 @@ test('combined source changes revise the same release once and date changes reta
   assert.equal(renderCalendar({ events: restored.feed('all').events }), renderCalendar({ events: moved }));
 });
 
-test('people exclusions migrate fresh saved memberships, retry failures, and preserve shared interest episodes and cancellation history', async (t) => {
+test('global exclusions migrate legacy memberships, retry failures, and cancel excluded releases while preserving history', async (t) => {
   let clock = new Date('2026-10-20T00:00:00Z');
   const interest = { slug: 'marvel', kind: 'interest', id: 'in0000248', label: 'Marvel' };
   const person = { slug: 'person', kind: 'name', id: 'nm0319213', label: 'A person' };
   const excluded = { id: 'tt2345678', title: 'A person-only news title', date: '2026-11-20' };
+  const interestExcluded = { id: 'tt7890123', title: 'An interest-only short film', date: '2026-11-21' };
   const parent = { id: 'tt3456789', title: 'An interest-matched talk show', date: '2026-11-19', type: 'tvSeries' };
   const first = { id: 'tt4567890', title: 'The first conversation', date: '2026-11-26', type: 'tvEpisode',
     series: { id: parent.id, title: parent.title, date: parent.date, season: 1, episode: 1 } };
@@ -552,14 +554,18 @@ test('people exclusions migrate fresh saved memberships, retry failures, and pre
   const calls = [];
   const loader = async (source) => {
     calls.push(source.slug);
-    if (source.kind === 'interest') return result([shared]);
     if (broken) throw new Error('HTTP 429');
+    if (source.kind === 'interest') return result(migrating ? [] : [shared, interestExcluded]);
     return result(migrating ? [title] : [title, excluded, parent, first, second]);
   };
   const { store, config } = await setup(t, loader, { clock: () => clock });
   config.sources = [interest, person];
   await store.refresh();
-  delete store.snapshot.sources.person.excludedInterestIds;
+  for (const saved of Object.values(store.snapshot.sources)) delete saved.exclusions;
+  store.snapshot.sources.person.excludedInterestIds = ['in0000211', 'in0000127'];
+  const withdrawn = { id: 'tt6789012', titleId: 'tt6789012', title: 'An earlier removed release', date: '2026-11-18',
+    description: '', episodeDescription: '', episodeIds: [], createdAt: clock.toISOString(), modifiedAt: clock.toISOString(), sequence: 7, status: 'CANCELLED' };
+  store.snapshot.combined.events[withdrawn.id] = withdrawn;
   await store.persist();
   const previousPerson = structuredClone(store.feed('person').events);
   const previousInterest = structuredClone(store.feed('marvel').events);
@@ -573,34 +579,47 @@ test('people exclusions migrate fresh saved memberships, retry failures, and pre
   t.after(() => migrated.stop());
   await migrated.initialize();
   assert.equal(migrated.feed('person').stale, true, 'a fresh legacy membership still needs the current query policy');
+  assert.equal(migrated.feed('marvel').stale, true, 'interests also need the current query policy');
   assert.equal(migrated.feed('all').stale, true);
   assert.equal(renderCalendar({ events: migrated.feed('all').events }), previousBytes);
   await migrated.refresh({ force: false });
-  assert.deepEqual(calls, ['person'], 'policy migration runs immediately without refetching fresh interests');
-  assert.equal(migrated.snapshot.sources.person.excludedInterestIds, undefined);
+  assert.deepEqual(calls, ['marvel', 'person'], 'policy migration immediately refreshes both kinds of fresh memberships');
+  assert.equal(migrated.snapshot.sources.marvel.exclusions, undefined);
+  assert.equal(migrated.snapshot.sources.person.exclusions, undefined);
+  assert.deepEqual(migrated.snapshot.sources.person.excludedInterestIds, ['in0000211', 'in0000127']);
   assert.deepEqual(migrated.feed('person').events, previousPerson);
+  assert.deepEqual(migrated.feed('marvel').events, previousInterest);
   assert.deepEqual(migrated.feed('all').events, previousCombined);
   assert.equal(migrated.snapshot.sources.person.lastSuccessAt, '2026-10-20T00:00:00.000Z');
+  const failedSnapshot = JSON.parse(gunzipSync(await readFile(join(config.dataDir, 'snapshot.json.gz'))));
+  assert.equal(failedSnapshot.sources.marvel.exclusions, undefined);
+  assert.equal(failedSnapshot.sources.person.exclusions, undefined);
+  assert.deepEqual(failedSnapshot.sources.person.excludedInterestIds, ['in0000211', 'in0000127']);
   clock = new Date('2026-10-20T00:10:00Z');
   broken = false;
   await migrated.refresh({ force: false });
-  assert.deepEqual(calls, ['person'], 'a failed policy migration honours the retry interval');
+  assert.deepEqual(calls, ['marvel', 'person'], 'a failed policy migration honors the retry interval');
   assert.deepEqual(migrated.feed('all').events, previousCombined);
 
   clock = new Date('2026-10-20T00:35:00Z');
   await migrated.refresh({ force: false });
-  assert.deepEqual(calls, ['person', 'person']);
-  const policy = migrated.snapshot.sources.person.excludedInterestIds;
-  assert.deepEqual([...policy].sort(), ['in0000127', 'in0000211']);
+  assert.deepEqual(calls, ['marvel', 'person', 'marvel', 'person']);
+  for (const source of config.sources) assert.deepEqual(migrated.snapshot.sources[source.slug].exclusions, TITLE_EXCLUSIONS);
+  assert.equal(migrated.snapshot.sources.person.excludedInterestIds, undefined);
   assert.equal(migrated.feed('person').stale, false);
+  assert.equal(migrated.feed('marvel').stale, false);
   assert.equal(migrated.feed('all').stale, false);
   assert.deepEqual(migrated.snapshot.sources.person.titles, [title]);
-  assert.deepEqual(migrated.feed('marvel').events, previousInterest);
+  assert.deepEqual(migrated.snapshot.sources.marvel.titles, []);
+  assert.deepEqual(migrated.feed('marvel').events, {});
   const combined = migrated.feed('all').events;
   assert.equal(migrated.feed('person').events[excluded.id], undefined);
   assert.equal(combined[excluded.id], undefined);
+  assert.equal(combined[interestExcluded.id], undefined);
   for (const [before, after] of [[previousPerson[excluded.id], migrated.snapshot.sources.person.events[excluded.id]],
-    [previousCombined[excluded.id], migrated.snapshot.combined.events[excluded.id]]]) {
+    [previousInterest[interestExcluded.id], migrated.snapshot.sources.marvel.events[interestExcluded.id]],
+    [previousCombined[excluded.id], migrated.snapshot.combined.events[excluded.id]],
+    [previousCombined[interestExcluded.id], migrated.snapshot.combined.events[interestExcluded.id]]]) {
     assert.equal(after.id, before.id);
     assert.equal(after.createdAt, before.createdAt);
     assert.equal(after.status, 'CANCELLED');
@@ -612,32 +631,39 @@ test('people exclusions migrate fresh saved memberships, retry failures, and pre
     assert.equal(migrated.feed('person').events[id], undefined);
     assert.equal(migrated.snapshot.sources.person.events[id].status, 'CANCELLED');
     assert.equal(migrated.snapshot.sources.person.events[id].sequence, previousPerson[id].sequence + 1);
-    assert.equal(combined[id].status, 'CONFIRMED');
-    assert.equal(combined[id].sequence, previousCombined[id].sequence + 1);
-    assert.equal(combined[id].createdAt, previousCombined[id].createdAt);
-    assert.deepEqual(combined[id].sourceLabels, { interests: ['Marvel'], people: [] });
+    assert.equal(migrated.snapshot.sources.marvel.events[id].status, 'CANCELLED');
+    assert.equal(migrated.snapshot.sources.marvel.events[id].sequence, previousInterest[id].sequence + 1);
+    assert.equal(combined[id], undefined);
+    const archived = migrated.snapshot.combined.events[id];
+    assert.equal(archived.status, 'CANCELLED');
+    assert.equal(archived.sequence, previousCombined[id].sequence + 1);
+    assert.equal(archived.createdAt, previousCombined[id].createdAt);
   }
-  assert.deepEqual(combined[groupId].episodeIds, [first.id, second.id]);
-  assert.equal(combined[groupId].description, 'https://www.imdb.com/title/tt3456789/\n\nInterests: Marvel\n\nS01E01: The first conversation\nS01E02: The second conversation');
+  assert.deepEqual(migrated.snapshot.combined.events[groupId].episodeIds, [first.id, second.id]);
+  assert.deepEqual(migrated.snapshot.combined.events[withdrawn.id], withdrawn);
   assert.deepEqual(combined[title.id], previousCombined[title.id], 'unaffected releases retain every revision field');
-  assert.deepEqual(migrated.pageData().upcoming.find((event) => event.id === groupId).sources, ['Marvel']);
-  assert.deepEqual(migrated.pageData(undefined, 'marvel').upcoming.find((event) => event.id === groupId).sources, ['Marvel']);
+  assert.equal(migrated.pageData().upcoming.find((event) => event.id === groupId), undefined);
+  assert.deepEqual(migrated.pageData(undefined, 'marvel').upcoming, []);
   const bytes = renderCalendar({ events: combined });
   clock = new Date('2026-10-20T01:35:00Z');
   await migrated.refresh({ force: false });
-  assert.deepEqual(calls, ['person', 'person'], 'current policy snapshots keep the ordinary refresh interval');
+  assert.deepEqual(calls, ['marvel', 'person', 'marvel', 'person'], 'current policy snapshots keep the ordinary refresh interval');
   assert.equal(renderCalendar({ events: migrated.feed('all').events }), bytes);
   const restored = new CalendarStore(config, { logger: quiet, clock: () => clock, loader });
   t.after(() => restored.stop());
   await restored.initialize();
-  assert.deepEqual(restored.snapshot.sources.person.excludedInterestIds, policy);
+  for (const source of config.sources) assert.deepEqual(restored.snapshot.sources[source.slug].exclusions, TITLE_EXCLUSIONS);
+  assert.equal(restored.snapshot.sources.person.excludedInterestIds, undefined);
   assert.equal(restored.feed('person').stale, false);
+  assert.equal(restored.feed('marvel').stale, false);
+  assert.deepEqual(restored.snapshot.combined.events[withdrawn.id], withdrawn);
   assert.equal(renderCalendar({ events: restored.feed('all').events }), bytes);
   await restored.refresh({ force: false });
-  assert.deepEqual(calls, ['person', 'person']);
+  assert.deepEqual(calls, ['marvel', 'person', 'marvel', 'person']);
   broken = true;
   await restored.refresh();
-  assert.deepEqual(restored.snapshot.sources.person.excludedInterestIds, policy, 'later failures retain the policy of the last good data');
+  for (const source of config.sources) assert.deepEqual(restored.snapshot.sources[source.slug].exclusions, TITLE_EXCLUSIONS, 'later failures retain the policy of the last good data');
   assert.equal(restored.feed('person').stale, true);
+  assert.equal(restored.feed('marvel').stale, true);
   assert.equal(renderCalendar({ events: restored.feed('all').events }), bytes);
 });

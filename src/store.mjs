@@ -10,7 +10,7 @@ import Assembler from 'stream-json/assembler.js';
 import { disassembler } from 'stream-json/disassembler.js';
 import { stringer } from 'stream-json/stringer.js';
 import { attributeReleases, isValidEvent, reconcileEvents, releaseDescription } from './calendar.mjs';
-import { fetchSource, PEOPLE_EXCLUDED_INTEREST_IDS } from './imdb.mjs';
+import { fetchSource, TITLE_EXCLUSIONS } from './imdb.mjs';
 
 const MAX_SNAPSHOT_BYTES = 96 * 1024 * 1024;
 const MAX_COMPRESSED_BYTES = 16 * 1024 * 1024;
@@ -164,7 +164,7 @@ export class CalendarStore {
   sourceState(source) {
     const saved = this.snapshot.sources[source.slug];
     if (!saved?.lastSuccessAt) return { status: saved?.error ? 'error' : 'pending', saved };
-    const policyChanged = source.kind === 'name' && JSON.stringify(saved.excludedInterestIds) !== JSON.stringify(PEOPLE_EXCLUDED_INTEREST_IDS);
+    const policyChanged = JSON.stringify(saved.exclusions) !== JSON.stringify(TITLE_EXCLUSIONS);
     const stale = !!saved.error || policyChanged || this.clock().getTime() - Date.parse(saved.lastSuccessAt) >= this.config.refreshIntervalMs;
     return { status: stale ? 'stale' : 'ready', saved };
   }
@@ -249,7 +249,7 @@ export class CalendarStore {
       if (signal.aborted) break;
       const previous = this.snapshot.sources[source.slug];
       const now = this.clock().toISOString();
-      const policyChanged = source.kind === 'name' && JSON.stringify(previous?.excludedInterestIds) !== JSON.stringify(PEOPLE_EXCLUDED_INTEREST_IDS);
+      const policyChanged = JSON.stringify(previous?.exclusions) !== JSON.stringify(TITLE_EXCLUSIONS);
       const interval = previous?.error ? this.config.retryIntervalMs : this.config.refreshIntervalMs;
       const checkedAt = previous?.error ? previous.lastAttemptAt : previous?.lastSuccessAt;
       if (!force && checkedAt && (previous?.error || !policyChanged) && this.clock().getTime() - Date.parse(checkedAt) < interval) continue;
@@ -261,7 +261,7 @@ export class CalendarStore {
         const omitted = undatedTitleCount(result.titles, events);
         this.snapshot.sources[source.slug] = { titles: result.titles, events,
           total: result.total, omitted, warnings: result.warnings || [],
-          ...(source.kind === 'name' ? { excludedInterestIds: PEOPLE_EXCLUDED_INTEREST_IDS } : {}),
+          exclusions: TITLE_EXCLUSIONS,
           lastSuccessAt: now, lastAttemptAt: now, error: null };
         refreshed = true;
         this.logger.info(`Refreshed ${source.slug}: ${result.titles.length} titles, ${omitted} without a complete date.`);
@@ -343,7 +343,7 @@ export class CalendarStore {
     const due = this.config.sources.map((source) => {
       const saved = this.snapshot.sources[source.slug];
       if (!saved) return now + this.config.retryIntervalMs;
-      if (source.kind === 'name' && !saved.error && JSON.stringify(saved.excludedInterestIds) !== JSON.stringify(PEOPLE_EXCLUDED_INTEREST_IDS)) return now;
+      if (!saved.error && JSON.stringify(saved.exclusions) !== JSON.stringify(TITLE_EXCLUSIONS)) return now;
       return Date.parse(saved.error ? saved.lastAttemptAt : saved.lastSuccessAt) +
         (saved.error ? this.config.retryIntervalMs : this.config.refreshIntervalMs);
     });

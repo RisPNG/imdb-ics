@@ -33,7 +33,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
     import { loadConfig } from ${JSON.stringify(new URL('../src/config.mjs', import.meta.url).href)};
     import { createApp } from ${JSON.stringify(new URL('../src/server.mjs', import.meta.url).href)};
     import { calendarChunks } from ${JSON.stringify(new URL('../src/calendar.mjs', import.meta.url).href)};
-    import { PEOPLE_EXCLUDED_INTEREST_IDS } from ${JSON.stringify(new URL('../src/imdb.mjs', import.meta.url).href)};
+    import { TITLE_EXCLUSIONS } from ${JSON.stringify(new URL('../src/imdb.mjs', import.meta.url).href)};
     const dataDir = ${JSON.stringify(dataDir)};
     const sources = Array.from({ length: ${SOURCES.length} }, (_, index) => ({ slug: 'source-' + String.fromCharCode(97 + Math.floor(index / 26), 97 + index % 26),
       id: (index < 3 ? 'in' : 'nm') + (1000000 + index), kind: index < 3 ? 'interest' : 'name', label: (index < 3 ? 'Interest ' : 'Person ') + index }));
@@ -67,7 +67,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
         } });
       await store.initialize();
       await store.refresh();
-      for (const saved of Object.values(store.snapshot.sources)) delete saved.excludedInterestIds;
+      for (const saved of Object.values(store.snapshot.sources)) delete saved.exclusions;
       for (const events of [store.snapshot.combined.events, ...Object.values(store.snapshot.sources).map((saved) => saved.events)]) {
         for (const event of Object.values(events)) {
           if (event.status !== 'CONFIRMED') continue;
@@ -112,7 +112,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       assert.equal(Object.values(store.feed('all').events).filter((event) => event.status === 'CANCELLED').length, 0);
       assert.equal(Object.values(store.snapshot.combined.events).filter((event) => event.status === 'CANCELLED').length, ${expectedCancelled});
       for (const source of sources) {
-        if (source.kind === 'name') assert.deepEqual(store.snapshot.sources[source.slug].excludedInterestIds, PEOPLE_EXCLUDED_INTEREST_IDS);
+        assert.deepEqual(store.snapshot.sources[source.slug].exclusions, TITLE_EXCLUSIONS);
         assert.equal(store.sourceState(source).status, 'ready');
         assert(Object.values(store.feed(source.slug).events).every((event) => event.status === 'CONFIRMED'));
         assert(Object.values(store.feed(source.slug).events).every((event) => event.description.split('\\n')[0] === 'https://www.imdb.com/title/' + event.titleId + '/'));
@@ -164,7 +164,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       const formerlyCredited = app.store.feed('all').events[excludedId];
       assert.equal(formerlyCredited.status, 'CONFIRMED');
       assert.equal(app.store.sourceState(sources[3]).status, 'stale');
-      assert.equal(app.store.snapshot.sources[sources[3].slug].excludedInterestIds, undefined);
+      assert.equal(app.store.snapshot.sources[sources[3].slug].exclusions, undefined);
       let coldFinished = false;
       const cold = request('/calendars/all.ics').then((response) => { coldFinished = true; return response; });
       const coldHead = request('/calendars/all.ics', { method: 'HEAD' });
@@ -209,10 +209,10 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       assert.equal(app.store.persistenceError, null);
       assert.equal(warnings.length, 1);
       assert.match(warnings[0], /A temporary upstream failure/);
-      assert.equal(attempts.length, sources.length - 3);
-      assert(sources.slice(0, 3).every((source) => !attempts.includes(source.slug)));
+      assert.equal(attempts.length, sources.length);
+      assert(sources.slice(0, 3).every((source) => attempts.includes(source.slug)));
       assert.equal(app.store.feed('all').events[excludedId].status, 'CONFIRMED');
-      assert.equal(app.store.snapshot.sources[sources[3].slug].excludedInterestIds, undefined);
+      assert.equal(app.store.snapshot.sources[sources[3].slug].exclusions, undefined);
       assert.deepEqual(app.store.feed('all').events.tt1000000.sourceLabels.people, ['Person 3']);
       assert.equal(Object.values(app.store.feed('all').events).filter((event) => event.status === 'CANCELLED').length, 0);
       assert.equal(Object.values(app.store.snapshot.combined.events).filter((event) => event.status === 'CANCELLED').length, ${expectedCancelled - (uniqueTitles - retainedUniqueTitles)});
@@ -228,7 +228,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       clock = new Date('2026-10-20T00:31:00.000Z');
       await app.store.refresh({ force: false });
       assert.equal(app.store.persistenceError, null);
-      assert.equal(attempts.length, sources.length - 2);
+      assert.equal(attempts.length, sources.length + 1);
       assert.equal(attempts.at(-1), sources[3].slug);
       const events = app.store.feed('all').events;
       const archive = app.store.snapshot.combined.events;
@@ -254,8 +254,7 @@ test(`${SOURCES.length} sources preserve full history through policy-driven mass
       assert(Object.values(events).every((event) => event.description.startsWith('https://www.imdb.com/title/' + event.titleId + '/\\n\\n')));
       assert.equal(app.store.feed('all').stale, false);
       for (const source of sources) {
-        if (source.kind === 'name') assert.deepEqual(app.store.snapshot.sources[source.slug].excludedInterestIds, PEOPLE_EXCLUDED_INTEREST_IDS);
-        else assert.equal(app.store.snapshot.sources[source.slug].excludedInterestIds, undefined);
+        assert.deepEqual(app.store.snapshot.sources[source.slug].exclusions, TITLE_EXCLUSIONS);
       }
       const confirmed = Object.values(events).filter((event) => event.status === 'CONFIRMED').length;
       const cancelled = Object.values(events).filter((event) => event.status === 'CANCELLED').length;

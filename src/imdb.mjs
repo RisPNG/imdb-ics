@@ -5,7 +5,10 @@ const MAX_PAGES = 1_000;
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 const PAGE_TIMEOUT_MS = 20_000;
 const OPERATION_TIMEOUT_MS = 120_000;
-export const PEOPLE_EXCLUDED_INTEREST_IDS = Object.freeze(['in0000211', 'in0000127']);
+export const TITLE_EXCLUSIONS = Object.freeze({
+  interestIds: Object.freeze(['in0000105', 'in0000104', 'in0000211', 'in0000127', 'in0000060']),
+  officialSite: 'youtube',
+});
 
 export class ImdbError extends Error {
   constructor(message, { code = 'UPSTREAM_ERROR', status, cause } = {}) {
@@ -19,15 +22,19 @@ export class ImdbError extends Error {
 function queryFor(source, cursor) {
   const after = cursor === null ? '' : `, after: ${JSON.stringify(cursor)}`;
   const filter = source.kind === 'interest'
-    ? `interestConstraint: {allInterestIds: ["${source.id}"]}`
-    : source.kind === 'name' ? `titleCreditsConstraint: {anyCredits: [{nameId: "${source.id}"}]}, interestConstraint: {excludeInterestIds: ${JSON.stringify(PEOPLE_EXCLUDED_INTEREST_IDS)}}`
-      : `episodicConstraint: {anySeriesIds: ["${source.id}"]}`;
+    ? `interestConstraint: {allInterestIds: ["${source.id}"], excludeInterestIds: ${JSON.stringify(TITLE_EXCLUSIONS.interestIds)}}`
+    : `${source.kind === 'name' ? `titleCreditsConstraint: {anyCredits: [{nameId: "${source.id}"}]}` : `episodicConstraint: {anySeriesIds: ["${source.id}"]}`}, interestConstraint: {excludeInterestIds: ${JSON.stringify(TITLE_EXCLUSIONS.interestIds)}}`;
   return `query ${source.kind === 'series' ? 'CalendarEpisodes' : 'CalendarSource'} {
     advancedTitleSearch(first: ${PAGE_SIZE}${after}, constraints: {${filter}}) {
       total
       pageInfo { hasNextPage endCursor }
-      edges { node { title { id titleText { text } releaseDate { year month day } titleType { id } series { series { id titleText { text } releaseDate { year month day } } episodeNumber { seasonNumber episodeNumber } } } } }
+      edges { node { title { ...CalendarTitle titleType { id } series { series { ...CalendarTitle } episodeNumber { seasonNumber episodeNumber } } } } }
     }
+  }
+  fragment CalendarTitle on Title {
+    id titleText { text } releaseDate { year month day }
+    interests(first: 100) { total pageInfo { hasNextPage } edges { node { id } } }
+    externalLinks(first: 100, filter: {categories: ["official"]}) { total pageInfo { hasNextPage } edges { node { url label } } }
   }`;
 }
 
@@ -100,6 +107,34 @@ function invalid(message) {
   throw new ImdbError(`IMDb returned an incomplete or inconsistent result: ${message}`, { code: 'INCOMPLETE_RESULT' });
 }
 
+function isExcludedTitle(title) {
+  for (const field of ['interests', 'externalLinks']) {
+    const connection = title[field];
+    if (!connection || !Number.isSafeInteger(connection.total) || connection.total < 0
+        || connection.pageInfo?.hasNextPage !== false || !Array.isArray(connection.edges)
+        || connection.edges.length !== connection.total) {
+      invalid(`title ${title.id} is missing complete ${field}.`);
+    }
+  }
+  const interests = title.interests.edges.map((edge) => edge?.node?.id);
+  if (interests.some((id) => typeof id !== 'string' || !/^in\d{7}$/.test(id))) invalid(`title ${title.id} has an invalid interest.`);
+  const sites = title.externalLinks.edges.map((edge) => {
+    const link = edge?.node;
+    if (typeof link?.url !== 'string' || (link.label != null && typeof link.label !== 'string')) invalid(`title ${title.id} has an invalid official site.`);
+    let url;
+    try { url = new URL(link.url); }
+    catch { invalid(`title ${title.id} has an invalid official site URL.`); }
+    if (!['http:', 'https:'].includes(url.protocol)) invalid(`title ${title.id} has an invalid official site URL.`);
+    const host = url.hostname.toLowerCase();
+    return { youtube: ['youtube.com', 'youtu.be'].some((domain) => host === domain || host.endsWith(`.${domain}`)),
+      main: /\b(?:(?:official|company)\s+(?:web\s*)?site|web\s*site)\b/i.test(link.label ?? ''),
+      social: ['facebook.com', 'instagram.com', 'twitter.com', 'x.com', 'tiktok.com'].some((domain) => host === domain || host.endsWith(`.${domain}`)) };
+  });
+  return interests.some((id) => TITLE_EXCLUSIONS.interestIds.includes(id))
+    || (sites.length > 0 && sites.every((site) => site.youtube))
+    || (sites.some((site) => site.youtube && site.main) && !sites.some((site) => !site.youtube && (site.main || !site.social)));
+}
+
 async function readTitles(source, { fetchImpl, signal }) {
   const operationSignal = AbortSignal.any([
     AbortSignal.timeout(OPERATION_TIMEOUT_MS),
@@ -107,6 +142,7 @@ async function readTitles(source, { fetchImpl, signal }) {
   ]);
   operationSignal.throwIfAborted();
   const titles = new Map();
+  const excludedIds = new Set();
   const cursors = new Set();
   const warnings = new Set();
   let cursor = null;
@@ -158,6 +194,7 @@ async function readTitles(source, { fetchImpl, signal }) {
       if (typeof type !== 'string' || !type) invalid(`title ${title.id} is missing its type.`);
       if (source.kind === 'series' && type !== 'tvEpisode') invalid(`episode search for series ${source.id} returned non-episode ${title.id}.`);
       const item = { id: title.id, title: title.titleText.text.trim(), date: completeDate(title.releaseDate), type };
+      let excluded = isExcludedTitle(title);
       if (type === 'tvEpisode') {
         const parent = title.series?.series;
         const numbering = title.series?.episodeNumber;
@@ -170,18 +207,20 @@ async function readTitles(source, { fetchImpl, signal }) {
           invalid(`episode ${title.id} has invalid numbering.`);
         }
         item.series = { id: parent.id, title: source.kind === 'series' ? source.title : parent.titleText.text.trim(), date: source.kind === 'series' ? source.date : completeDate(parent.releaseDate), season: numbering?.seasonNumber ?? null, episode: numbering?.episodeNumber ?? null };
+        excluded = isExcludedTitle(parent) || excluded;
       }
       const previous = titles.get(item.id);
-      if (previous && JSON.stringify(previous) !== JSON.stringify(item)) {
+      if (previous && (JSON.stringify(previous) !== JSON.stringify(item) || excludedIds.has(item.id) !== excluded)) {
         invalid(`title ${item.id} changed during pagination; retry the refresh.`);
       }
       titles.set(item.id, item);
+      if (excluded) excludedIds.add(item.id);
     }
     if (titles.size > total) invalid('more unique titles than the reported total.');
     if (!page.pageInfo.hasNextPage) {
       if (titles.size !== total) invalid(`expected ${total} unique titles but received ${titles.size}.`);
-      const results = [...titles.values()];
-      return { titles: results, total, omitted: results.filter((title) => title.date === null).length, warnings: [...warnings] };
+      const results = [...titles.values()].filter((title) => !excludedIds.has(title.id));
+      return { titles: results, total: results.length, omitted: results.filter((title) => title.date === null).length, warnings: [...warnings] };
     }
     const next = page.pageInfo.endCursor;
     if (!page.edges.length || typeof next !== 'string' || !next || next.length > 10_000 || cursors.has(next)) {
@@ -194,7 +233,7 @@ async function readTitles(source, { fetchImpl, signal }) {
 }
 
 /**
- * Read all directly matching titles, including undated titles, and expand interest series into their complete episode lists. Filmographies exclude News and Talk Show interests and retain only directly credited episodes.
+ * Read eligible directly matching titles, including undated titles, and expand interest series into their complete eligible episode lists. Every source uses the same title exclusions, inherited by episodes from their series. Filmographies retain only directly credited episodes.
  * The website GraphQL endpoint is not the licensed AWS IMDb API. Entitlement metadata and usage notices are returned as warnings for the caller to expose.
  * Any failed or inconsistent page rejects the entire source; callers should keep their previous complete snapshot.
  */

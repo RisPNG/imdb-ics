@@ -72,7 +72,6 @@ export const SOURCES = Object.freeze([
   { slug: 'mark-fischbach', id: 'nm6179964', kind: 'name', label: 'Mark Fischbach' },
   { slug: 'sean-mcloughlin', id: 'nm7681921', kind: 'name', label: 'Seán McLoughlin' },
   { slug: 'isack-hadjar', id: 'nm15884712', kind: 'name', label: 'Isack Hadjar' },
-  { slug: 'felix-kjellberg', id: 'nm5579304', kind: 'name', label: 'Felix Kjellberg' },
   { slug: 'max-verstappen', id: 'nm6722413', kind: 'name', label: 'Max Verstappen' },
   { slug: 'tom-cruise', id: 'nm0000129', kind: 'name', label: 'Tom Cruise' },
   { slug: 'nathan-fillion', id: 'nm0277213', kind: 'name', label: 'Nathan Fillion' },
@@ -133,6 +132,9 @@ export const SOURCES = Object.freeze([
   { slug: 'rahim-razali', id: 'nm0713604', kind: 'name', label: 'Rahim Razali' },
   { slug: 'eizlan-yusof', id: 'nm0951132', kind: 'name', label: 'Eizlan Yusof' },
   { slug: 'zamarul-hisham', id: 'nm1935071', kind: 'name', label: 'Zamarul Hisham' },
+  { slug: 'aedy-ashraf', id: 'nm2834062', kind: 'name', label: 'Aedy Ashraf' },
+  { slug: 'shaquille-o-neal', id: 'nm0641944', kind: 'name', label: 'Shaquille O\'Neal' },
+  { slug: 'riz-ahmed', id: 'nm1981893', kind: 'name', label: 'Riz Ahmed' },
 ].map((source) => Object.freeze({
   ...source,
   url: `https://www.imdb.com/${source.kind === 'interest' ? 'interest' : 'name'}/${source.id}/`,

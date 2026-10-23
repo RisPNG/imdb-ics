@@ -72,10 +72,10 @@ export function attributeReleases(events, sources) {
         if (!ids.has(entry?.id)) continue;
         let labels = memberships.get(entry.id);
         if (!labels) {
-          labels = { interests: new Set(), people: new Set() };
+          labels = {};
           memberships.set(entry.id, labels);
         }
-        labels[source.kind === 'interest' ? 'interests' : 'people'].add(source.label);
+        (labels[source.kind === 'interest' ? 'interests' : 'people'] ??= new Set()).add(source.label);
       }
     }
   }
