@@ -1232,5 +1232,32 @@
     "alt": "Felix Kjellberg",
     "caption": "Felix Kjellberg",
     "credit": "Cold Ones Clips (CC BY 3.0)"
+  },
+  "sacha-baron-cohen": {
+    "path": "/images/sacha-baron-cohen.jpg",
+    "width": 320,
+    "height": 213,
+    "sourceUrl": "https://www.imdb.com/name/nm0056187/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BODNlYjZlZTgtOWNkOC00NDFmLThmZDYtNzRlZDNjNTBmNjdhXkEyXkFqcGc@._V1_QL85_UX320_.jpg",
+    "alt": "Sacha Baron Cohen",
+    "caption": "Sacha Baron Cohen"
+  },
+  "mazlan-senario": {
+    "path": "/images/mazlan-senario.jpg",
+    "width": 188,
+    "height": 270,
+    "sourceUrl": "https://ms.wikipedia.org/wiki/Fail:LanPetPet.JPG",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/ms/4/42/LanPetPet.JPG",
+    "alt": "Mazlan Senario",
+    "caption": "Mazlan Senario"
+  },
+  "steve-o": {
+    "path": "/images/steve-o.jpg",
+    "width": 320,
+    "height": 433,
+    "sourceUrl": "https://www.imdb.com/name/nm0828177/",
+    "imageUrl": "https://m.media-amazon.com/images/M/MV5BNWI1YTgzMzctNWIxMi00NDE3LTkwMWEtYjY2MDFkMjBlNWM3XkEyXkFqcGc@._V1_QL85_UX320_.jpg",
+    "alt": "Steve-O",
+    "caption": "Steve-O"
   }
 }

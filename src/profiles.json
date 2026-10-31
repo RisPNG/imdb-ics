@@ -900,5 +900,23 @@
     "roles": ["Video creator", "Writer", "Producer"],
     "knownFor": ["PewDiePie", "Scare PewDiePie", "Pew News", "Minecraft Epic"],
     "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm5579304/" }]
+  },
+  "sacha-baron-cohen": {
+    "summary": "Sacha Baron Cohen is a British actor, comedian, and writer known for creating Ali G, Borat, and Brüno. His screen work includes Borat, Who Is America?, and The Trial of the Chicago 7.",
+    "roles": ["Actor", "Comedian", "Writer"],
+    "knownFor": ["Borat", "Who Is America?", "Brüno", "The Trial of the Chicago 7"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0056187/" }]
+  },
+  "mazlan-senario": {
+    "summary": "Mazlan Senario is a Malaysian actor and comedian, widely known as Lan Pet Pet of the comedy group Senario. His credits include Gerak Khas the Movie, Pontianak Menjerit, and Senario Dalam Pemburu Emas Yamashita.",
+    "roles": ["Actor", "Comedian"],
+    "knownFor": ["Gerak Khas the Movie", "Pontianak Menjerit", "Senario Dalam Pemburu Emas Yamashita"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0784094/" }]
+  },
+  "steve-o": {
+    "summary": "Steve-O is an American stunt performer and comedian who rose to fame on Jackass. He studied at Ringling Bros. and Barnum & Bailey Clown College and later wrote and performed in the Jackass films.",
+    "roles": ["Stunt performer", "Comedian", "Writer"],
+    "knownFor": ["Jackass", "Jackass: The Movie", "Wildboyz"],
+    "references": [{ "label": "IMDb biography and credits", "url": "https://www.imdb.com/name/nm0828177/" }]
   }
 }

@@ -136,6 +136,9 @@ export const SOURCES = Object.freeze([
   { slug: 'shaquille-o-neal', id: 'nm0641944', kind: 'name', label: 'Shaquille O\'Neal' },
   { slug: 'riz-ahmed', id: 'nm1981893', kind: 'name', label: 'Riz Ahmed' },
   { slug: 'felix-kjellberg', id: 'nm5579304', kind: 'name', label: 'Felix Kjellberg' },
+  { slug: 'sacha-baron-cohen', id: 'nm0056187', kind: 'name', label: 'Sacha Baron Cohen' },
+  { slug: 'mazlan-senario', id: 'nm0784094', kind: 'name', label: 'Mazlan Senario' },
+  { slug: 'steve-o', id: 'nm0828177', kind: 'name', label: 'Steve-O' },
 ].map((source) => Object.freeze({
   ...source,
   url: `https://www.imdb.com/${source.kind === 'interest' ? 'interest' : 'name'}/${source.id}/`,
